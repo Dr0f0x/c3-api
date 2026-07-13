@@ -2,17 +2,23 @@
   // Language version of C3.
   "langrev": "1",
   // Warnings used for all targets.
-  "warnings": [ "no-unused" ],
+  "warnings": [
+    "no-unused"
+  ],
   // Directories where C3 library files may be found.
-  "dependency-search-paths": [ "lib" ],
+  "dependency-search-paths": [
+    "lib",
+    "build"
+  ],
   // Libraries to use for all targets.
-  "dependencies": [ ],
+  "dependencies": [],
   // Authors, optionally with email.
-  "authors": [ "Kirill Velikiy <velikoss@vk.com>" ],
+  "authors": [
+    "Kirill Velikiy <velikoss@vk.com>"
+  ],
   // Version using semantic versioning.
   "version": "0.1.0",
   // Sources compiled for all targets.
-  "sources": [ "src/**" ],
   // C sources if the project also compiles C sources
   // relative to the project file.
   // "c-sources": [ "csource/**" ],
@@ -25,10 +31,13 @@
   "targets": {
     "c3api": {
       // Executable or library.
-      "type": "static-lib",
+      "type": "executable",
+      "sources": [
+        "src/**"
+      ],
       // Additional libraries, sources
       // and overrides of global settings here.
-    },
+    }
   },
   // Global settings.
   // CPU name, used for optimizations in the LLVM backend.

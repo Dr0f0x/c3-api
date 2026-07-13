@@ -12,10 +12,10 @@ struct HttpResponse {
     char[] body;
 }
 
-fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
+fn void? HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
     @pool() {
         DString buffer;
-        buffer.new_init(64);
+        buffer.init(mem, 64);
 
         buffer.appendf("HTTP/1.1 %d %s\r\n", self.status.code, self.status.message);
 
@@ -23,17 +23,17 @@ fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
 
         if (self.body.len > 0) {
             if (!self.headers.is_initialized()) {
-                self.headers.new_init();
+                self.headers.init(mem);
             }
 
             StringList content_length;
-            content_length.new_init(1);
+            content_length.init(mem, 1);
             content_length.push(string::tformat("%d", self.body.len)); // Leaked Allocation
 
             self.headers.set("Content-Length", content_length);
         }
 
-        self.headers.@each(; String key, List(<String>) values)
+        self.headers.@each(; String key, List{String} values)
         {
             foreach (value: values) {
                 buffer.appendf("%s: %s\r\n", key, value);
@@ -41,7 +41,7 @@ fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
         };
 
         if (self.headers.len() > 0) {
-            buffer.append_chars("\r\n");
+            buffer.append_string("\r\n");
         }
 
         socket.write(buffer.str_view())!;

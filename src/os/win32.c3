@@ -8,9 +8,9 @@ struct WsaData @if(env::WIN32) {
     char[408] data;
 }
 
-extern fn CInt win32_WSAStartup() @extern("WSAStartup") @if(env::WIN32 && !$defined(win32_WSAStartup));
-extern fn CInt win32_WSACleanup() @extern("WSACleanup") @if(env::WIN32 && !$defined(win32_WSACleanup));
-extern fn CInt win32_WSAGetLastError() @extern("WSAGetLastError") @if(env::WIN32 && !$defined(win32_WSAGetLastError));
+extern fn CInt win32_WSAStartup(Win32_WORD version, WsaData* data) @cname("WSAStartup") @if(env::WIN32 && !$defined(win32_WSAStartup));
+extern fn CInt win32_WSACleanup() @cname("WSACleanup") @if(env::WIN32 && !$defined(win32_WSACleanup));
+extern fn CInt win32_WSAGetLastError() @cname("WSAGetLastError") @if(env::WIN32 && !$defined(win32_WSAGetLastError));
 
 fn void startWSA() {
     $if !env::WIN32:

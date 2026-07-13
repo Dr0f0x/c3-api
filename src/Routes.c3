@@ -3,104 +3,129 @@ import std::collections::map;
 import std::io;
 import std::collections::object;
 
-def RouteFunction = fn HttpResponse(ControllerParadise*, HttpRequest, HashMap(<String,String>));
-def RouteMap = HashMap(<String, RouteNode*>);
-def TagsMap = HashMap(<String, Object*>);
+alias RouteFunction = fn HttpResponse(ControllerParadise*, HttpRequest, HashMap{String, String});
+alias RouteMap = HashMap{String, RouteNode*};
+alias TagsMap = HashMap{String, Object*};
 
-struct RouteNode {
-    String name;
-    RouteMap subnodes;
-    bool has_apply;
-    RouteFunction apply;
+struct RouteNode
+{
+	String name;
+	RouteMap subnodes;
+	bool has_apply;
+	RouteFunction apply;
 }
 
-fn HttpResponse e404(ControllerParadise* controller = null, HttpRequest req, HashMap(<String,String>) args) {
-    HttpResponse res;
+fn HttpResponse e404(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
+{
+	HttpResponse res;
 
-    res.status = HttpStatus.NOT_FOUND;
-    res.body = string::new_format(`{"type":"error","status":404}`, "\n", req.method, req.uri);
+	res.status = HttpStatus.NOT_FOUND;
+	res.body = string::format(mem, `{"type":"error","status":404}`);
 
-    res.headers.add_header("Content-Type", "application/json");
+	res.headers.add_header("Content-Type", "application/json");
 
-    return res;
+	return res;
 }
 
-fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, HashMap(<String,String>) args) {
-    HttpResponse res;
+fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
+{
+	HttpResponse res;
 
-    String filename = args["filename"]!!;
-    //io::printfn("%s:%d %s", $$MODULE, $$LINE, filename);
+	String filename = args["filename"]!!;
+	// io::printfn("%s:%d %s", $$MODULE, $$LINE, filename);
 
-    File! file;
+	File? file;
 
-    if (file::is_file(filename)) {
-        file = file::open(filename, "rb");
-    } else {
-        Path path = path::tgetcwd()!!;
-        path = path.append(filename)!!;
+	if (file::is_file(filename))
+	{
+		file = file::open(filename, "rb");
+	}
+	else
+	{
+		Path path = path::cwd(mem)!!;
+		path = path.append(mem, filename)!!;
 
-        file = file::open_path(path, "rb");
-        filename = path.str_view();
-    }
+		file = file::open_path(path, "rb");
+		filename = path;
+	}
 
-    defer {
-      (void)file.flush();
-      (void)file.close();
-    }
+	defer
+	{
+		(void)file.flush();
+		(void)file.close();
+	}
 
-    if (catch anyfault err = file) {
-        res.status = HttpStatus.NOT_FOUND;
-        io::eprintfn("Failed to get file: %s", err);
-        res.body = string::new_format(`{"type":"error","status":404}`, "\n", req.method, req.uri);
+	if (catch err = file)
+	{
+		res.status = HttpStatus.NOT_FOUND;
+		io::eprintfn("Failed to get file: %s", err);
+		res.body = string::format(mem, `{"type":"error","status":404}`);
 
-        res.headers.add_header("Content-Type", "application/json");
-    } else if (file::get_size(filename)!! > 5 * 1024 * 1024) { // TODO CONFIG (right now 5Mb is the limit for the file)
-        res.status = HttpStatus.PAYLOAD_TOO_LARGE;
+		res.headers.add_header("Content-Type", "application/json");
+	}
+	else if (file::get_size(filename)!! > 5 * 1024 * 1024)
+	{
+		// TODO CONFIG (right now 5Mb is the limit for the file)
+		res.status = HttpStatus.PAYLOAD_TOO_LARGE;
 
-        res.body = string::new_format(`{"type":"error","status":413}`, "\n", req.method, req.uri);
+		res.body = string::format(mem, `{"type":"error","status":413}`);
 
-        res.headers.add_header("Content-Type", "application/json");
-    } else {
-        DString text;
-        if (catch anyfault err1 = text.read_from_stream(&file)) {
-            io::eprintfn("Failed to read: %s", err1);
-            res.status = HttpStatus.BAD_REQUEST;
-            res.body = string::new_format(`{"type":"error","status":400}`, "\n", req.method, req.uri);
-        } else {
-            res.status = HttpStatus.OK;
-            res.body = text.str_view();
-            res.headers.add_header("Content-Type", "text/plain");
-        }
-    }
+		res.headers.add_header("Content-Type", "application/json");
+	}
+	else
+	{
+		DString text;
+		if (catch err1 = text.read_from_stream(&file))
+		{
+			io::eprintfn("Failed to read: %s", err1);
+			res.status = HttpStatus.BAD_REQUEST;
+			res.body = string::format(mem, `{"type":"error","status":400}`);
+		}
+		else
+		{
+			res.status = HttpStatus.OK;
+			res.body = text.str_view();
+			res.headers.add_header("Content-Type", "text/plain");
+		}
+	}
 
-    return res;
+	return res;
 }
 
-fn HttpResponse folder(ControllerParadise* controller = null, HttpRequest req, HashMap(<String,String>) args) {
-    HttpResponse res;
-    String filename = args["foldername"]!!;
+fn HttpResponse folder(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
+{
+	HttpResponse res;
+	String filename = args["foldername"]!!;
 
-    PathList! list;
+	PathList? list;
 
-    if (os::native_is_dir(filename)) {
-        list = path::ls(path::temp_new(filename));
-    } else {
-        Path path = path::tgetcwd()!!;
-        path = path.append(filename)!!;
-        filename = path.str_view();
-        if (path::is_dir(path)) {
-            list = path::ls(path);
-        }
-    }
+	if (os::native_is_dir(filename))
+	{
+		list = path::ls(mem, path::tnew(filename));
+	}
+	else
+	{
+		Path path = path::cwd(mem)!!;
+		path = path.append(mem, filename)!!;
+		filename = path;
+		if (path::is_dir(path))
+		{
+			list = path::ls(mem, path);
+		}
+	}
 
-    if (catch anyfault err = list) {
-        res.status = HttpStatus.NOT_FOUND;
-        res.body = string::new_format(`{"type":"error","status":404}`, "\n", req.method, req.uri);
+	if (catch err = list)
+	{
+		res.status = HttpStatus.NOT_FOUND;
+		res.body = string::format(mem, `{"type":"error","status":404}`);
 
-        res.headers.add_header("Content-Type", "application/json");
-    } else {
-        DString body = dstring::new();
-        body.appendfn(`
+		res.headers.add_header("Content-Type", "application/json");
+	}
+	else
+	{
+		DString body = dstring::new(mem);
+		body.appendfn(
+			`
 <style>
 table, th, td {
   border: 1px solid black;
@@ -116,142 +141,234 @@ table, th, td {
     <th>Name</th>
     <th>Size</th>
 </tr>
-        `, filename);
+        `,
+			filename
+		);
 
-        foreach (Path file: list) {
-            body.appendfn(
-`<tr>
+		foreach (Path file : list)
+		{
+			body.appendfn(
+				`<tr>
     <td>%s %s</td>
     <td>%d</td>
-</tr>`
-            , (path::is_dir(file) ? "📁 " : "🔗 "), file.str_view(), file::get_size(file.str_view())!!);
-        }
+</tr>`,
+				(path::is_dir(file) ? "📁 " : "🔗 "),
+				file,
+				file::get_size(file)!!
+			);
+		}
 
-        body.append("</table>");
+		body.append("</table>");
 
-        res.status = HttpStatus.OK;
+		res.status = HttpStatus.OK;
 
-        res.body = body.str_view();
-        res.headers.add_header("Content-Type", "text/html; charset=utf-8");
-    }
+		res.body = body.str_view();
+		res.headers.add_header("Content-Type", "text/html; charset=utf-8");
+	}
 
-    return res;
+	return res;
 }
 
-fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
-    DString reverse_path = dstring::new(uri);
-    if (uri[0] != '/') reverse_path.insert_at(0, "/");
-    args.set("reverse_path", reverse_path.str_view());
-    reverse_path.free();
+fn RouteFunction get_route(String uri, HashMap{String, String}* args)
+{
+	DString reverse_path = dstring::new(mem, uri);
+	if (uri[0] != '/')
+	{
+		reverse_path.insert_at(0, "/");
+	}
+	io::printfn("[ROUTER] Initial reverse path: '%s'", reverse_path.str_view());
+	args.set("reverse_path", reverse_path.str_view());
 
-    if (uri == "" || uri == "/") { return (_lowLevel[uri].has_apply??false)?_lowLevel[uri].apply!!:&e404; }
+	if (uri == "" || uri == "/")
+	{
+		io::printn("[ROUTER] Root request");
+		if (_rootNodes.has_key(uri))
+		{
+			io::printn("[ROUTER] Root route exists");
 
-    String old_uri;
-    if (uri[0] == '/' && uri.len > 1) {
-         old_uri = uri;
-         uri = uri[1..];
-    }
+			return (_rootNodes[uri].has_apply ?? false) ? _rootNodes[uri].apply!! : &e404;
+		}
 
-    if (
-        !(uri.contains("{") && uri.contains("}")) // Dynamic URI check
-        && _lowLevel.has_key(uri)
-    ) {
-        return (_lowLevel[uri].has_apply??false)?_lowLevel[uri].apply!!:&e404;
-    }
+		io::printn("[ROUTER] Root route missing");
+		return &e404;
+	}
 
-    String[] nodes = uri.tsplit("/");
+	String old_uri;
+	if (uri[0] == '/' && uri.len > 1)
+	{
+		io::printfn("[ROUTER] Removing leading slash from '%s'", uri);
+		old_uri = uri;
+		uri = uri[1..];
+	}
 
-    RouteNode*! temp = _lowLevel[nodes[0]];
-    if (catch err = temp) {
-        if (err != SearchResult.MISSING) io::printfn("Catch err: %s", err);
-        return &e404;
-    }
+	io::printfn("[ROUTER] Normalized URI: '%s'", uri);
 
-    reverse_path.new_init();
-    reverse_path.appendf("/%s", temp.name);
-    int i = 0;
-    while (temp != null && i < nodes.len - 1) {
-        temp = get_next_node(temp, nodes[i++])??null;
-        if (temp == null) { continue; }
-        if (temp.name[0] == '{' && temp.name[^1] == '}'
-        ) (*args)[temp.name[1:^2]] = nodes[i]; // Leaked Allocation
-        reverse_path.appendf("/%s", temp.name);
-    }
+	if (!(uri.contains("{") && uri.contains("}")) && _rootNodes.has_key(uri))
+	{
+		io::printfn("[ROUTER] Direct route match: '%s'", uri);
 
-    if (temp == null) {
-        args.set("reverse_path", "/e404");
-        return &e404;
-    }
+		RouteNode* node = _rootNodes[uri]!!;
 
-    args.set("reverse_path", reverse_path.str_view());
+		io::printfn("[ROUTER] Node '%s' has handler: %s", node.name, node.has_apply ? "yes" : "no");
 
-    RouteFunction res = temp.apply;
-    return res;
+		return node.has_apply ? node.apply : &e404;
+	}
+
+	String[] nodes = uri.tsplit("/");
+
+	RouteNode*? temp = _rootNodes[nodes[0]];
+	if (catch err = temp)
+	{
+		io::printfn("Catch err: %s", err);
+		return &e404;
+	}
+
+	io::printfn("[ROUTER] Starting node: '%s'", temp.name);
+	reverse_path.clear();
+	reverse_path.appendf("/%s", temp.name);
+
+	int i = 1;
+	while (temp != null && i < nodes.len)
+	{
+		if(nodes[i] == "") break;
+		io::printfn("[ROUTER] Looking for child '%s' under '%s'", nodes[i], temp.name);
+
+		temp = get_next_node(temp, nodes[i]) ?? null;
+
+		if (temp == null)
+		{
+			io::printfn("[ROUTER] No child found, continuing");
+			continue;
+		}
+
+		io::printfn("[ROUTER] Matched node '%s'", temp.name);
+
+		if (temp.name[0] == '{' && temp.name[^1] == '}')
+		{
+			String key = temp.name[1:^2];
+			io::printfn("[ROUTER] Dynamic parameter: %s=%s", key, nodes[i]);
+			(*args)[key] = nodes[i];
+		}
+
+		reverse_path.appendf("/%s", temp.name);
+		io::printfn("[ROUTER] Reverse path now: '%s'", reverse_path.str_view());
+		i++;
+	}
+
+	if (temp == null)
+	{
+		io::printn("[ROUTER] No matching route found");
+		args.set("reverse_path", "/e404");
+		return &e404;
+	}
+
+
+	args.set("reverse_path", reverse_path.str_view());
+
+	io::printfn("[ROUTER] Final route: '%s'", reverse_path.str_view());
+	io::printfn("[ROUTER] Has handler: %s", temp.has_apply ? "yes" : "no");
+
+
+	if (!temp.has_apply)
+	{
+		io::printn("[ROUTER] Missing handler, returning 404");
+		return &e404;
+	}
+	RouteFunction res = temp.apply;
+	return res;
 }
 
-fn void add_route(String uri, RouteFunction apply) {
-    if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
+fn void add_route(String uri, RouteFunction apply)
+{
+	io::printfn("[ROUTER ADD] Adding route '%s'", uri);
+	if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
 
-    if (
-            !(uri.contains("{") && uri.contains("}")) // Dynamic URI check
-    ) {
-        _lowLevel[uri] = new_route(.name = uri, .apply = apply);
-        return;
-    }
+	io::printfn("[ROUTER ADD] Normalized route '%s'", uri);
 
-    String[] nodes = uri.split("/");
-    RouteNode* temp;
+	String[] nodes = uri.split(mem, "/");
+	RouteNode* temp;
 
-    if (!_lowLevel.has_key(nodes[0])) {
-        temp = new_route(nodes[0]);
-        _lowLevel[nodes[0]] = temp;
-    } else {
-        temp = _lowLevel[nodes[0]]!!;
-    }
+	io::printfn("[ROUTER ADD] route has %d nodes", nodes.len);
+	foreach (String n : nodes)
+	{
+		io::printfn("[ROUTER ADD] node part '%s'", n);
+	}
 
-    foreach (i, node : nodes[..^2]) {
-        if (try _temp = get_next_node(temp, node)) {
-            temp = _temp;
-            continue;
-        }
-        String key = nodes[i + 1].is_braced() ? "{}" : nodes[i + 1];
-        temp.subnodes[key] = temp = new_route(nodes[i + 1]);
-    }
+	if (!_rootNodes.has_key(nodes[0]))
+	{
+		io::printfn("[ROUTER ADD] Creating root node '%s'", nodes[0]);
+		temp = new_route(nodes[0]);
+		_rootNodes[nodes[0]] = temp;
+	}
+	else
+	{
+		io::printfn("[ROUTER ADD] Using existing root node '%s'", nodes[0]);
+		temp = _rootNodes[nodes[0]]!!;
+	}
 
-    temp.apply = apply;
+	foreach (i, node : nodes[..^2])
+	{
+		io::printfn("[ROUTER ADD] Processing child '%s' under '%s'", node, temp.name);
+		if (try _temp = get_next_node(temp, node))
+		{
+			io::printfn("[ROUTER ADD] Existing child '%s'", _temp.name);
+			temp = _temp;
+			continue;
+		}
+		String key = nodes[i + 1].is_braced() ? "{}" : nodes[i + 1];
+
+		io::printfn("[ROUTER ADD] Creating child key '%s'", key);
+
+		RouteNode* child = new_route(nodes[i + 1]);
+		temp.subnodes[key] = child;
+		temp = child;
+	}
+
+	io::printfn("[ROUTER ADD] Assigning handler to '%s'", temp.name);
+	temp.apply = apply;
+	temp.has_apply = true;
 }
 
-fn void init_route_map() {
-    _lowLevel.new_init();
-    tagsMap.new_init();
+fn void init_route_map()
+{
+	_rootNodes.init(mem);
+	tagsMap.init(mem);
 }
-fn void destroy_route_map() {
-    _lowLevel.free();
-    tagsMap.free();
+fn void destroy_route_map()
+{
+	_rootNodes.free();
+	tagsMap.free();
 }
 
 TagsMap tagsMap;
 
-fn void add_tag(String func, String key, String value) {
-    if (!tagsMap.has_key(func)) { tagsMap[func] = object::new_obj(allocator::heap()); }
-    tagsMap[func]!!.set(key, value);
+fn void add_tag(String func, String key, String value)
+{
+	if (!tagsMap.has_key(func))
+	{
+		tagsMap[func] = object::new_obj(mem);
+	}
+	tagsMap[func]!!.set(key, value);
 }
 
 module c3api::routes @private;
 import std::collections::map;
 import std::io;
 
-RouteMap _lowLevel;
+RouteMap _rootNodes;
 
-fn RouteNode*! get_next_node(RouteNode* from, String to) {
-    return from.subnodes[to] ?? from.subnodes["{}"];
+fn RouteNode*? get_next_node(RouteNode* from, String to)
+{
+	return from.subnodes[to] ?? from.subnodes["{}"];
 }
 
-macro RouteNode* new_route(String name, HashMap(<String, RouteNode*>) subnodes = {}, RouteFunction apply = null) {
-    return @clone(RouteNode {.name = name, .subnodes = subnodes, .has_apply = apply != null, .apply = apply});
+macro RouteNode* new_route(String name, HashMap{String, RouteNode*} subnodes = { }, RouteFunction apply = null)
+{
+	io::printfn("[ROUTER ADD] Creating node '%s' handler=%s", name, apply != null ? "yes" : "no");
+	return @clone((RouteNode) { name, subnodes, apply != null, apply, });
 }
 
-fn bool String.is_braced(self) {
-    return self[0] == '{' && self[^1] == '}';
+fn bool String.is_braced(self)
+{
+	return self[0] == '{' && self[^1] == '}';
 }
-
