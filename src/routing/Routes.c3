@@ -1,7 +1,10 @@
-module c3api::routes;
+module c3api::routing;
+
 import std::collections::map;
 import std::io;
 import std::collections::object;
+
+import c3api::http;
 
 alias RouteFunction = fn HttpResponse(ControllerParadise*, HttpRequest, HashMap{String, String});
 alias RouteMap = HashMap{String, RouteNode*};
@@ -18,11 +21,12 @@ struct RouteNode
 fn HttpResponse e404(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
 {
 	HttpResponse res;
+	res.init(tmem);
 
 	res.status = HttpStatus.NOT_FOUND;
 	res.body = string::format(mem, `{"type":"error","status":404}`);
 
-	res.headers.add_header("Content-Type", "application/json");
+	res.headers.set_header_value("Content-Type", "application/json");
 
 	return res;
 }
@@ -30,6 +34,7 @@ fn HttpResponse e404(ControllerParadise* controller = null, HttpRequest req, Has
 fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
 {
 	HttpResponse res;
+	res.init(tmem);
 
 	String filename = args["filename"]!!;
 	// io::printfn("%s:%d %s", $$MODULE, $$LINE, filename);
@@ -61,7 +66,7 @@ fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, Has
 		io::eprintfn("Failed to get file: %s", err);
 		res.body = string::format(mem, `{"type":"error","status":404}`);
 
-		res.headers.add_header("Content-Type", "application/json");
+		res.headers.set_header_value("Content-Type", "application/json");
 	}
 	else if (file::get_size(filename)!! > 5 * 1024 * 1024)
 	{
@@ -70,7 +75,7 @@ fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, Has
 
 		res.body = string::format(mem, `{"type":"error","status":413}`);
 
-		res.headers.add_header("Content-Type", "application/json");
+		res.headers.set_header_value("Content-Type", "application/json");
 	}
 	else
 	{
@@ -85,7 +90,7 @@ fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, Has
 		{
 			res.status = HttpStatus.OK;
 			res.body = text.str_view();
-			res.headers.add_header("Content-Type", "text/plain");
+			res.headers.set_header_value("Content-Type", "text/plain");
 		}
 	}
 
@@ -95,6 +100,7 @@ fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, Has
 fn HttpResponse folder(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
 {
 	HttpResponse res;
+	res.init(tmem);
 	String filename = args["foldername"]!!;
 
 	PathList? list;
@@ -119,7 +125,7 @@ fn HttpResponse folder(ControllerParadise* controller = null, HttpRequest req, H
 		res.status = HttpStatus.NOT_FOUND;
 		res.body = string::format(mem, `{"type":"error","status":404}`);
 
-		res.headers.add_header("Content-Type", "application/json");
+		res.headers.set_header_value("Content-Type", "application/json");
 	}
 	else
 	{
@@ -163,7 +169,7 @@ table, th, td {
 		res.status = HttpStatus.OK;
 
 		res.body = body.str_view();
-		res.headers.add_header("Content-Type", "text/html; charset=utf-8");
+		res.headers.set_header_value("Content-Type", "text/html; charset=utf-8");
 	}
 
 	return res;
@@ -329,10 +335,10 @@ fn void add_route(String uri, RouteFunction apply)
 	temp.has_apply = true;
 }
 
-fn void init_route_map()
+fn void init_route_map(Allocator allocator)
 {
-	_rootNodes.init(mem);
-	tagsMap.init(mem);
+	_rootNodes.init(allocator);
+	tagsMap.init(allocator);
 }
 fn void destroy_route_map()
 {
@@ -342,16 +348,16 @@ fn void destroy_route_map()
 
 TagsMap tagsMap;
 
-fn void add_tag(String func, String key, String value)
+fn void add_tag(Allocator allocator, String func, String key, String value)
 {
 	if (!tagsMap.has_key(func))
 	{
-		tagsMap[func] = object::new_obj(mem);
+		tagsMap[func] = object::new_obj(allocator);
 	}
 	tagsMap[func]!!.set(key, value);
 }
 
-module c3api::routes @private;
+module c3api::routing @private;
 import std::collections::map;
 import std::io;
 

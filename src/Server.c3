@@ -1,5 +1,7 @@
 module c3api;
 
+import c3api::http;
+
 struct ControllerParadise
 {
 	bool _ignore;
@@ -50,12 +52,13 @@ import std::io;
 import std::thread;
 import std::net::tcp;
 
-import c3api::routes;
+import c3api::routing;
 
 const uint BACKLOG = 10000;
 bool should_close  = false;
 
 import c3api::utils;
+import c3api::http;
 import std::collections::map;
 
 fn int process(void* arg)
@@ -74,10 +77,12 @@ fn int process(void* arg)
 				}
 			}
 
-			HttpRequest req;
+			http::HttpRequest req;
+			req.init(tmem);
+			defer req.free();
+
 			if (catch err = req.read(socket))
 			{
-				req.free();
 				io::printfn("Request Read Error: %s", err);
 				return 1;
 			}
@@ -87,24 +92,19 @@ fn int process(void* arg)
 
 			HashMap{String, String} args;
 			args.init(mem);
+			defer args.free();
 
 			RouteFunction route;
-			route = routes::get_route(uri, &args);
+			route = routing::get_route(uri, &args);
 
 			// TODO doesnt work rn
-			//Object* tags = routes::tagsMap[args["reverse_path"]!!] ?? null;
+			// Object* tags = routing::tagsMap[args["reverse_path"]!!] ?? null;
 
-			HttpResponse res;
-			res.headers.init(tmem);
+			http::HttpResponse res;
+			res.init(tmem);
+			defer res.free();
 
-			defer
-			{
-				args.free();
-				req.free();
-				res.free();
-			}
-
-			/*if (tags != null)
+			/* if (tags != null)
 			{
 				if ((tags.get_string("file") ?? "") != "")
 				{
@@ -120,7 +120,7 @@ fn int process(void* arg)
 					args["foldername"] = utils::format_path(folder, &args) ?? folder;
 					route = &routes::folder;
 				}
-			}*/
+			} */
 
 			if (cors_config.get_bool("enabled") ?? false)
 			{
@@ -129,22 +129,22 @@ fn int process(void* arg)
 					res.status = HttpStatus.OK;
 					res.body = `{"status":200}`;
 
-					res.headers.add_header(
+					res.headers.set_header_value(
 						"Access-Control-Allow-Methods",
 						cors_config.get_string("Access-Control-Allow-Methods") ?? ""
 					);
-					res.headers.add_header(
+					res.headers.set_header_value(
 						"Access-Control-Allow-Headers",
 						cors_config.get_string("Access-Control-Allow-Headers") ?? ""
 					);
 
-					res.headers.add_header("Content-Type", "application/json");
+					res.headers.set_header_value("Content-Type", "application/json");
 				}
 				else
 				{
 					res = route(null, req, args);
 				}
-				res.headers.add_header(
+				res.headers.set_header_value(
 					"Access-Control-Allow-Origin",
 					cors_config.get_string("Access-Control-Allow-Origin") ?? ""
 				);
@@ -153,7 +153,6 @@ fn int process(void* arg)
 			{
 				res = route(null, req, args);
 			}
-
 
 			if (catch err = res.write(socket))
 			{

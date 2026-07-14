@@ -1,7 +1,13 @@
-module c3api;
+module c3api::http;
 
+<*
+ HTTP response status codes and reason phrases.
+
+ The enum stores both integer status code and status message.
+*>
 enum HttpStatus : int (int code, String message)
 {
+	UNKNOWN                         { 0, "Unknown" },
 	CONTINUE                        { 100, "Continue" },
 	SWITCHING_PROTOCOLS             { 101, "Switching Protocols" },
 	PROCESSING                      { 102, "Processing" },
@@ -39,7 +45,7 @@ enum HttpStatus : int (int code, String message)
 	LENGTH_REQUIRED                 { 411, "Length Required" },
 	PRECONDITION_FAILED             { 412, "Precondition Failed" },
 	PAYLOAD_TOO_LARGE               { 413, "Payload Too Large" },
-	URITOO_LONG                     { 414, "URI Too Long" },
+	URI_TOO_LONG                     { 414, "URI Too Long" },
 	UNSUPPORTED_MEDIA_TYPE          { 415, "Unsupported Media Type" },
 	RANGE_NOT_SATISFIABLE           { 416, "Range Not Satisfiable" },
 	EXPECTATION_FAILED              { 417, "Expectation Failed" },
