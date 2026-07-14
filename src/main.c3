@@ -1,10 +1,12 @@
 module app;
 
+import std::collections::map;
+import std::io::path;
+
 import c3api;
 import c3api::config;
 import c3api::routing;
 import c3api::server;
-import std::collections::map;
 
 fn HttpResponse no_controller(c3api::Cref self = null, HttpRequest req, HashMap{String, String} args)
 {
@@ -42,11 +44,23 @@ fn int main(String[] args)
 	config.from_file(mem,true);
 	defer config.free(mem);
 
+	/* sets up custom looger configuration
 	log::C3ApiLogger logger;
 	logger.init(mem);
+
 	log::ConsoleSink console_sink;
-	console_sink.init(mem);
+	console_sink.init();
+	defer console_sink.free();
 	logger.add_sink(&console_sink, log::min_level_enabler(log::LogLevel.TRACE));
+	
+	log::FileSink file_sink;
+	if(catch error = file_sink.init(path::tnew("c3api.log")!!)){
+		io::eprintn("FileSink for logger could not be created");
+		return 1;
+	}
+	defer file_sink.free();
+	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE));
+	*/
 
 	routing::init_route_map(mem);
 	defer routing::destroy_route_map();
@@ -55,7 +69,7 @@ fn int main(String[] args)
 
 	routing::add_route("/exampler/static", &static_no_controller);
 
-	server::startServer(config, &logger)!!;
+	server::startServer(config)!!;
 
 	return 0;
 }

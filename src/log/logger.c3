@@ -6,29 +6,29 @@ import std::collections::list;
 
 interface Logger
 {
-	fn void trace(String message);
+	fn void trace(String message, Field ...fields);
 
-	fn void debug(String message);
+	fn void debug(String message, Field ...fields);
 
-	fn void info(String message);
+	fn void info(String message, Field ...fields);
 
-	fn void warn(String message);
+	fn void warn(String message, Field ...fields);
 
-	fn void error(String message);
+	fn void error(String message, Field ...fields);
 
-	fn void fatal(String message);
+	fn void fatal(String message, Field ...fields);
 
-	fn void tracef(String format, args...);
+	fn void tracef(String format_msg, String struct_msg, Field ...fields);
 
-	fn void debugf(String format, args...);
+	fn void debugf(String format_msg, String struct_msg, Field ...fields);
 
-	fn void infof(String format, args...);
+	fn void infof(String format_msg, String struct_msg, Field ...fields);
 
-	fn void warnf(String format, args...);
+	fn void warnf(String format_msg, String struct_msg, Field ...fields);
 
-	fn void errorf(String format, args...);
+	fn void errorf(String format_msg, String struct_msg, Field ...fields);
 
-	fn void fatalf(String format, args...);
+	fn void fatalf(String format_msg, String struct_msg, Field ...fields);
 
 	fn void add_sink(LogSink sink, EnablerFunc enabler);
 }
@@ -36,8 +36,10 @@ interface Logger
 struct LogEntry
 {
 	LogLevel level;
-	String message;
+	String fmt_msg;
+	String strct_msg;
 	DateTime timestamp;
+	Field[] fields;
 }
 
 struct LogSinkRegistration
@@ -59,9 +61,9 @@ fn C3ApiLogger* C3ApiLogger.init(&self, Allocator allocator)
 	return self;
 }
 
-fn void C3ApiLogger.log(&self, LogLevel level, String message)
+fn void C3ApiLogger.log(&self, LogLevel level, String message, Field ...fields)
 {
-	LogEntry entry = { .level = level, .message = message, .timestamp = datetime::now() };
+	LogEntry entry = { .level = level, .fmt_msg = message, .strct_msg = message, .timestamp = datetime::now(), .fields = fields };
 	foreach (LogSinkRegistration registration : self.sinks)
 	{
 		if (registration.enabler(&entry))
@@ -71,13 +73,9 @@ fn void C3ApiLogger.log(&self, LogLevel level, String message)
 	}
 }
 
-fn void C3ApiLogger.logf(&self, LogLevel level, String format, args...)
+fn void C3ApiLogger.logf(&self, LogLevel level, String format_msg, String struct_msg, Field ...fields)
 {
-	LogEntry entry = {
-		.level = level,
-		.message = string::format(self.allocator, format, ...args),
-		.timestamp = datetime::now()
-	};
+	LogEntry entry = { .level = level, .fmt_msg = format_msg, .strct_msg = struct_msg, .timestamp = datetime::now(), .fields = fields};
 	foreach (LogSinkRegistration registration : self.sinks)
 	{
 		if (registration.enabler(&entry))
@@ -87,64 +85,64 @@ fn void C3ApiLogger.logf(&self, LogLevel level, String format, args...)
 	}
 }
 
-fn void C3ApiLogger.trace(&self, String message) @dynamic
+fn void C3ApiLogger.trace(&self, String message, Field ...fields) @dynamic
 {
-	self.log(LogLevel.TRACE, message);
+	self.log(LogLevel.TRACE, message, ...fields);
 }
 
-fn void C3ApiLogger.debug(&self, String message) @dynamic
+fn void C3ApiLogger.debug(&self, String message, Field ...fields) @dynamic
 {
-	self.log(LogLevel.DEBUG, message);
+	self.log(LogLevel.DEBUG, message, ...fields);
 }
 
-fn void C3ApiLogger.info(&self, String message) @dynamic
+fn void C3ApiLogger.info(&self, String message, Field ...fields) @dynamic
 {
-	self.log(LogLevel.INFO, message);
+	self.log(LogLevel.INFO, message, ...fields);
 }
 
-fn void C3ApiLogger.warn(&self, String message) @dynamic
+fn void C3ApiLogger.warn(&self, String message, Field ...fields) @dynamic
 {
-	self.log(LogLevel.WARN, message);
+	self.log(LogLevel.WARN, message, ...fields);
 }
 
-fn void C3ApiLogger.error(&self, String message) @dynamic
+fn void C3ApiLogger.error(&self, String message, Field ...fields) @dynamic
 {
-	self.log(LogLevel.ERROR, message);
+	self.log(LogLevel.ERROR, message, ...fields);
 }
 
-fn void C3ApiLogger.fatal(&self, String message) @dynamic
+fn void C3ApiLogger.fatal(&self, String message, Field ...fields) @dynamic
 {
-	self.log(LogLevel.FATAL, message);
+	self.log(LogLevel.FATAL, message, ...fields);
 }
 
-fn void C3ApiLogger.tracef(&self, String format, args...) @dynamic
+fn void C3ApiLogger.tracef(&self, String format_msg, String struct_msg, Field ...fields) @dynamic
 {
-	self.logf(LogLevel.TRACE, format, ...args);
+	self.logf(LogLevel.TRACE, format_msg, struct_msg, ...fields);
 }
 
-fn void C3ApiLogger.debugf(&self, String format, args...) @dynamic
+fn void C3ApiLogger.debugf(&self, String format_msg, String struct_msg, Field ...fields) @dynamic
 {
-	self.logf(LogLevel.DEBUG, format, ...args);
+	self.logf(LogLevel.DEBUG, format_msg, struct_msg, ...fields);
 }
 
-fn void C3ApiLogger.infof(&self, String format, args...) @dynamic
+fn void C3ApiLogger.infof(&self, String format_msg, String struct_msg, Field ...fields) @dynamic
 {
-	self.logf(LogLevel.INFO, format, ...args);
+	self.logf(LogLevel.INFO, format_msg, struct_msg, ...fields);
 }
 
-fn void C3ApiLogger.warnf(&self, String format, args...) @dynamic
+fn void C3ApiLogger.warnf(&self, String format_msg, String struct_msg, Field ...fields) @dynamic
 {
-	self.logf(LogLevel.WARN, format, ...args);
+	self.logf(LogLevel.WARN, format_msg, struct_msg, ...fields);
 }
 
-fn void C3ApiLogger.errorf(&self, String format, args...) @dynamic
+fn void C3ApiLogger.errorf(&self, String format_msg, String struct_msg, Field ...fields) @dynamic
 {
-	self.logf(LogLevel.ERROR, format, ...args);
+	self.logf(LogLevel.ERROR, format_msg, struct_msg, ...fields);
 }
 
-fn void C3ApiLogger.fatalf(&self, String format, args...) @dynamic
+fn void C3ApiLogger.fatalf(&self, String format_msg, String struct_msg, Field ...fields) @dynamic
 {
-	self.logf(LogLevel.FATAL, format, ...args);
+	self.logf(LogLevel.FATAL, format_msg, struct_msg, ...fields);
 }
 
 fn void C3ApiLogger.add_sink(&self, LogSink sink, EnablerFunc enabler) @dynamic

@@ -75,14 +75,14 @@ fn int process(void* context_arg)
 		@pool()
 		{
 			ProcessContext* context = context_arg;
-			TcpSocket* socket = &context.socket;
-			log::Logger* logger = &context.logger;
+			TcpSocket* socket       = &context.socket;
+			log::Logger* logger     = &context.logger;
 
 			defer
 			{
 				if (catch err = socket.close())
 				{
-					logger.errorf("Socket Closing Error: %s", err);
+					logger.errorf("Socket Closing Error: %s", "Error Closing Socket", log::_error(err));
 				}
 			}
 
@@ -92,7 +92,7 @@ fn int process(void* context_arg)
 
 			if (catch err = req.read(socket))
 			{
-				logger.errorf("Request Read Error: %s", err);
+				logger.errorf("Request Read Error: %s", "Error reading request", log::_error(err));
 				return 1;
 			}
 
@@ -136,14 +136,8 @@ fn int process(void* context_arg)
 					res.status = HttpStatus.OK;
 					res.body = `{"status":200}`;
 
-					res.headers.set_header_value(
-						"Access-Control-Allow-Methods",
-						cors_config.allow_methods
-					);
-					res.headers.set_header_value(
-						"Access-Control-Allow-Headers",
-						cors_config.allow_headers
-					);
+					res.headers.set_header_value("Access-Control-Allow-Methods", cors_config.allow_methods);
+					res.headers.set_header_value("Access-Control-Allow-Headers", cors_config.allow_headers);
 
 					res.headers.set_header_value("Content-Type", "application/json");
 				}
@@ -153,10 +147,7 @@ fn int process(void* context_arg)
 					route = routing::get_route(uri, &args);
 					res = route(null, req, args);
 				}
-				res.headers.set_header_value(
-					"Access-Control-Allow-Origin",
-					cors_config.allow_origin
-				);
+				res.headers.set_header_value("Access-Control-Allow-Origin", cors_config.allow_origin);
 			}
 			else
 			{
@@ -167,7 +158,7 @@ fn int process(void* context_arg)
 
 			if (catch err = res.write(socket))
 			{
-				logger.errorf("Failed to write: %s", err);
+				logger.errorf("Failed to write: %s", "Failed to write response", log::_error(err));
 			}
 		};
 	};
@@ -182,51 +173,83 @@ import c3api::log;
 import c3api::os::win32;
 
 config::CorsConfig cors_config;
+log::Logger server_logger;
 
-fn void? startServer(config::Config config, log::Logger logger) @public
+fn void? startServer(config::Config config, log::Logger logger = null) @public
 {
-	cors_config = config.cors;
-
-	win32::startWSA();
-
-	TcpServerSocket? server = tcp::listen(
-		config.address,
-		(int)config.port,
-		BACKLOG,
-		net::SocketOption.REUSEADDR,
-		ip_protocol: net::IpProtocol.IPV4
-	);
-	if (catch err = server)
+	@pool()
 	{
-		logger.errorf("failed to bind <%s:%d> with failure: %s", config.address, config.port, err);
-		return;
-	}
-	defer
-	{
-		logger.info("Closing server...");
-		server.close()!!;
-		win32::stopWSA();
-	};
+		cors_config = config.cors;
 
-	logger.infof("listening on <%s:%d>", config.address, config.port);
-
-	while (!should_close)
-	{
-		TcpSocket? socket = tcp::accept(&server);
-		if (catch err = socket)
+		if (!logger)
 		{
-			should_close = true;
-			logger.errorf("Error was %s", err);
-			win32::lastWSAErrorOut();
-			continue;
+			C3ApiLogger* default_logger = alloc::new(tmem, C3ApiLogger);
+			default_logger.init(mem);
+
+			ConsoleSink* console_sink = alloc::new(tmem, ConsoleSink);
+			console_sink.init();
+
+			default_logger.add_sink(console_sink, log::min_level_enabler(log::LogLevel.INFO));
+
+			server_logger = default_logger;
+		}
+		else
+		{
+			server_logger = logger;
 		}
 
-		ProcessContext context;
-		context.socket = socket;
-		context.logger = logger;
+		win32::startWSA(server_logger);
 
-		thread::Thread thread;
-		thread.create(&process, @clone(context))!!;
-		thread.detach()!!;
-	}
+		TcpServerSocket? server = tcp::listen(
+			config.address,
+			(int)config.port,
+			BACKLOG,
+			net::SocketOption.REUSEADDR,
+			ip_protocol: net::IpProtocol.IPV4
+		);
+		if (catch err = server)
+		{
+			server_logger.errorf(
+				"failed to bind <%s:%d> with failure: %s",
+				"failed to bind adress",
+				log::_string("adress", config.address),
+				log::_uint("port", config.port),
+				log::_error(err)
+			);
+			return;
+		}
+		defer
+		{
+			server_logger.info("Closing server...");
+			server.close()!!;
+			win32::stopWSA(server_logger);
+		}
+
+		server_logger.infof(
+			"listening on <%s:%d>",
+			"server started listening",
+			log::_string("adress", config.address),
+			log::_uint("port", config.port),
+		);
+
+		while (!should_close)
+		{
+			TcpSocket? socket = tcp::accept(&server);
+			if (catch err = socket)
+			{
+				should_close = true;
+				server_logger.errorf("accepting connection threw error %s", "could not accpet connection", log::_error(err));
+				win32::lastWSAErrorOut(server_logger);
+				continue;
+			}
+
+			ProcessContext context;
+			context.socket = socket;
+			context.logger = server_logger;
+
+			thread::Thread thread;
+			thread.create(&process, @clone(context))!!;
+			thread.detach()!!;
+		}
+	};
 }

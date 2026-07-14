@@ -19,7 +19,7 @@ struct HttpHeaders
  @param [&inout] allocator : "Allocator to use for internal allocations"
  @return "The initialized headers collection"
 *>
-fn HttpHeaders* HttpHeaders.init(HttpHeaders* self, Allocator allocator)
+fn HttpHeaders* HttpHeaders.init(&self, Allocator allocator)
 {
 	self.header_map.init(allocator);
 	self.allocator = allocator;
@@ -31,7 +31,7 @@ fn HttpHeaders* HttpHeaders.init(HttpHeaders* self, Allocator allocator)
 
  @return "True if initialized, false otherwise"
 *>
-fn bool HttpHeaders.is_initialized(HttpHeaders* self)
+fn bool HttpHeaders.is_initialized(&self)
 {
 	return self.header_map.is_initialized();
 }
@@ -45,7 +45,7 @@ fn bool HttpHeaders.is_initialized(HttpHeaders* self)
  @param [in] header_values : "List of header field values"
  @return "True if the header key already existed, false if a new header key was added"
 *>
-fn bool HttpHeaders.set_header_values(HttpHeaders* self, String header_name, String... header_values)
+fn bool HttpHeaders.set_header_values(&self, String header_name, String... header_values)
 {
 	if (try entry = self.header_map.get_entry(header_name))
 	{
@@ -72,7 +72,7 @@ fn bool HttpHeaders.set_header_values(HttpHeaders* self, String header_name, Str
  @param [in] header_value : "Header field value"
  @return "True if the header key already existed, false if a new header key was added"
 *>
-fn bool HttpHeaders.set_header_value(HttpHeaders* self, String header_name, String header_value)
+fn bool HttpHeaders.set_header_value(&self, String header_name, String header_value)
 {
 	if (try entry = self.header_map.get_entry(header_name))
 	{
@@ -96,7 +96,7 @@ fn bool HttpHeaders.set_header_value(HttpHeaders* self, String header_name, Stri
  @param [in] header_name : "Header field name"
  @return "The list of values for the header key, or NOT_FOUND~ if the key does not exist"
 *>
-fn List{String}? HttpHeaders.get_header_values(HttpHeaders* self, String header_name) @operator([])
+fn List{String}? HttpHeaders.get_header_values(&self, String header_name) @operator([])
 {
 	return *self.header_map.get_ref(header_name) @inline;
 }
@@ -106,7 +106,7 @@ fn List{String}? HttpHeaders.get_header_values(HttpHeaders* self, String header_
 
  @return "The count of unique header keys"
 *>
-fn sz HttpHeaders.len(HttpHeaders* self)
+fn sz HttpHeaders.len(&self)
 {
 	return self.header_map.len();
 }
@@ -119,7 +119,7 @@ fn sz HttpHeaders.len(HttpHeaders* self)
  @param [&inout] self : "The headers collection to populate"
  @param lines : "Header lines, consumed and freed by this function"
 *>
-fn void? HttpHeaders.set_from_lines(HttpHeaders* self, List{String} lines)
+fn void? HttpHeaders.set_from_lines(&self, List{String} lines)
 {
 	@pool()
 	{
@@ -163,7 +163,7 @@ macro HttpHeaders.@each_entry(headers; @body(entry))
 <*
  Free the headers collection and its internal resources.
 *>
-fn void HttpHeaders.free(HttpHeaders* self)
+fn void HttpHeaders.free(&self)
 {
 	foreach (List{String} value : self.header_map.value_iter())
 	{
