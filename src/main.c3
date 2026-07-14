@@ -35,11 +35,18 @@ fn HttpResponse static_no_controller(c3api::Cref self = null, HttpRequest req, H
 		return res;
 	};
 }
+
 fn int main(String[] args)
 {
 	config::Config config;
 	config.from_file(mem,true);
 	defer config.free(mem);
+
+	log::C3ApiLogger logger;
+	logger.init(mem);
+	log::ConsoleSink console_sink;
+	console_sink.init(mem);
+	logger.add_sink(&console_sink, log::min_level_enabler(log::LogLevel.TRACE));
 
 	routing::init_route_map(mem);
 	defer routing::destroy_route_map();
@@ -48,7 +55,7 @@ fn int main(String[] args)
 
 	routing::add_route("/exampler/static", &static_no_controller);
 
-	server::startServer(config)!!;
+	server::startServer(config, &logger)!!;
 
 	return 0;
 }

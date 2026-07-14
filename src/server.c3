@@ -1,6 +1,7 @@
 module c3api;
 
 import c3api::http;
+import c3api::log;
 
 struct ControllerParadise
 {
@@ -57,23 +58,31 @@ import c3api::routing;
 const uint BACKLOG = 10000;
 bool should_close  = false;
 
+struct ProcessContext
+{
+	TcpSocket socket;
+	log::Logger logger;
+}
+
 import c3api::utils;
 import c3api::http;
 import std::collections::map;
 
-fn int process(void* arg)
+fn int process(void* context_arg)
 {
 	@pool_init(mem, 2 * 1024, 8 * 1024)
 	{
 		@pool()
 		{
-			TcpSocket* socket = arg;
+			ProcessContext* context = context_arg;
+			TcpSocket* socket = &context.socket;
+			log::Logger* logger = &context.logger;
 
 			defer
 			{
 				if (catch err = socket.close())
 				{
-					io::printfn("Socket Closing Error: %s", err);
+					logger.errorf("Socket Closing Error: %s", err);
 				}
 			}
 
@@ -83,13 +92,13 @@ fn int process(void* arg)
 
 			if (catch err = req.read(socket))
 			{
-				io::printfn("Request Read Error: %s", err);
+				logger.errorf("Request Read Error: %s", err);
 				return 1;
 			}
 
 			String uri = req.uri;
 			if (uri.len > 0 && uri[0] == '/') uri = uri[1..];
-			io::printfn("URI: '%s'", uri);
+			logger.infof("URI: '%s'", uri);
 
 			HashMap{String, String} args;
 			args.init(mem);
@@ -158,7 +167,7 @@ fn int process(void* arg)
 
 			if (catch err = res.write(socket))
 			{
-				io::eprintfn("Failed to write: %s", err);
+				logger.errorf("Failed to write: %s", err);
 			}
 		};
 	};
@@ -169,11 +178,12 @@ fn int process(void* arg)
 import std::collections::object;
 
 import c3api::config;
+import c3api::log;
 import c3api::os::win32;
 
 config::CorsConfig cors_config;
 
-fn void? startServer(config::Config config) @public
+fn void? startServer(config::Config config, log::Logger logger) @public
 {
 	cors_config = config.cors;
 
@@ -188,18 +198,17 @@ fn void? startServer(config::Config config) @public
 	);
 	if (catch err = server)
 	{
-		io::printfn("failed to bind <%s:%d> with failure: %s", config.address, config.port, err);
+		logger.errorf("failed to bind <%s:%d> with failure: %s", config.address, config.port, err);
 		return;
 	}
 	defer
 	{
-		io::printn("Closing server...");
+		logger.info("Closing server...");
 		server.close()!!;
 		win32::stopWSA();
 	};
 
-
-	io::printfn("listening on <%s:%d>", config.address, config.port);
+	logger.infof("listening on <%s:%d>", config.address, config.port);
 
 	while (!should_close)
 	{
@@ -207,13 +216,17 @@ fn void? startServer(config::Config config) @public
 		if (catch err = socket)
 		{
 			should_close = true;
-			io::printfn("Error was %s", err);
+			logger.errorf("Error was %s", err);
 			win32::lastWSAErrorOut();
 			continue;
 		}
 
+		ProcessContext context;
+		context.socket = socket;
+		context.logger = logger;
+
 		thread::Thread thread;
-		thread.create(&process, @clone(socket))!!;
+		thread.create(&process, @clone(context))!!;
 		thread.detach()!!;
 	}
 }
