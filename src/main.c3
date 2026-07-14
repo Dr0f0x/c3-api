@@ -37,7 +37,9 @@ fn HttpResponse static_no_controller(c3api::Cref self = null, HttpRequest req, H
 }
 fn int main(String[] args)
 {
-	config::Config config = config::readFromFile();
+	config::Config config;
+	config.from_file(mem,true);
+	defer config.free(mem);
 
 	routing::init_route_map(mem);
 	defer routing::destroy_route_map();
@@ -47,5 +49,6 @@ fn int main(String[] args)
 	routing::add_route("/exampler/static", &static_no_controller);
 
 	server::startServer(config)!!;
+
 	return 0;
 }

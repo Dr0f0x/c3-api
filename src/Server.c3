@@ -87,15 +87,13 @@ fn int process(void* arg)
 				return 1;
 			}
 
-			String uri = req.uri[1..];
+			String uri = req.uri;
+			if (uri.len > 0 && uri[0] == '/') uri = uri[1..];
 			io::printfn("URI: '%s'", uri);
 
 			HashMap{String, String} args;
 			args.init(mem);
 			defer args.free();
-
-			RouteFunction route;
-			route = routing::get_route(uri, &args);
 
 			// TODO doesnt work rn
 			// Object* tags = routing::tagsMap[args["reverse_path"]!!] ?? null;
@@ -122,7 +120,7 @@ fn int process(void* arg)
 				}
 			} */
 
-			if (cors_config.get_bool("enabled") ?? false)
+			if (cors_config.enabled)
 			{
 				if (req.method == HttpVerb.OPTIONS)
 				{
@@ -131,26 +129,30 @@ fn int process(void* arg)
 
 					res.headers.set_header_value(
 						"Access-Control-Allow-Methods",
-						cors_config.get_string("Access-Control-Allow-Methods") ?? ""
+						cors_config.allow_methods
 					);
 					res.headers.set_header_value(
 						"Access-Control-Allow-Headers",
-						cors_config.get_string("Access-Control-Allow-Headers") ?? ""
+						cors_config.allow_headers
 					);
 
 					res.headers.set_header_value("Content-Type", "application/json");
 				}
 				else
 				{
+					RouteFunction route;
+					route = routing::get_route(uri, &args);
 					res = route(null, req, args);
 				}
 				res.headers.set_header_value(
 					"Access-Control-Allow-Origin",
-					cors_config.get_string("Access-Control-Allow-Origin") ?? ""
+					cors_config.allow_origin
 				);
 			}
 			else
 			{
+				RouteFunction route;
+				route = routing::get_route(uri, &args);
 				res = route(null, req, args);
 			}
 
@@ -165,10 +167,11 @@ fn int process(void* arg)
 }
 
 import std::collections::object;
-Object* cors_config;
 
 import c3api::config;
 import c3api::os::win32;
+
+config::CorsConfig cors_config;
 
 fn void? startServer(config::Config config) @public
 {
@@ -193,8 +196,7 @@ fn void? startServer(config::Config config) @public
 		io::printn("Closing server...");
 		server.close()!!;
 		win32::stopWSA();
-		free(cors_config);
-	}
+	};
 
 
 	io::printfn("listening on <%s:%d>", config.address, config.port);

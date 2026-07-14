@@ -177,14 +177,6 @@ table, th, td {
 
 fn RouteFunction get_route(String uri, HashMap{String, String}* args)
 {
-	DString reverse_path = dstring::new(mem, uri);
-	if (uri[0] != '/')
-	{
-		reverse_path.insert_at(0, "/");
-	}
-	io::printfn("[ROUTER] Initial reverse path: '%s'", reverse_path.str_view());
-	args.set("reverse_path", reverse_path.str_view());
-
 	if (uri == "" || uri == "/")
 	{
 		io::printn("[ROUTER] Root request");
@@ -198,6 +190,15 @@ fn RouteFunction get_route(String uri, HashMap{String, String}* args)
 		io::printn("[ROUTER] Root route missing");
 		return &e404;
 	}
+
+	DString reverse_path = dstring::new(mem, uri);
+
+	if (uri[0] != '/')
+	{
+		reverse_path.insert_at(0, "/");
+	}
+	io::printfn("[ROUTER] Initial reverse path: '%s'", reverse_path.str_view());
+	args.set("reverse_path", reverse_path.str_view());
 
 	String old_uri;
 	if (uri[0] == '/' && uri.len > 1)
@@ -236,7 +237,7 @@ fn RouteFunction get_route(String uri, HashMap{String, String}* args)
 	int i = 1;
 	while (temp != null && i < nodes.len)
 	{
-		if(nodes[i] == "") break;
+		if (nodes[i] == "") break;
 		io::printfn("[ROUTER] Looking for child '%s' under '%s'", nodes[i], temp.name);
 
 		temp = get_next_node(temp, nodes[i]) ?? null;
