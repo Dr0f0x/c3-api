@@ -152,3 +152,8 @@ fn void C3ApiLogger.add_sink(&self, LogSink sink, EnablerFunc enabler) @dynamic
 	registration.enabler = enabler;
 	self.sinks.push(registration);
 }
+
+fn void C3ApiLogger.free(&self)
+{
+	self.sinks.free();
+}

@@ -10,11 +10,26 @@ import c3api::log;
 *>
 struct LoggingConfig
 {
-	log::LogLevel level;
+	
+	struct console {
+		bool enabled;
+		log::LogLevel min_level;
+	}
+	struct file {
+		bool enabled;
+		log::LogLevel min_level;
+	}
 }
 
 const LoggingConfig DEFAULT_LOGGING_CONFIG = {
-	.level = log::LogLevel.INFO,
+	.console = {
+		.enabled = true,
+		.min_level = log::LogLevel.INFO,
+	},
+	.file = {
+		.enabled = false,
+		.min_level = log::LogLevel.INFO,
+	}
 };
 
 <*
@@ -22,10 +37,13 @@ const LoggingConfig DEFAULT_LOGGING_CONFIG = {
 
  @param [&in] other : "Source logging config"
  @param [&inout] allocator : "Unused, kept for API consistency"
-*> 
+*>
 fn void LoggingConfig.from_other(&self, LoggingConfig* other, Allocator allocator)
 {
-	self.level = other.level;
+	self.console.enabled = other.console.enabled;
+	self.console.min_level = other.console.min_level;
+	self.file.enabled = other.file.enabled;
+	self.file.min_level = other.file.min_level;
 }
 
 <*
@@ -38,7 +56,19 @@ fn void LoggingConfig.parse_from_object(&self, Allocator allocator, Object* logg
 {
 	@pool()
 	{
-		self.level = logging_obj.get_enum(log::LogLevel, "level") ?? DEFAULT_LOGGING_CONFIG.level;
+		self.console.enabled = logging_obj.get_bool("console.enabled") ?? DEFAULT_LOGGING_CONFIG.console.enabled;
+
+		self.console.min_level = logging_obj.get_enum(
+			log::LogLevel,
+			"console.min_level"
+		) ?? DEFAULT_LOGGING_CONFIG.console.min_level;
+
+		self.file.enabled = logging_obj.get_bool("file.enabled") ?? DEFAULT_LOGGING_CONFIG.file.enabled;
+
+		self.file.min_level = logging_obj.get_enum(
+			log::LogLevel,
+			"file.min_level"
+		) ?? DEFAULT_LOGGING_CONFIG.file.min_level;
 	};
 }
 

@@ -1,11 +1,12 @@
 module c3api::http;
+import std::io;
 
 <*
  HTTP response status codes and reason phrases.
 
  The enum stores both integer status code and status message.
 *>
-enum HttpStatus : int (int code, String message)
+enum HttpStatus (Printable) : int (int code, String message) 
 {
 	UNKNOWN                         { 0, "Unknown" },
 	CONTINUE                        { 100, "Continue" },
@@ -71,4 +72,18 @@ enum HttpStatus : int (int code, String message)
 	LOOP_DETECTED                   { 508, "Loop Detected" },
 	NOT_EXTENDED                    { 510, "Not Extended" },
 	NETWORK_AUTHENTICATION_REQUIRED { 511, "Network Authentication Required" }
+}
+
+<*
+ Format the HTTP status as `<code> - <reason phrase>`.
+
+ @param [inout] formatter : "Formatter to write output to"
+ @return "The number of characters written, or an error"
+*>
+fn sz? HttpStatus.to_format(&self, Formatter* formatter) @dynamic
+{
+    sz len = formatter.printf("%d", self.code)!;
+    len += formatter.print(" - ")!;
+    len += formatter.print(self.message)!;
+    return len;
 }

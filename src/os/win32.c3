@@ -63,9 +63,9 @@ fn void startWSA(log::Logger logger)
 			logger.infof(
 				"Winsock Configuration | version: %s | description: %s | status: %s",
 				"Winsock configured",
-				log::_string("version", string::tformat("%d.%d", major, minor)),
-				log::_string("description", desc.str_view()),
-				log::_string("status", status.str_view())
+				log::_string("version", &&string::tformat("%d.%d", major, minor)),
+				log::_string("description", &&desc.str_view()),
+				log::_string("status", &&status.str_view())
 			);
 		};
 
@@ -74,7 +74,7 @@ fn void startWSA(log::Logger logger)
 			logger.errorf(
 				"failed to startup WSA with error: %d",
 				"failed to startup WSA",
-				log::_int("error", wsa_error)
+				log::_int("error", &wsa_error)
 			);
 			return;
 		}
@@ -97,6 +97,6 @@ fn void lastWSAErrorOut(log::Logger logger)
 	$if !env::WIN32:
 		return;
 	$else
-		logger.warnf("WSAGetLastError Output: %d", "WSAGetLastError", log::_int("error", win32_WSAGetLastError()));
+		logger.warnf("WSAGetLastError Output: %d", "WSAGetLastError", log::_int("error", &&win32_WSAGetLastError()));
 	$endif
 }

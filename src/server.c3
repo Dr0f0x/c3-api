@@ -82,7 +82,7 @@ fn int process(void* context_arg)
 			{
 				if (catch err = socket.close())
 				{
-					logger.errorf("Socket Closing Error: %s", "Error Closing Socket", log::_error(err));
+					logger.errorf("Socket Closing Error: %s", "Error Closing Socket", log::_error(&err));
 				}
 			}
 
@@ -92,13 +92,9 @@ fn int process(void* context_arg)
 
 			if (catch err = req.read(socket))
 			{
-				logger.errorf("Request Read Error: %s", "Error reading request", log::_error(err));
+				logger.errorf("Request Read Error: %s", "Error reading request", log::_error(&err));
 				return 1;
 			}
-
-			String uri = req.uri;
-			if (uri.len > 0 && uri[0] == '/') uri = uri[1..];
-			logger.infof("URI: '%s'", uri);
 
 			HashMap{String, String} args;
 			args.init(mem);
@@ -144,21 +140,21 @@ fn int process(void* context_arg)
 				else
 				{
 					RouteFunction route;
-					route = routing::get_route(uri, &args);
-					res = route(null, req, args);
+					route = routing::get_route(&req, &args);
+					route(&req, &res);
 				}
 				res.headers.set_header_value("Access-Control-Allow-Origin", cors_config.allow_origin);
 			}
 			else
 			{
 				RouteFunction route;
-				route = routing::get_route(uri, &args);
-				res = route(null, req, args);
+				route = routing::get_route(&req, &args);
+				route(&req, &res);
 			}
 
 			if (catch err = res.write(socket))
 			{
-				logger.errorf("Failed to write: %s", "Failed to write response", log::_error(err));
+				logger.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
 			}
 		};
 	};
@@ -181,15 +177,34 @@ fn void? startServer(config::Config config, log::Logger logger = null) @public
 	{
 		cors_config = config.cors;
 
+		ConsoleSink* console_sink;
+		FileSink* file_sink;
+		C3ApiLogger* default_logger;
+		defer if (console_sink) console_sink.free();
+		defer if (file_sink) file_sink.free();
+		defer if (default_logger) default_logger.free();
+
 		if (!logger)
 		{
-			C3ApiLogger* default_logger = alloc::new(tmem, C3ApiLogger);
+			default_logger = alloc::new(tmem, C3ApiLogger);
 			default_logger.init(mem);
 
-			ConsoleSink* console_sink = alloc::new(tmem, ConsoleSink);
-			console_sink.init();
 
-			default_logger.add_sink(console_sink, log::min_level_enabler(log::LogLevel.INFO));
+			if (config.logging.console.enabled)
+			{
+				console_sink = alloc::new(tmem, ConsoleSink);
+				console_sink.init();
+				default_logger.add_sink(console_sink, log::min_level_enabler(config.logging.console.min_level));
+			}
+
+			if (config.logging.file.enabled)
+			{
+				file_sink = alloc::new(tmem, FileSink);
+				if (try error = file_sink.init(path::tnew("c3api.log")!!))
+				{
+					default_logger.add_sink(file_sink, log::min_level_enabler(config.logging.file.min_level));
+				}
+			}
 
 			server_logger = default_logger;
 		}
@@ -212,9 +227,9 @@ fn void? startServer(config::Config config, log::Logger logger = null) @public
 			server_logger.errorf(
 				"failed to bind <%s:%d> with failure: %s",
 				"failed to bind adress",
-				log::_string("adress", config.address),
-				log::_uint("port", config.port),
-				log::_error(err)
+				log::_string("adress", &config.address),
+				log::_uint("port", &config.port),
+				log::_error(&err)
 			);
 			return;
 		}
@@ -228,8 +243,8 @@ fn void? startServer(config::Config config, log::Logger logger = null) @public
 		server_logger.infof(
 			"listening on <%s:%d>",
 			"server started listening",
-			log::_string("adress", config.address),
-			log::_uint("port", config.port),
+			log::_string("adress", &config.address),
+			log::_uint("port", &config.port),
 		);
 
 		while (!should_close)
@@ -238,7 +253,11 @@ fn void? startServer(config::Config config, log::Logger logger = null) @public
 			if (catch err = socket)
 			{
 				should_close = true;
-				server_logger.errorf("accepting connection threw error %s", "could not accpet connection", log::_error(err));
+				server_logger.errorf(
+					"accepting connection threw error %s",
+					"could not accpet connection",
+					log::_error(&err)
+				);
 				win32::lastWSAErrorOut(server_logger);
 				continue;
 			}

@@ -6,7 +6,7 @@ import std::io;
 <*
  HTTP headers map keyed by header name.
 *>
-struct HttpHeaders
+struct HttpHeaders (Printable)
 {
 	HashMap{String, List{String}} header_map;
 
@@ -29,7 +29,7 @@ fn HttpHeaders* HttpHeaders.init(&self, Allocator allocator)
 <*
  Check if the headers collection has been initialized.
 
- @return "True if initialized, false otherwise"
+ @return "true if initialized, false otherwise"
 *>
 fn bool HttpHeaders.is_initialized(&self)
 {
@@ -45,7 +45,7 @@ fn bool HttpHeaders.is_initialized(&self)
  @param [in] header_values : "List of header field values"
  @return "True if the header key already existed, false if a new header key was added"
 *>
-fn bool HttpHeaders.set_header_values(&self, String header_name, String... header_values)
+fn bool HttpHeaders.set_header_values(&self, String header_name, String ...header_values)
 {
 	if (try entry = self.header_map.get_entry(header_name))
 	{
@@ -113,8 +113,20 @@ fn sz HttpHeaders.len(&self)
 
 <*
  Parse header lines into the headers map.
-
  Each line must be in the form `name: value`.
+
+ Example:
+
+ [
+	"Content-Type: application/json",
+	"Content-Length: 123",
+	""
+ ]
+
+ becomes:
+
+ - Content-Type -> ["application/json"]
+ - Content-Length -> ["123"]
 
  @param [&inout] self : "The headers collection to populate"
  @param lines : "Header lines, consumed and freed by this function"
@@ -126,11 +138,11 @@ fn void? HttpHeaders.set_from_lines(&self, List{String} lines)
 		foreach (line : lines)
 		{
 			line = line.trim();
-			if (line == "") break;
+			if (line == "") continue;
 
 			sz colon = line.index_of_char(':')!;
 
-			String header_name  = line[0..colon].trim();
+			String header_name  = line[0..colon-1].trim();
 			String header_value = line[colon + 1..].trim();
 
 			self.set_header_value(header_name, header_value);
@@ -170,4 +182,16 @@ fn void HttpHeaders.free(&self)
 		value.free();
 	}
 	self.header_map.free();
+}
+
+
+<*
+ Format the headers collection using the underlying headers map formatter.
+
+ @param [inout] formatter : "Formatter to write output to"
+ @return "The number of characters written, or an error"
+*>
+fn sz? HttpHeaders.to_format(&self, Formatter* formatter) @dynamic
+{
+	return self.header_map.to_format(formatter);
 }

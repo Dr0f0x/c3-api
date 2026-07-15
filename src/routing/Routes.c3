@@ -6,7 +6,7 @@ import std::collections::object;
 
 import c3api::http;
 
-alias RouteFunction = fn HttpResponse(ControllerParadise*, HttpRequest, HashMap{String, String});
+alias RouteFunction = fn void(HttpRequest*, HttpResponse*);
 alias RouteMap = HashMap{String, RouteNode*};
 alias TagsMap = HashMap{String, Object*};
 
@@ -18,17 +18,12 @@ struct RouteNode
 	RouteFunction apply;
 }
 
-fn HttpResponse e404(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
+fn void e404(HttpRequest* req, HttpResponse* res)
 {
-	HttpResponse res;
-	res.init(tmem);
-
 	res.status = HttpStatus.NOT_FOUND;
 	res.body = string::format(mem, `{"type":"error","status":404}`);
 
 	res.headers.set_header_value("Content-Type", "application/json");
-
-	return res;
 }
 
 fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, HashMap{String, String} args)
@@ -175,8 +170,9 @@ table, th, td {
 	return res;
 }
 
-fn RouteFunction get_route(String uri, HashMap{String, String}* args)
+fn RouteFunction get_route(HttpRequest* req, HashMap{String, String}* args)
 {
+	String uri = req.uri;
 	if (uri == "" || uri == "/")
 	{
 		io::printn("[ROUTER] Root request");
@@ -198,7 +194,6 @@ fn RouteFunction get_route(String uri, HashMap{String, String}* args)
 		reverse_path.insert_at(0, "/");
 	}
 	io::printfn("[ROUTER] Initial reverse path: '%s'", reverse_path.str_view());
-	args.set("reverse_path", reverse_path.str_view());
 
 	String old_uri;
 	if (uri[0] == '/' && uri.len > 1)
@@ -255,6 +250,7 @@ fn RouteFunction get_route(String uri, HashMap{String, String}* args)
 			String key = temp.name[1:^2];
 			io::printfn("[ROUTER] Dynamic parameter: %s=%s", key, nodes[i]);
 			(*args)[key] = nodes[i];
+			req.args.set_argument_value(key, nodes[i]);
 		}
 
 		reverse_path.appendf("/%s", temp.name);

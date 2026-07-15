@@ -9,7 +9,7 @@ import std::core::dstring;
 <*
  HTTP response container.
 *>
-struct HttpResponse
+struct HttpResponse (Printable)
 {
 	HttpStatus status;
 	HttpHeaders headers;
@@ -82,4 +82,20 @@ fn void HttpResponse.free(HttpResponse* self)
 
 	self.status = HttpStatus.UNKNOWN;
 	self.body = { };
+}
+
+fn sz? HttpResponse.to_format(&self, Formatter* formatter) @dynamic
+{
+	sz len = formatter.print("HttpResponse { ")!;
+
+	len += formatter.print("status: ")!;
+	len += formatter.printf("%s", self.status)!;
+
+	len += formatter.print(", headers: ")!;
+	len += formatter.printf("%s", self.headers)!;
+
+	len += formatter.print(", body_size: ")!;
+	len += formatter.printf("%d", self.body.len)!;
+
+	return len += formatter.print(" }")!;
 }

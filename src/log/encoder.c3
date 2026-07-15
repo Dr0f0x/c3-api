@@ -54,7 +54,7 @@ fn String json_encode(Allocator allocator, LogEntry* entry)
 
 	out.append("{");
 
-	out.appendf(`"timestamp":"%s"`, entry.timestamp.format(allocator, DateTimeFormat.UNIXDATE));
+	out.appendf(`"timestamp":"%s"`, entry.timestamp.format(allocator, DateTimeFormat.RFC3339));
 	out.appendf(`,"level":"%s"`, entry.level.name);
 	out.appendf(`,"msg":"%s"`, entry.strct_msg);
 

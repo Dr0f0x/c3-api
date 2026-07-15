@@ -6,87 +6,79 @@ struct Field
 	any value;
 }
 
-fn Field field(String name, any value)
+macro Field _field(String name, $Type, value)
 {
-	return { name, value };
+	return { name, any_make(value, $Type) };
 }
 
-
-macro Field _field_value(String name, $Type, value)
+fn Field _string(String name, String* val) @inline
 {
-	$Type* p = alloc::new(tmem, $Type);
-	*p = value;
-	return { name, any_make(p, $Type) };
+	return _field(name, String, val);
 }
 
-fn Field _string(String name, String val)
+fn Field _bool(String name, bool* val) @inline
 {
-	return _field_value(name, String, val);
+	return _field(name, bool, val);
 }
 
-fn Field _bool(String name, bool val)
+fn Field _char(String name, char* val) @inline
 {
-	return _field_value(name, bool, val);
+	return _field(name, char, val);
 }
 
-fn Field _char(String name, char val)
+fn Field _short(String name, short* val) @inline
 {
-	return _field_value(name, char, val);
+	return _field(name, short, val);
 }
 
-fn Field _short(String name, short val)
+fn Field _int(String name, int* val) @inline
 {
-	return _field_value(name, short, val);
+	return _field(name, int, val);
 }
 
-fn Field _int(String name, int val)
+fn Field _long(String name, long* val) @inline
 {
-	return _field_value(name, int, val);
+	return _field(name, long, val);
 }
 
-fn Field _long(String name, long val)
+fn Field _ushort(String name, ushort* val) @inline
 {
-	return _field_value(name, long, val);
+	return _field(name, ushort, val);
 }
 
-fn Field _ushort(String name, ushort val)
+fn Field _uint(String name, uint* val) @inline
 {
-	return _field_value(name, ushort, val);
+	return _field(name, uint, val);
 }
 
-fn Field _uint(String name, uint val)
+fn Field _ulong(String name, ulong* val) @inline
 {
-	return _field_value(name, uint, val);
+	return _field(name, ulong, val);
 }
 
-fn Field _ulong(String name, ulong val)
+fn Field _usz(String name, usz* val) @inline
 {
-	return _field_value(name, ulong, val);
+	return _field(name, usz, val);
 }
 
-fn Field _usz(String name, usz val)
+fn Field _float(String name, float* val) @inline
 {
-	return _field_value(name, usz, val);
+	return _field(name, float, val);
 }
 
-fn Field _float(String name, float val)
+fn Field _double(String name, double* val) @inline
 {
-	return _field_value(name, float, val);
+	return _field(name, double, val);
 }
 
-fn Field _double(String name, double val)
+fn Field _fault(String name, fault* val) @inline
 {
-	return _field_value(name, double, val);
+	return _field(name, fault, val);
 }
 
-fn Field _fault(String name, fault val)
+fn Field _error(fault* err) @inline
 {
-	return _field_value(name, fault, val);
-}
-
-fn Field _error(fault err)
-{
-	return _field_value("error", fault, err);
+	return _field("error", fault, err);
 }
 
 fn any[] values(Allocator allocator, Field[] fields)

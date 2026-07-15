@@ -14,7 +14,11 @@ struct HttpRequest
 {
 	HttpVerb method;
 	String uri;
+
 	HttpHeaders headers;
+	HttpQueryParams query;
+	HttpPathArguments args;
+
 	char[] body;
 
 	List{char} bytes;
@@ -22,30 +26,6 @@ struct HttpRequest
 
 faultdef
 	NO_DATA, REQUEST_TOO_LARGE, MALFORMED_REQUEST, UNSUPPORTED_VERSION, UNIMPLEMENTED;
-
-<*
- Parse an HTTP verb token into a [HttpVerb].
-
- @param [in] verb : "The request method token from the request line"
- @return "A parsed [HttpVerb] value"
-*>
-fn HttpVerb? parse_verb(String verb)
-{
-	switch (verb)
-	{
-		case "HEAD": return HttpVerb.HEAD;
-		case "GET": return HttpVerb.GET;
-		case "PATCH": return HttpVerb.PATCH;
-		case "POST": return HttpVerb.POST;
-		case "PUT": return HttpVerb.PUT;
-		case "DELETE": return HttpVerb.DELETE;
-		case "OPTIONS": return HttpVerb.OPTIONS;
-		case "TRACE": return HttpVerb.TRACE;
-		case "CONNECT": return HttpVerb.CONNECT;
-		default:
-			return http::INVALID_VERB~;
-	}
-}
 
 <*
  Initialize an HTTP request container with an allocator.
@@ -58,6 +38,9 @@ fn HttpRequest* HttpRequest.init(&self, Allocator allocator)
 	self.method = HttpVerb.UNKNOWN;
 	self.uri = "";
 	self.headers.init(allocator);
+	self.query.init(allocator);
+	self.args.init(allocator);
+
 	self.body = { };
 	self.bytes.init(allocator, 256);
 	return self;
@@ -117,6 +100,15 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 		self.method = parse_verb(status_line[0])!;
 		self.uri = status_line[1];
 
+		sz query_start = self.uri.index_of_char('?') ?? -1;
+		if (query_start >= 0)
+		{
+			String query = self.uri[query_start + 1..];
+			self.query.set_from_last_uri_segment(query)!;
+
+			self.uri = self.uri[0..query_start-1];
+		}
+
 		self.headers.set_from_lines(header_lines)!;
 		self.body = body;
 	};
@@ -130,9 +122,36 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 fn void HttpRequest.free(HttpRequest* self)
 {
 	self.headers.free();
+	self.query.free();
+	self.args.free();
 	self.bytes.free();
 
 	self.uri = "";
 	self.body = { };
 	self.method = HttpVerb.UNKNOWN;
+}
+
+fn sz? HttpRequest.to_format(&self, Formatter* formatter) @dynamic
+{
+	sz len = formatter.print("HttpRequest { ")!;
+
+	len += formatter.print("method: ")!;
+	len += formatter.printf("%s", self.method)!;
+
+	len += formatter.print(", uri: ")!;
+	len += formatter.print(self.uri)!;
+
+	len += formatter.print(", arguments: ")!;
+	len += formatter.printf("%s", self.args)!;
+
+	len += formatter.print(", params: ")!;
+	len += formatter.printf("%s", self.query)!;
+
+	len += formatter.print(", headers: ")!;
+	len += formatter.printf("%s", self.headers)!;
+
+	len += formatter.print(", body_size: ")!;
+	len += formatter.printf("%d", self.body.len)!;
+
+	return len += formatter.print(" }")!;
 }
