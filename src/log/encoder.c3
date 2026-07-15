@@ -6,8 +6,22 @@ import std::collections::object;
 import std::encoding::json;
 import std::io;
 
+<*
+ Log entry encoder callback.
+
+ Implementations transform a log entry into a final string representation.
+*>
 alias EncoderFunc = fn String(Allocator allocator, LogEntry* entry);
 
+<*
+ Encode a log entry as plain human-readable text.
+
+ Format: [timestamp] [LEVEL] message
+
+ @param [&inout] allocator : "Allocator used to build the encoded string"
+ @param [in] entry : "Entry to encode"
+ @return "Plain text encoded log line"
+*>
 fn String plain_encode(Allocator allocator, LogEntry* entry)
 {
 	return string::format(
@@ -19,6 +33,13 @@ fn String plain_encode(Allocator allocator, LogEntry* entry)
 	);
 }
 
+<*
+ Encode a log entry as ANSI-colored text for terminal output.
+
+ @param [&inout] allocator : "Allocator used to build the encoded string"
+ @param [in] entry : "Entry to encode"
+ @return "ANSI-colored encoded log line"
+*>
 fn String color_encode(Allocator allocator, LogEntry* entry)
 {
 	Ansi color;
@@ -48,6 +69,15 @@ fn String color_encode(Allocator allocator, LogEntry* entry)
 	);
 }
 
+<*
+ Encode a log entry as a JSON object.
+
+ The output includes timestamp, level, message and all attached fields.
+
+ @param [&inout] allocator : "Allocator used to build the encoded string"
+ @param [in] entry : "Entry to encode"
+ @return "JSON encoded log line"
+*>
 fn String json_encode(Allocator allocator, LogEntry* entry)
 {
 	DString out = dstring::new(allocator);

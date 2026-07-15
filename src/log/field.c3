@@ -1,11 +1,22 @@
 module c3api::log;
 
+<*
+ Named structured value attached to a log entry.
+*>
 struct Field
 {
 	String name;
 	any value;
 }
 
+<*
+ Create a typed log field.
+
+ @param [in] name : "Field key"
+ @param $Type : "Type of the field value"
+ @param [in] value : "Field value"
+ @return "A field storing the provided value in an any container"
+*>
 macro Field _field(String name, $Type, value)
 {
 	return { name, any_make(value, $Type) };
@@ -81,6 +92,15 @@ fn Field _error(fault* err) @inline
 	return _field("error", fault, err);
 }
 
+<*
+ Extract all field values as an array.
+
+ This is primarily used for format-string interpolation.
+
+ @param [in] allocator : "Allocator used for the returned array"
+ @param [in] fields : "Source fields"
+ @return "Array containing each field value"
+*>
 fn any[] values(Allocator allocator, Field[] fields)
 {
 	any[] value_arr = alloc::new_array(allocator, any, fields.len);
@@ -91,6 +111,13 @@ fn any[] values(Allocator allocator, Field[] fields)
 	return value_arr;
 }
 
+<*
+ Extract all field names as an array.
+
+ @param [in] allocator : "Allocator used for the returned array"
+ @param [in] fields : "Source fields"
+ @return "Array containing each field name"
+*>
 fn String[] names(Allocator allocator, Field[] fields)
 {
 	String[] name_arr = alloc::new_array(allocator, String, fields.len);
