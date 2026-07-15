@@ -37,7 +37,7 @@ fn bool HttpHeaders.is_initialized(&self)
 }
 
 <*
- Set a header value in the headers map.
+ Set header values in the headers map.
 
  If the header key already exists, the value list is replaced with the new values.
 
@@ -77,6 +77,58 @@ fn bool HttpHeaders.set_header_value(&self, String header_name, String header_va
 	if (try entry = self.header_map.get_entry(header_name))
 	{
 		entry.value.clear();
+		entry.value.push(header_value);
+		return true;
+	}
+	else
+	{
+		List{String} header;
+		header.init(self.allocator);
+		header.push(header_value);
+		self.header_map.set(header_name, header);
+		return false;
+	}
+}
+
+<*
+ Add mutiple header values to the headers map.
+
+ If the header key already exists, the values are appended to its value list.
+
+ @param [in] header_name : "Header field name"
+ @param [in] header_values : "List of header field values"
+ @return "True if the header key already existed, false if a new header key was added"
+*>
+fn bool HttpHeaders.add_header_values(&self, String header_name, String ...header_values)
+{
+	if (try entry = self.header_map.get_entry(header_name))
+	{
+		entry.value.push_all(header_values);
+		return true;
+	}
+	else
+	{
+		List{String} header;
+		header.init(self.allocator);
+		header.push_all(header_values);
+		self.header_map.set(header_name, header);
+		return false;
+	}
+}
+
+<*
+ Add a header value in the headers map.
+
+ If the header key already exists, the value is appended to its value list.
+
+ @param [in] header_name : "Header field name"
+ @param [in] header_value : "Header field value"
+ @return "True if the header key already existed, false if a new header key was added"
+*>
+fn bool HttpHeaders.add_header_value(&self, String header_name, String header_value)
+{
+	if (try entry = self.header_map.get_entry(header_name))
+	{
 		entry.value.push(header_value);
 		return true;
 	}

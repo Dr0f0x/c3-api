@@ -42,7 +42,7 @@ fn bool HttpPathArguments.is_initialized(&self)
  @param [in] argument_value : "Argument value"
  @return "True if the argument key already existed, false if a new argument key was added"
 *>
-fn bool HttpPathArguments.set_argument_value(&self, String argument_name, String argument_value)
+fn bool HttpPathArguments.set_argument_value(&self, String argument_name, String argument_value) @operator([]=)
 {
 	return self.argument_map.set(argument_name, argument_value);
 }

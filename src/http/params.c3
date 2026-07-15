@@ -42,7 +42,7 @@ fn bool HttpQueryParams.is_initialized(&self)
  @param [in] param_value : "Parameter value"
  @return "True if the parameter key already existed, false if a new parameter key was added"
 *>
-fn bool HttpQueryParams.set_param_value(&self, String param_name, String param_value)
+fn bool HttpQueryParams.set_param_value(&self, String param_name, String param_value) @operator([]=)
 {
 	return self.param_map.set(param_name, param_value);
 }

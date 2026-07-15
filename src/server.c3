@@ -3,50 +3,6 @@ module c3api;
 import c3api::http;
 import c3api::log;
 
-struct ControllerParadise
-{
-	bool _ignore;
-}
-
-alias Cref = ControllerParadise*;
-
-macro @controller(uri)
-{
-	@tag("controller", uri);
-}
-macro @file(uri)
-{
-	@tag("file", uri);
-}
-macro @folder(uri)
-{
-	@tag("folder", uri);
-}
-
-macro bool @method_has_tag(#self, $method, $tag)
-{
-	return $typeof(*#self).$eval($method).has_tagof($tag);
-}
-
-/* fn void ControllerParadise.init(ControllerParadise* self) {
-    $foreach($method : $typeof(*self).methodsof)
-        $if @method_has_tag(self, $method, "controller"):
-            var $tag = $typeof(*self).$eval($method).tagof("controller");
-            routes::add_route($tag, &$typeof(*self).$eval($method));
-            routes::add_tag($tag, "controller", $tag);
-            $if @method_has_tag(self, $method, "file"):
-                var $filetag = $typeof(*self).$eval($method).tagof("file");
-                routes::add_tag($tag, "file", $filetag);
-            $else
-                $if @method_has_tag(self, $method, "folder"):
-                    var $foldertag = $typeof(*self).$eval($method).tagof("folder");
-                    routes::add_tag($tag, "folder", $foldertag);
-                $endif
-            $endif
-        $endif
-    $endforeach
-} */
-
 module c3api::server @private;
 
 import std::io;
@@ -62,6 +18,7 @@ struct ProcessContext
 {
 	TcpSocket socket;
 	log::Logger logger;
+	Router router;
 }
 
 import c3api::utils;
@@ -77,6 +34,7 @@ fn int process(void* context_arg)
 			ProcessContext* context = context_arg;
 			TcpSocket* socket       = &context.socket;
 			log::Logger* logger     = &context.logger;
+			Router* router          = &context.router;
 
 			defer
 			{
@@ -90,68 +48,32 @@ fn int process(void* context_arg)
 			req.init(tmem);
 			defer req.free();
 
-			if (catch err = req.read(socket))
-			{
-				logger.errorf("Request Read Error: %s", "Error reading request", log::_error(&err));
-				return 1;
-			}
-
-			HashMap{String, String} args;
-			args.init(mem);
-			defer args.free();
-
-			// TODO doesnt work rn
-			// Object* tags = routing::tagsMap[args["reverse_path"]!!] ?? null;
-
 			http::HttpResponse res;
 			res.init(tmem);
 			defer res.free();
 
-			/* if (tags != null)
+			if (catch err = req.read(socket))
 			{
-				if ((tags.get_string("file") ?? "") != "")
+				if (err == http::INVALID_VERB)
 				{
-					args["filename"] = utils::format_path(
-						tags.get_string("file")!!,
-						&args
-					) ?? tags.get_string("file")!!;
-					route = &routes::file;
-				}
-				else if ((tags.get_string("folder") ?? "") != "")
-				{
-					String folder = tags.get_string("folder")!!;
-					args["foldername"] = utils::format_path(folder, &args) ?? folder;
-					route = &routes::folder;
-				}
-			} */
-
-			if (cors_config.enabled)
-			{
-				if (req.method == HttpVerb.OPTIONS)
-				{
-					res.status = HttpStatus.OK;
-					res.body = `{"status":200}`;
-
-					res.headers.set_header_value("Access-Control-Allow-Methods", cors_config.allow_methods);
-					res.headers.set_header_value("Access-Control-Allow-Headers", cors_config.allow_headers);
-
-					res.headers.set_header_value("Content-Type", "application/json");
+					res.status = HttpStatus.METHOD_NOT_ALLOWED;
 				}
 				else
 				{
-					RouteFunction route;
-					route = routing::get_route(&req, &args);
-					route(&req, &res);
+					logger.errorf("Request Read Error: %s", "Error reading request", log::_error(&err));
+					return 1;
 				}
-				res.headers.set_header_value("Access-Control-Allow-Origin", cors_config.allow_origin);
 			}
 			else
 			{
-				RouteFunction route;
-				route = routing::get_route(&req, &args);
-				route(&req, &res);
+				if (catch error = handle(tmem, &req, &res, socket, router, logger))
+				{
+					res.body = "";
+					res.status = HttpStatus.INTERNAL_SERVER_ERROR;
+				}
 			}
 
+			io::printfn("%s", res);
 			if (catch err = res.write(socket))
 			{
 				logger.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
@@ -160,6 +82,77 @@ fn int process(void* context_arg)
 	};
 
 	return 0;
+}
+
+fn void? handle(
+	Allocator allocator,
+	HttpRequest* req,
+	HttpResponse* res,
+	TcpSocket* socket,
+	Router* router,
+	log::Logger* logger,
+) @private
+{
+	if (cors_config.enabled)
+	{
+		if (req.method == HttpVerb.OPTIONS)
+		{
+			res.status = HttpStatus.OK;
+			res.body = `{"status":200}`;
+
+			res.headers.set_header_value("Access-Control-Allow-Methods", cors_config.allow_methods);
+			res.headers.set_header_value("Access-Control-Allow-Headers", cors_config.allow_headers);
+
+			res.headers.set_header_value("Content-Type", "application/json");
+		}
+		else
+		{
+			HandleFunc handler;
+			if (try method = routing::from_http_verb(req.method))
+			{
+				handler = router.get_route(method, req.uri, req) ?? &routing::e404;
+				handler(tmem, req, res);
+			}
+		}
+		res.headers.set_header_value("Access-Control-Allow-Origin", cors_config.allow_origin);
+	}
+	else
+	{
+		HandleFunc handler;
+		io::printfn("%s", req);
+		if (req.method == HttpVerb.OPTIONS)
+		{
+			io::printn("in options");
+			HandlerCollection*? handlers = router.get_handlers(req.uri, req);
+			if (catch err = handlers)
+			{
+				routing::e404(tmem, req, res);
+			}
+			else
+			{
+				// set allowed header to registered handlers
+				res.headers.add_header_values("Allow", "HEAD, OPTIONS");
+				res.status = HttpStatus.NO_CONTENT;
+				foreach (i, &value : handlers.handler_map.values)
+				{
+					if (*value != null)
+					{
+						res.headers.add_header_value("Allow", string::format(tmem, "%s", RouteMethod::from_ordinal(i)));
+					}
+				}
+			}
+		}
+		else if (try method = routing::from_http_verb(req.method))
+		{
+			handler = router.get_route(method, req.uri, req) ?? &routing::e404;
+			handler(tmem, req, res);
+		}
+	}
+
+	if (req.method == HttpVerb.HEAD)
+	{
+		res.body = "";
+	}
 }
 
 import std::collections::object;
@@ -171,7 +164,7 @@ import c3api::os::win32;
 config::CorsConfig cors_config;
 log::Logger server_logger;
 
-fn void? startServer(config::Config config, log::Logger logger = null) @public
+fn void? startServer(config::Config config, Router router, log::Logger logger = null) @public
 {
 	@pool()
 	{
@@ -265,6 +258,7 @@ fn void? startServer(config::Config config, log::Logger logger = null) @public
 			ProcessContext context;
 			context.socket = socket;
 			context.logger = server_logger;
+			context.router = router;
 
 			thread::Thread thread;
 			thread.create(&process, @clone(context))!!;

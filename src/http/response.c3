@@ -36,7 +36,7 @@ fn HttpResponse* HttpResponse.init(&self, Allocator allocator)
  @param [in] socket : "Destination socket"
  @require socket != null : "Socket must be valid"
 *>
-fn void? HttpResponse.write(HttpResponse* self, TcpSocket* socket)
+fn void? HttpResponse.write(&self, TcpSocket* socket)
 {
 	@pool()
 	{
@@ -56,10 +56,7 @@ fn void? HttpResponse.write(HttpResponse* self, TcpSocket* socket)
 			}
 		};
 
-		if (self.headers.len() > 0)
-		{
-			self.bytes.push_all("\r\n");
-		}
+		self.bytes.push_all("\r\n");
 
 		socket.write(self.bytes.array_view())!;
 
@@ -75,7 +72,7 @@ fn void? HttpResponse.write(HttpResponse* self, TcpSocket* socket)
 
  @param [&inout] self : "The response to free"
 *>
-fn void HttpResponse.free(HttpResponse* self)
+fn void HttpResponse.free(&self)
 {
 	self.headers.free();
 	self.bytes.free();

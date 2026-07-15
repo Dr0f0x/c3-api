@@ -2,13 +2,14 @@ module app;
 
 import std::collections::map;
 import std::io::path;
+import std::encoding::json;
 
 import c3api;
 import c3api::config;
 import c3api::routing;
 import c3api::server;
 
-fn void no_controller(HttpRequest* req, HttpResponse* res)
+fn void no_controller(Allocator allocator, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("%s", req);
 
@@ -18,24 +19,24 @@ fn void no_controller(HttpRequest* req, HttpResponse* res)
 		res.status = HttpStatus.OK;
 		DString greetings = dstring::temp();
 		greetings.appendf("Look, %s, no controllers!\n", req.args["name"]!!);
-		res.body = string::format(mem, greetings.tcopy_str(), req.method, req.uri);
+		res.body = string::format(allocator, greetings.tcopy_str(), req.method, req.uri);
 	};
 
 	io::printfn("%s", res);
 }
 
-fn void static_no_controller(HttpRequest* req, HttpResponse* res)
+struct JSONResponse
+{
+	bool test;
+	String value;
+}
+
+fn void static_no_controller(Allocator allocator, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("%s", req);
 
-	@pool()
-	{
-		// Using pool because of dstring::temp_new();
-		res.status = HttpStatus.OK;
-		DString greetings = dstring::temp();
-		greetings.appendf("Look, static!\n");
-		res.body = string::format(mem, greetings.tcopy_str(), req.method, req.uri);
-	};
+	res.status = HttpStatus.OK;
+	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" }, indent: Indent.SPACE_2);
 
 	io::printfn("%s", res);
 }
@@ -63,14 +64,23 @@ fn int main(String[] args)
 	defer file_sink.free();
 	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE)); */
 
-	routing::init_route_map(mem);
-	defer routing::destroy_route_map();
+	Router router;
+	router.init(mem, null);
+	defer router.free();
 
-	routing::add_route("/example/{name}", &no_controller);
+	@pool()
+	{
+		Group* example = router.group(tmem, "/v1/example");
 
-	routing::add_route("/exampler/static", &static_no_controller);
+		example.add_route(RouteMethod.GET, "/{name}", &no_controller);
+		example.add_route(RouteMethod.GET, "/static/test", &static_no_controller);
 
-	server::startServer(config)!!;
+		io::printfn("%s", *example);
+	};
+
+	io::printfn("%s", router);
+
+	server::startServer(config, router)!!;
 
 	return 0;
 }
