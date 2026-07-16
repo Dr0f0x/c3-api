@@ -38,7 +38,7 @@ fn RequestFlow router_log_middleware(Allocator allocator, HttpRequest* req, Http
 fn RequestFlow group_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("[MIDDLEWARE] group %s %s", req.method, req.uri);
-	return RequestFlow.INTERRUPT;
+	return RequestFlow.CONTINUE;
 }
 
 fn RequestFlow endpoint_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
@@ -63,7 +63,6 @@ fn int main(String[] args)
 	config.from_file(mem, true);
 	defer config.free(mem);
 
-	/* sets up custom looger configuration
 	log::C3ApiLogger logger;
 	logger.init(mem);
 
@@ -78,10 +77,10 @@ fn int main(String[] args)
 		return 1;
 	}
 	defer file_sink.free();
-	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE)); */
+	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE));
 
 	Router router;
-	router.init(mem, null);
+	router.init(mem, &logger);
 	defer router.free();
 
 	router.use_middleware(&router_log_middleware);
@@ -100,7 +99,7 @@ fn int main(String[] args)
 
 	io::printfn("%s", router);
 
-	server::startServer(config, router)!!;
+	server::startServer(config, router, &logger)!!;
 
 	return 0;
 }

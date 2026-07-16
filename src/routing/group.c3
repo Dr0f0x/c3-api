@@ -2,13 +2,27 @@ module c3api::routing;
 
 import std::io;
 
+import c3api::log;
+
+<*
+ Route group scoped to a trie node.
+
+ Group operations are relative to the backing node path.
+*>
 struct Group (Printable)
 {
 	RouteNode* node;
-	Logger* log;
+	log::Logger log;
 }
 
-fn Group* Group.init(&self, RouteNode* node, Logger* log)
+<*
+ Initialize a group wrapper around an existing route node.
+
+ @param [&in] node : "Backing node for relative route registrations"
+ @param [&in] log : "Logger used by routing internals"
+ @return "Initialized group instance"
+*>
+fn Group* Group.init(&self, RouteNode* node, log::Logger log)
 {
 	self.node = node;
 	self.log = log;
@@ -41,6 +55,14 @@ fn bool Group.add_route(&self, RouteMethod method, String uri, HandleFunc handle
 	);
 }
 
+<*
+ Add middleware to a relative route within this group.
+
+ If uri refers to the group root, middleware is added to the group node.
+
+ @param [in] uri : "Relative route pattern"
+ @param [in] middlewares : "Middleware callbacks to append"
+*>
 fn void Group.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
 {
 	if (try node = routing::get_or_create_node(uri, &self.node.sub_nodes, self.log))
@@ -53,11 +75,19 @@ fn void Group.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
 	}
 }
 
+<*
+ Add middleware to the group root node.
+
+ @param [in] middlewares : "Middleware callbacks to append"
+*>
 fn void Group.use_middleware(&self, MiddlewareFunc ...middlewares)
 {
 	self.node.middlewares.push_all(middlewares);
 }
 
+<*
+ Formatter implementation for debug output.
+*>
 fn sz? Group.to_format(&self, Formatter* formatter) @dynamic
 {
 	sz len = formatter.print("Group { ")!;

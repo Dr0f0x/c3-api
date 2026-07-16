@@ -4,6 +4,11 @@ import std::collections::map;
 import std::collections::list;
 import std::io;
 
+<*
+ Node in the route trie.
+
+ Each node owns handler registrations, middleware, and child nodes.
+*>
 struct RouteNode (Printable)
 {
 	String name;
@@ -13,6 +18,13 @@ struct RouteNode (Printable)
 	List{MiddlewareFunc} middlewares;
 }
 
+<*
+ Initialize a route node.
+
+ @param [&inout] allocator : "Allocator used by child map and middleware list"
+ @param [in] name : "Path segment represented by this node"
+ @return "Initialized route node"
+*>
 fn RouteNode* RouteNode.init(&self, Allocator allocator, String name)
 {
 	self.sub_nodes.init(allocator);
@@ -22,16 +34,32 @@ fn RouteNode* RouteNode.init(&self, Allocator allocator, String name)
 	return self;
 }
 
+<*
+ Check whether this node has middleware attached.
+
+ @return "True when middleware list is non-empty"
+*>
 fn bool RouteNode.has_middleware(&self)
 {
 	return self.middlewares.len() > 0;
 }
 
+<*
+ Resolve the next child node for a segment.
+
+ Tries an exact child first, then the dynamic placeholder key.
+
+ @param [in] to : "Next URI segment"
+ @return "Matching child node or null"
+*>
 fn RouteNode*? RouteNode.get_next_node(&self, String to)
 {
 	return self.sub_nodes.get_ref(to) ?? self.sub_nodes.get_ref("{}");
 }
 
+<*
+ Free node-owned resources.
+*>
 fn void RouteNode.free(&self)
 {
 	self.middlewares.free();
@@ -40,6 +68,9 @@ fn void RouteNode.free(&self)
 }
 
 
+<*
+ Formatter implementation for debug output.
+*>
 fn sz? RouteNode.to_format(&self, Formatter* formatter) @dynamic
 {
     sz len = formatter.print("RouteNode { ")!;

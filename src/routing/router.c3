@@ -5,8 +5,17 @@ import std::collections::list;
 import std::io;
 
 import c3api::http;
+import c3api::log;
 
+<*
+ ROUTE_NOT_FOUND: no route or method match for the request.
+ ROUTE_ALREADY_PRESENT: route existed before replacement.
+*>
 faultdef ROUTE_NOT_FOUND, ROUTE_ALREADY_PRESENT;
+
+<*
+ HTTP router using a trie of route nodes.
+*>
 struct Router (Printable)
 {
 	HashMap{String, RouteNode} root_nodes;
@@ -14,11 +23,18 @@ struct Router (Printable)
 	HandlerCollection root_handlers;
 	List{MiddlewareFunc} root_middlewares;
 
-	Logger* logger;
+	log::Logger logger;
 	Allocator allocator;
 }
 
-fn Router* Router.init(&self, Allocator allocator, Logger* logger)
+<*
+ Initialize router storage and root handler collections.
+
+ @param [&inout] allocator : "Allocator used by route trie and middleware lists"
+ @param [&in] logger : "Logger used by routing internals"
+ @return "Initialized router instance"
+*>
+fn Router* Router.init(&self, Allocator allocator, log::Logger logger)
 {
 	self.root_nodes.init(allocator);
 	self.root_middlewares.init(allocator);
@@ -28,6 +44,16 @@ fn Router* Router.init(&self, Allocator allocator, Logger* logger)
 	return self;
 }
 
+<*
+ Resolve the handler collection for a URI.
+
+ Collects middleware along the matched path.
+
+ @param [in] uri : "Request URI"
+ @param [&inout] request : "Request object receiving path arguments"
+ @param [&inout] middleware_collector : "Middleware output buffer"
+ @return "Matched handler collection or ROUTE_NOT_FOUND~"
+*>
 fn HandlerCollection*? Router.get_handlers(
 	&self,
 	String uri,
@@ -50,6 +76,8 @@ fn HandlerCollection*? Router.get_handlers(
 
  @param method : "HTTP method to match"
  @param [in] uri : "Route URI to look up"
+ @param [&inout] request : "Request object receiving path arguments"
+ @param [&inout] middleware_collector : "Middleware output buffer"
 
  @return "The matching handler if found; otherwise ROUTE_NOT_FOUND~"
 *>
@@ -86,6 +114,7 @@ fn HandleFunc? Router.get_route(
  @param method : "HTTP method"
  @param [in] uri : "Route URI"
  @param handler : "Handler function"
+ @param [in] middlewares : "Middleware callbacks for this route"
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
@@ -103,6 +132,14 @@ fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handl
 	);
 }
 
+<*
+ Add middleware to a router route.
+
+ If uri refers to router root, middleware is attached at root level.
+
+ @param [in] uri : "Route pattern"
+ @param [in] middlewares : "Middleware callbacks to append"
+*>
 fn void Router.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
 {
 	if (try node = routing::get_or_create_node(uri, &self.root_nodes, self.logger))
@@ -115,14 +152,26 @@ fn void Router.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
 	}
 }
 
+<*
+ Add middleware to the router root.
+
+ @param [in] middlewares : "Middleware callbacks to append"
+*>
 fn void Router.use_middleware(&self, MiddlewareFunc ...middlewares)
 {
 	self.root_middlewares.push_all(middlewares);
 }
 
 <*
+ Create a group wrapper around a route node.
+
  @require uri != "" : "Group cant refer to the root"
  @require uri != "/" : "Group cant refer to the root"
+
+ @param [&inout] allocator : "Allocator used by the group"
+ @param [in] uri : "Route pattern for the group"
+
+ @return "Group instance for relative route registrations"
 *>
 fn Group* Router.group(&self, Allocator allocator, String uri)
 {
@@ -132,21 +181,8 @@ fn Group* Router.group(&self, Allocator allocator, String uri)
 }
 
 <*
- Integrate all routes from another router under the specified URI prefix.
-
- Each route in `other` is added to this router with `uri` prepended to
- its route path.
-
- @param [in] uri : "URI prefix under which the other router will be mounted"
- @param other : "Router whose routes will be integrated"
-
- @return "ROUTE_ALREADY_PRESENT~ if a route already exists at a URI where a route from the other router would be added; otherwise void"
+ Free router-owned resources.
 *>
-fn void? Router.add_router(&self, String uri, Router other)
-{
-	return NOT_IMPLEMENTED~;
-}
-
 fn void Router.free(&self)
 {
 	self.root_nodes.free();
@@ -154,6 +190,9 @@ fn void Router.free(&self)
 	self.root_handlers.free();
 }
 
+<*
+ Formatter implementation for debug output.
+*>
 fn sz? Router.to_format(&self, Formatter* formatter) @dynamic
 {
 	sz len = formatter.print("Router { ")!;

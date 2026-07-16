@@ -3,6 +3,9 @@ module c3api::routing;
 import std::io;
 import c3api::http;
 
+<*
+ Supported HTTP methods in the routing layer.
+*>
 enum RouteMethod (Printable)
 {
 	GET,
@@ -13,6 +16,11 @@ enum RouteMethod (Printable)
 	HEAD,
 }
 
+<*
+ Convert a route method enum value to its uppercase HTTP token.
+
+ @return "Uppercase method token such as GET or POST"
+*>
 fn String RouteMethod.to_constant_string(&self) @dynamic
 {
 	switch (*self)
@@ -33,6 +41,9 @@ fn String RouteMethod.to_constant_string(&self) @dynamic
 }
 
 
+<*
+ Returned when an HTTP verb has no routing equivalent.
+*>
 faultdef UNSUPPORTED_HTTP_VERB;
 
 <*

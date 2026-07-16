@@ -5,14 +5,29 @@ import std::collections::list;
 import std::io;
 
 import c3api::http;
+import c3api::log;
 
+<*
+ Traverse the route trie and return handlers for a URI.
+
+ Collects middleware along the matched path and writes dynamic path
+ segment values into request arguments.
+
+ @param [in] uri : "Request URI to resolve"
+ @param [&in] start_handlers : "Fallback handler collection for root"
+ @param [&in] start_nodes : "Root node map to traverse"
+ @param [&inout] request : "Request receiving path argument values"
+ @param [&inout] middleware_collector : "Collected middleware callbacks"
+ @param [&in] log : "Logger"
+ @return "Matching handler collection or ROUTE_NOT_FOUND~"
+*>
 fn HandlerCollection*? get_handlers(
 	String uri,
 	HandlerCollection* start_handlers,
 	HashMap{String, RouteNode}* start_nodes,
 	HttpRequest* request,
 	List{MiddlewareFunc}* middleware_collector,
-	Logger* log,
+	log::Logger log,
 ) @private
 {
 	if (uri == "" || uri == "/")
@@ -76,9 +91,23 @@ fn HandlerCollection*? get_handlers(
 	return &cur_node.handlers;
 }
 
+<*
+ Raised when an insertion URI points at the root scope.
+*>
 faultdef REFERS_TO_ROOT;
 
-fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_nodes, Logger* log) @private
+<*
+ Get or create the route node corresponding to the given URI.
+
+ Root-level URIs return REFERS_TO_ROOT~ so callers can attach directly
+ to root handlers or middleware collections.
+
+ @param [in] uri : "Route pattern to resolve"
+ @param [&inout] start_nodes : "Root node map"
+ @param [&in] log : "Logger"
+ @return "Resolved node pointer or REFERS_TO_ROOT~"
+*>
+fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_nodes, log::Logger log) @private
 {
 	@pool()
 	{
@@ -137,6 +166,22 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
 	};
 }
 
+<*
+ Add or replace a route handler and attach route middleware.
+
+ When uri refers to root, handler and middleware are attached to the
+ provided root collections.
+
+ @param [in] uri : "Route pattern"
+ @param method : "HTTP method"
+ @param handler : "Handler callback"
+ @param [in] middlewares : "Middleware callbacks for this route"
+ @param [&inout] start_handlers : "Root handler collection"
+ @param [&inout] start_middlewares : "Root middleware collection"
+ @param [&inout] start_nodes : "Root node map"
+ @param [&in] log : "Logger"
+ @return "True if an existing handler for method was replaced"
+*>
 fn bool add_handler(
 	String uri,
 	RouteMethod method,
@@ -145,7 +190,7 @@ fn bool add_handler(
 	HandlerCollection* start_handlers,
 	List{MiddlewareFunc}* start_middlewares,
 	HashMap{String, RouteNode}* start_nodes,
-	Logger* log
+	log::Logger log
 ) @private
 {
 	RouteNode*? node = get_or_create_node(uri, start_nodes, log);
@@ -160,17 +205,34 @@ fn bool add_handler(
 	return node.handlers.set_handler(method, handler);
 }
 
+<*
+ Check whether a segment is a dynamic braced segment.
+
+ @return "True for segments such as {name}"
+*>
 fn bool String.is_braced(self)
 {
 	return self[0] == '{' && self[^1] == '}';
 }
 
-fn String node_key(String segment)
+<*
+ Convert a route segment to its trie storage key.
+
+ Dynamic segments share the {} key so only one wildcard branch exists
+ per node level.
+
+ @param [in] segment : "Raw route segment"
+ @return "Storage key used in sub node maps"
+*>
+fn String node_key(String segment) @private
 {
 	return segment.is_braced() ? "{}" : segment;
 }
 
-macro RouteNode new_route_node(String name)
+<*
+ Construct and initialize a RouteNode by segment name.
+*>
+macro RouteNode new_route_node(String name) @private
 {
 	RouteNode node;
 	node.init(mem, name);
