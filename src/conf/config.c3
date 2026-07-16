@@ -8,6 +8,8 @@ import std::collections::object;
 import std::encoding::json;
 import std::core::string;
 
+const Path DEFAULT_CONF_PATH = "c3api.conf.json";
+
 <*
  Application configuration.
 
@@ -17,6 +19,7 @@ struct Config
 {
 	String address;
 	uint port;
+	int tcp_backlog;
 
 	CorsConfig cors;
 	LoggingConfig logging;
@@ -25,6 +28,7 @@ struct Config
 const Config DEFAULT_CONFIG = {
 	.address = "127.0.0.1",
 	.port = 8080,
+	.tcp_backlog = 10000,
 	.cors = DEFAULT_CORS_CONFIG,
 	.logging = DEFAULT_LOGGING_CONFIG
 };
@@ -41,6 +45,7 @@ fn void Config.from_other(&self, Config* other, Allocator allocator)
 {
 	self.address = other.address.copy(allocator);
 	self.port = other.port;
+	self.tcp_backlog = other.tcp_backlog;
 
 	CorsConfig cors;
 	cors.from_other(&other.cors, allocator);
@@ -59,30 +64,15 @@ fn void Config.from_other(&self, Config* other, Allocator allocator)
  @param [&inout] allocator : "Allocator used for parsed and copied config fields"
  @param create_if_missing : "When true, writes a default config file if missing"
 *>
-fn void Config.from_file(&self, Allocator allocator, bool create_if_missing = true)
+fn void Config.from_file(&self, Allocator allocator, Path file = DEFAULT_CONF_PATH, bool create_if_missing = true)
 {
 	@pool()
 	{
-		Path? cwd = path::tcwd();
-		if (catch error = cwd)
-		{
-			io::eprintfn("Failed to get current working directory: %s", error);
-			self.from_other(&DEFAULT_CONFIG, allocator);
-			return;
-		}
-		Path? file = cwd.tappend("config.json");
-		if (catch error = file)
-		{
-			io::eprintfn("Failed to get config file path: %s", error);
-			self.from_other(&DEFAULT_CONFIG, allocator);
-			return;
-		}
-
 		if (!path::is_file(file))
 		{
 			if (create_if_missing)
 			{
-				if (catch error = write_to_file(&DEFAULT_CONFIG))
+				if (catch error = write_to_file(&DEFAULT_CONFIG, file))
 				{
 					io::eprintfn("Failed to write default config: %s", error);
 				}
@@ -107,17 +97,15 @@ fn void Config.from_file(&self, Allocator allocator, bool create_if_missing = tr
 }
 
 <*
- Write a config instance to `config.json` in the current working directory.
+ Write a config instance to `config.json` to a path.
 
  @param [&in] config : "Config data to serialize and write"
+ @param [in] path : "Path to the file where the config should be written"
 *>
-fn void? write_to_file(Config* config)
+fn void? write_to_file(Config* config, Path path)
 {
 	@pool()
 	{
-		Path path = path::tcwd()!;
-		path = path.tappend("config.json")!;
-
 		File file = file::open_path(path, "w")!;
 
 		String json_str = json::marshal(tmem, *config, indent: Indent.SPACE_2);
@@ -154,6 +142,7 @@ fn void? Config.parse_from_file(&self, Allocator allocator, Path path)
 
 		self.address = parsed_address.copy(allocator);
 		self.port = json.get_uint("port") ?? DEFAULT_CONFIG.port;
+		self.tcp_backlog = json.get_int("tcp_backlog") ?? DEFAULT_CONFIG.tcp_backlog;
 
 		CorsConfig cors;
 		cors.parse_from_object(allocator, json.get_or_create_obj("cors"));

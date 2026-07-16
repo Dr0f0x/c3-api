@@ -160,6 +160,7 @@ struct C3ApiLogger (Logger)
 fn C3ApiLogger* C3ApiLogger.init(&self, Allocator allocator)
 {
 	self.allocator = allocator;
+	self.sinks.init(allocator);
 	return self;
 }
 

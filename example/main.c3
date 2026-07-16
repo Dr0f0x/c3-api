@@ -7,7 +7,6 @@ import std::encoding::json;
 import c3api;
 import c3api::config;
 import c3api::routing;
-import c3api::server;
 
 fn void no_controller(Allocator allocator, HttpRequest* req, HttpResponse* res)
 {
@@ -60,9 +59,9 @@ fn void static_no_controller(Allocator allocator, HttpRequest* req, HttpResponse
 fn int main(String[] args)
 {
 	config::Config config;
-	config.from_file(mem, true);
+	config.from_file(mem);
 	defer config.free(mem);
-
+	/*
 	log::C3ApiLogger logger;
 	logger.init(mem);
 
@@ -78,11 +77,12 @@ fn int main(String[] args)
 	}
 	defer file_sink.free();
 	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE));
+	*/
 
-	Router router;
-	router.init(mem, &logger);
-	defer router.free();
+	c3api::Server server;
+	server.init(tmem, &config);
 
+	routing::Router* router = server.get_router();
 	router.use_middleware(&router_log_middleware);
 
 	@pool()
@@ -99,7 +99,7 @@ fn int main(String[] args)
 
 	io::printfn("%s", router);
 
-	server::startServer(config, router, &logger)!!;
+	server.run()!!;
 
 	return 0;
 }

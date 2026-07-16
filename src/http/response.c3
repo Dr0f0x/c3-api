@@ -50,9 +50,27 @@ fn void? HttpResponse.write(&self, TcpSocket* socket)
 
 		self.headers.@each(; String key, List{String} values)
 		{
-			foreach (value : values)
+			// set cookie needs to be handled differently (each value on new line)
+			if (key == "Set-Cookie")
 			{
-				self.bytes.push_all(string::tformat("%s: %s\r\n", key, value));
+				foreach (value : values)
+				{
+					self.bytes.push_all(string::tformat("%s: %s\r\n", key, value));
+				}
+			}
+			else
+			{
+				DString vals = dstring::temp();
+
+				bool first = true;
+				foreach (value : values)
+				{
+					if (!first) vals.append(", ");
+					vals.append(value);
+					first = false;
+				}
+
+				self.bytes.push_all(string::tformat("%s: %s\r\n", key, vals.str_view()));
 			}
 		};
 

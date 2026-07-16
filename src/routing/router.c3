@@ -23,7 +23,7 @@ struct Router (Printable)
 	HandlerCollection root_handlers;
 	List{MiddlewareFunc} root_middlewares;
 
-	log::Logger logger;
+	log::Logger log;
 	Allocator allocator;
 }
 
@@ -39,7 +39,7 @@ fn Router* Router.init(&self, Allocator allocator, log::Logger logger)
 	self.root_nodes.init(allocator);
 	self.root_middlewares.init(allocator);
 	self.root_handlers.init();
-	self.logger = logger;
+	self.log = logger;
 	self.allocator = allocator;
 	return self;
 }
@@ -67,7 +67,7 @@ fn HandlerCollection*? Router.get_handlers(
 		&self.root_nodes,
 		request,
 		middleware_collector,
-		self.logger
+		self.log
 	);
 }
 
@@ -128,7 +128,7 @@ fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handl
 		&self.root_handlers,
 		&self.root_middlewares,
 		&self.root_nodes,
-		self.logger
+		self.log
 	);
 }
 
@@ -142,7 +142,7 @@ fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handl
 *>
 fn void Router.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
 {
-	if (try node = routing::get_or_create_node(uri, &self.root_nodes, self.logger))
+	if (try node = routing::get_or_create_node(uri, &self.root_nodes, self.log))
 	{
 		node.middlewares.push_all(middlewares);
 	}
@@ -176,8 +176,8 @@ fn void Router.use_middleware(&self, MiddlewareFunc ...middlewares)
 fn Group* Router.group(&self, Allocator allocator, String uri)
 {
 	Group* group    = alloc::new(allocator, Group);
-	RouteNode* node = routing::get_or_create_node(uri, &self.root_nodes, self.logger)!!;
-	return group.init(node, self.logger);
+	RouteNode* node = routing::get_or_create_node(uri, &self.root_nodes, self.log)!!;
+	return group.init(node, self.log);
 }
 
 <*
