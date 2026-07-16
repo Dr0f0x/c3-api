@@ -92,13 +92,63 @@ fn String json_encode(Allocator allocator, LogEntry* entry)
 	{
 		out.appendf(`,"%s":`, field.name);
 
-		if (field.value.type == String::typeid)
+		switch (field.value.type.kind)
 		{
-			out.appendf(`"%s"`, field.value);
-		}
-		else
-		{
-			out.appendf("%s", field.value);
+			case BOOL:
+			case SIGNED_INT:
+			case UNSIGNED_INT:
+			case FLOAT:
+				out.appendf("%s", field.value);
+				break;
+			case ARRAY:
+			case VECTOR:
+			case SLICE:
+			case UNTYPEDLIST:
+				typeid inner = field.value.type.inner;
+				if (inner == void) inner = char;
+
+				sz size = inner.size;
+				sz len;
+				void* data_ptr;
+
+				if (field.value.type.kind == SLICE)
+				{
+					String* slice = field.value.ptr;
+					data_ptr = slice.ptr;
+					len = slice.len;
+				}
+				else
+				{
+					data_ptr = field.value.ptr;
+					len = field.value.type.len;
+				}
+
+				out.append("[");
+
+				for (sz i = 0; i < len; i++)
+				{
+					if (i != 0) out.append(",");
+					any elem = any_make(data_ptr, inner);
+
+					switch (inner.kind)
+					{
+						case BOOL:
+						case SIGNED_INT:
+						case UNSIGNED_INT:
+						case FLOAT:
+							out.appendf("%s", field.value);
+							break;
+						default:
+							out.appendf(`"%s"`, elem);
+					}
+
+					data_ptr += size;
+				}
+
+				out.append("]");
+				break;
+			default:
+				out.appendf(`"%s"`, field.value);
 		}
 	}
 

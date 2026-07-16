@@ -14,8 +14,6 @@ struct HttpResponse (Printable)
 	HttpStatus status;
 	HttpHeaders headers;
 	char[] body;
-
-	List{char} bytes;
 }
 
 fn HttpResponse* HttpResponse.init(&self, Allocator allocator)
@@ -23,7 +21,6 @@ fn HttpResponse* HttpResponse.init(&self, Allocator allocator)
 	self.status = HttpStatus.UNKNOWN;
 	self.headers.init(allocator);
 	self.body = { };
-	self.bytes.init(allocator, 256);
 	return self;
 }
 
@@ -40,7 +37,10 @@ fn void? HttpResponse.write(&self, TcpSocket* socket)
 {
 	@pool()
 	{
-		self.bytes.push_all(string::tformat("HTTP/1.1 %d %s\r\n", self.status.code, self.status.message));
+		List{char} bytes;
+		bytes.init(tmem, 256);
+
+		bytes.push_all(string::tformat("HTTP/1.1 %d %s\r\n", self.status.code, self.status.message));
 		Formatter formatter;
 
 		if (self.body.len > 0)
@@ -55,7 +55,7 @@ fn void? HttpResponse.write(&self, TcpSocket* socket)
 			{
 				foreach (value : values)
 				{
-					self.bytes.push_all(string::tformat("%s: %s\r\n", key, value));
+					bytes.push_all(string::tformat("%s: %s\r\n", key, value));
 				}
 			}
 			else
@@ -70,20 +70,40 @@ fn void? HttpResponse.write(&self, TcpSocket* socket)
 					first = false;
 				}
 
-				self.bytes.push_all(string::tformat("%s: %s\r\n", key, vals.str_view()));
+				bytes.push_all(string::tformat("%s: %s\r\n", key, vals.str_view()));
 			}
 		};
 
-		self.bytes.push_all("\r\n");
+		bytes.push_all("\r\n");
 
-		socket.write(self.bytes.array_view())!;
+		write_all(socket, bytes.array_view())!;
 
 		if (self.body.len > 0)
 		{
-			socket.write(self.body)!;
+			write_all(socket, self.body)!;
 		}
 	};
 }
+
+faultdef NO_DATA_WRITTEN;
+
+<*
+ Write a complete byte array to the Socket
+
+ @param [&in] socket : " The Socket to write to"
+ @param [in] bytes : "array of bytes to write"
+*>
+fn void? write_all(Socket* socket, char[] bytes) @private
+{
+	sz total = 0;
+
+	while (total < bytes.len)
+	{
+		sz written = socket.write(bytes[total..])!;
+		total += written;
+	}
+}
+
 
 <*
  Free owned response resources.
@@ -93,7 +113,6 @@ fn void? HttpResponse.write(&self, TcpSocket* socket)
 fn void HttpResponse.free(&self)
 {
 	self.headers.free();
-	self.bytes.free();
 
 	self.status = HttpStatus.UNKNOWN;
 	self.body = { };

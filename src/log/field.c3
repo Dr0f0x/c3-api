@@ -92,6 +92,71 @@ fn Field _error(fault* err) @inline
 	return _field("error", fault, err);
 }
 
+macro Field _array(String name, $Type, value)
+{
+    return _field(name, $Type[], value);
+}
+
+fn Field _string_arr(String name, String[]* val) @inline
+{
+	return _array(name, String, val);
+}
+
+fn Field _bool_arr(String name, bool[]* val) @inline
+{
+	return _array(name, bool, val);
+}
+
+fn Field _char_arr(String name, char[]* val) @inline
+{
+	return _array(name, char, val);
+}
+
+fn Field _short_arr(String name, short[]* val) @inline
+{
+	return _array(name, short, val);
+}
+
+fn Field _int_arr(String name, int[]* val) @inline
+{
+	return _array(name, int, val);
+}
+
+fn Field _long_arr(String name, long[]* val) @inline
+{
+	return _array(name, long, val);
+}
+
+fn Field _ushort_arr(String name, ushort[]* val) @inline
+{
+	return _array(name, ushort, val);
+}
+
+fn Field _uint_arr(String name, uint[]* val) @inline
+{
+	return _array(name, uint, val);
+}
+
+fn Field _ulong_arr(String name, ulong[]* val) @inline
+{
+	return _array(name, ulong, val);
+}
+
+fn Field _usz_arr(String name, usz[]* val) @inline
+{
+	return _array(name, usz, val);
+}
+
+fn Field _float_arr(String name, float[]* val) @inline
+{
+	return _array(name, float, val);
+}
+
+fn Field _double_arr(String name, double[]* val) @inline
+{
+	return _array(name, double, val);
+}
+
 <*
  Extract all field values as an array.
 

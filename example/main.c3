@@ -19,7 +19,7 @@ fn void no_controller(Allocator allocator, HttpRequest* req, HttpResponse* res)
 		res.body = string::format(allocator, greetings.tcopy_str(), req.method, req.uri);
 	};
 
-	io::printfn("%s", res);
+	//io::printfn("%s", res);
 }
 
 struct JSONResponse
@@ -30,19 +30,19 @@ struct JSONResponse
 
 fn RequestFlow router_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
 {
-	io::printfn("[MIDDLEWARE] router %s %s", req.method, req.uri);
+	//io::printfn("[MIDDLEWARE] router %s %s", req.method, req.uri);
 	return RequestFlow.CONTINUE;
 }
 
 fn RequestFlow group_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
 {
-	io::printfn("[MIDDLEWARE] group %s %s", req.method, req.uri);
+	//io::printfn("[MIDDLEWARE] group %s %s", req.method, req.uri);
 	return RequestFlow.CONTINUE;
 }
 
 fn RequestFlow endpoint_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
 {
-	io::printfn("[MIDDLEWARE] endpoint %s %s", req.method, req.uri);
+	//io::printfn("[MIDDLEWARE] endpoint %s %s", req.method, req.uri);
 	return RequestFlow.CONTINUE;
 }
 

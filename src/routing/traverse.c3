@@ -30,6 +30,8 @@ fn HandlerCollection*? get_handlers(
 	log::Logger log,
 ) @private
 {
+	log.tracef("Getting handlers for route %s", "Retrieving handlers", log::_string("uri", &uri));
+
 	if (uri == "" || uri == "/")
 	{
 		return start_handlers;
@@ -38,15 +40,15 @@ fn HandlerCollection*? get_handlers(
 	String old_uri;
 	if (uri[0] == '/' && uri.len > 1)
 	{
-		io::printfn("[ROUTER] Removing leading slash from '%s'", uri);
+		// remove leading slash
 		old_uri = uri;
 		uri = uri[1..];
 	}
 
 	String[] uri_segments = uri.tsplit("/");
-	io::printfn("[ROUTER] route segments: '%s'", uri_segments);
+	log.tracef("Normalized route into segments: %s", "route normalized", log::_string_arr("segments", &uri_segments));
 
-	String root_key = node_key(uri_segments[0]);
+	String root_key      = node_key(uri_segments[0]);
 	RouteNode*? cur_node = start_nodes.get_ref(root_key);
 	if (catch err = cur_node)
 	{
@@ -59,22 +61,17 @@ fn HandlerCollection*? get_handlers(
 		if (cur_node.has_middleware()) middleware_collector.push_all(cur_node.middlewares.array_view());
 
 		if (uri_segments[i] == "") break;
-		io::printfn("[ROUTER] Looking for child '%s' under '%s'", uri_segments[i], cur_node.name);
 
 		cur_node = cur_node.get_next_node(uri_segments[i]) ?? null;
 
 		if (cur_node == null)
 		{
-			io::printfn("[ROUTER] No child found, continuing");
 			return ROUTE_NOT_FOUND~;
 		}
-
-		io::printfn("[ROUTER] Matched node '%s'", cur_node.name);
 
 		if (cur_node.name[0] == '{' && cur_node.name[^1] == '}')
 		{
 			String key = cur_node.name[1:^2];
-			io::printfn("[ROUTER] Dynamic parameter: %s=%s", key, uri_segments[i]);
 			request.args.set_argument_value(key, uri_segments[i]);
 		}
 
@@ -83,10 +80,10 @@ fn HandlerCollection*? get_handlers(
 
 	if (cur_node == null)
 	{
-		io::printn("[ROUTER] No matching route found");
+		log.trace("No matching route found");
 		return ROUTE_NOT_FOUND~;
 	}
-	
+
 	middleware_collector.push_all(cur_node.middlewares.array_view());
 	return &cur_node.handlers;
 }
@@ -111,7 +108,7 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
 {
 	@pool()
 	{
-		io::printfn("[ROUTER ADD] Adding route '%s'", uri);
+		log.tracef("Retrieving route node at '%s'", "Retrieving route node", log::_string("uri", &uri));
 
 		// would be root route
 		if (uri == "/" || uri.len == 0)
@@ -122,42 +119,55 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
 		// remove leading slash
 		if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
 
-		io::printfn("[ROUTER ADD] Normalized route '%s'", uri);
-
 		String[] uri_segments = uri.tsplit("/");
 
 		RouteNode* cur_node;
 		String root_key = node_key(uri_segments[0]);
 
-		io::printfn("[ROUTER ADD] route segments %s", uri_segments);
+		log.tracef(
+			"Normalized route into segments: %s",
+			"route normalized",
+			log::_string_arr("segments", &uri_segments)
+		);
 
 		// check if root node needs to be added
 		if (!start_nodes.has_key(root_key))
 		{
-			io::printfn("[ROUTER ADD] Creating root node '%s'", uri_segments[0]);
+			log.tracef(
+				"Creating new route node '%s'",
+				"Created new route node",
+				log::_string("name", &uri_segments[0])
+			);
 
 			start_nodes.set(root_key, new_route_node(uri_segments[0]));
 			cur_node = start_nodes.get_ref(root_key)!!;
 		}
 		else
 		{
-			io::printfn("[ROUTER ADD] Using existing root node '%s'", uri_segments[0]);
+			log.tracef(
+				"Using existing route node '%s'",
+				"Found existing route node",
+				log::_string("uri", &uri_segments[0])
+			);
 			cur_node = start_nodes.get_ref(root_key)!!;
 		}
 
 		// traverse node tree down
 		foreach (i, segment : uri_segments[..^2])
 		{
-			io::printfn("[ROUTER ADD] Processing child '%s' under '%s'", segment, cur_node.name);
 			if (try new_cur_node = cur_node.get_next_node(segment))
 			{
-				io::printfn("[ROUTER ADD] Existing child '%s'", new_cur_node);
+				log.tracef(
+					"Using existing route node '%s'",
+					"Found existing route node",
+					log::_string("uri", &new_cur_node.name)
+				);
 				cur_node = new_cur_node;
 				continue;
 			}
 			String key = node_key(uri_segments[i + 1]);
 
-			io::printfn("[ROUTER ADD] Creating child key '%s'", key);
+			log.tracef("Creating new route node '%s'", "Created new route node", log::_string("name", &key));
 			cur_node.sub_nodes[key] = new_route_node(uri_segments[i + 1]);
 			cur_node = cur_node.sub_nodes.get_ref(key)!!;
 		}
@@ -194,14 +204,14 @@ fn bool add_handler(
 ) @private
 {
 	RouteNode*? node = get_or_create_node(uri, start_nodes, log);
-	if(catch err = node){
+	if (catch err = node)
+	{
 		start_middlewares.push_all(middlewares);
 		return start_handlers.set_handler(method, handler);
 	}
-	io::printfn("[ROUTER ADD] Assigning handler to '%s'", node.name);
-	io::printfn("Adding middlewares to node '%s' %s %s", node.name, middlewares.len, node.middlewares.len());
+	log.tracef("Assigning handler to '%s'", "Assigned handler to node", log::_string("node", &node.name));
+	log.tracef("Adding middlewares to '%s'", "Adding middlewares to node", log::_string("node", &node.name));
 	node.middlewares.push_all(middlewares);
-	io::printfn("Added middlewares to node '%s' %s %s", node.name, middlewares.len, node.middlewares.len());
 	return node.handlers.set_handler(method, handler);
 }
 

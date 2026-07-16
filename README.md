@@ -4,6 +4,8 @@
 
 Here are some planned features and improvements for the `c3-api` project:
 
+- [ ] **Http 2.0**
+- [ ] **Http 1.1. keep-alive**
 - [ ] **Performance Optimizations**
 - [ ] **Benchmarks**
 - [ ] **Cookies**

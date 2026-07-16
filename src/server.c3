@@ -99,14 +99,14 @@ fn Router* Server.get_router(&self)
 *>
 fn void? Server.run(&self)
 {
-	TcpServerSocket? server = tcp::listen(
+	TcpServerSocket? server_socket = tcp::listen(
 		self.config.address,
 		(int)self.config.port,
 		self.config.tcp_backlog,
 		net::SocketOption.REUSEADDR,
 		ip_protocol: net::IpProtocol.IPV4
 	);
-	if (catch err = server)
+	if (catch err = server_socket)
 	{
 		self.log.errorf(
 			"failed to bind <%s:%d> with failure: %s",
@@ -120,9 +120,16 @@ fn void? Server.run(&self)
 	defer
 	{
 		self.log.info("Closing server...");
-		server.close()!!;
+		if (catch err = server_socket.close())
+		{
+			self.log.errorf(
+				"Got Error while closing server socket %s",
+				"Error while closing server socket",
+				log::_error(&err)
+			);
+		}
 	}
-	self.server_socket = server;
+	self.server_socket = server_socket;
 
 	self.log.infof(
 		"listening on <%s:%d>",
@@ -137,18 +144,40 @@ fn void? Server.run(&self)
 
 	while (!self.should_close)
 	{
-		TcpSocket? socket = tcp::accept(&server);
+		TcpSocket? socket = tcp::accept(&self.server_socket);
 		if (catch err = socket)
 		{
-			self.should_close = true;
 			self.log.errorf("accepting connection threw error %s", "could not accept connection", log::_error(&err));
 			continue;
 		}
 		context.socket = socket;
 
 		thread::Thread thread;
-		thread.create(&process, @clone(context))!!;
-		thread.detach()!!;
+
+		if (catch err = thread.create(&process, @clone(context)))
+		{
+			self.log.errorf("Thread creation failed: %s", "thread creation failed", log::_error(&err));
+			close_socket(&socket, self.log);
+			continue;
+		}
+
+		if (catch err = thread.detach())
+		{
+			self.log.errorf("Couldnt detach thread %s", "Thread detaching failed", log::_error(&err));
+			continue;
+		}
+	}
+}
+
+fn void close_socket(TcpSocket* socket, log::Logger log) @private
+{
+	if (catch err = socket.shutdown(SocketShutdownHow.SEND))
+	{
+		log.errorf("Got Error while shutting down socket %s", "Error while shutting down socket", log::_error(&err));
+	}
+	if (catch err = socket.close())
+	{
+		log.errorf("Got Error while closing socket %s", "Error while closing socket", log::_error(&err));
 	}
 }
 

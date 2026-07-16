@@ -4,6 +4,7 @@ import std::io;
 import std::net::tcp;
 import std::collections::map;
 import std::collections::list;
+import std::net::os;
 
 import c3api::utils;
 import c3api::http;
@@ -41,15 +42,22 @@ fn int process(void* context_arg) @private
 			ProcessContext* context = context_arg;
 			TcpSocket* socket       = &context.socket;
 			Router* router          = context.router;
+			log::Logger log         = context.logger;
 			defer alloc::free(mem, context);
-
-			log::Logger log = context.logger;
 
 			defer
 			{
+				if (catch err = socket.shutdown(SocketShutdownHow.SEND))
+				{
+					log.errorf(
+						"Got Error while shutting down socket %s",
+						"Error while shutting down socket",
+						log::_error(&err)
+					);
+				}
 				if (catch err = socket.close())
 				{
-					log.errorf("Socket Closing Error: %s", "Error Closing Socket", log::_error(&err));
+					log.errorf("Got Error while closing socket %s", "Error while closing socket", log::_error(&err));
 				}
 			}
 
@@ -87,14 +95,12 @@ fn int process(void* context_arg) @private
 				}
 			}
 
-			io::printfn("%s", res);
 			if (catch err = res.write(socket))
 			{
 				log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
 			}
 		};
 	};
-
 	return 0;
 }
 
@@ -125,10 +131,9 @@ fn void? handle(
 	List{MiddlewareFunc} middleware_collector;
 	middleware_collector.tinit();
 
-	io::printfn("%s", req);
 	if (req.method == HttpVerb.OPTIONS)
 	{
-		io::printn("in options");
+		logger.trace("Received OPTIONS Request");
 		HandlerCollection*? handlers = router.get_handlers(req.uri, req, &middleware_collector);
 		if (!run_middlewares(allocator, req, res, &middleware_collector))
 		{
@@ -167,8 +172,12 @@ fn void? handle(
 		}
 	}
 
+	// server doesnt support keep-alive yet
+	res.headers.set_header_values("Connection", "close");
+
 	if (req.method == HttpVerb.HEAD)
 	{
+		logger.trace("Received HEAD Request, removing response body");
 		res.body = "";
 	}
 }

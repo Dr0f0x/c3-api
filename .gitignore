@@ -1,5 +1,6 @@
 build/
 .idea/
 *.conf.json
+.venv/
 
 *.log

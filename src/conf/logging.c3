@@ -10,26 +10,21 @@ import c3api::log;
 *>
 struct LoggingConfig
 {
-	
-	struct console {
+	struct console
+	{
 		bool enabled;
 		log::LogLevel min_level;
 	}
-	struct file {
+	struct file
+	{
 		bool enabled;
 		log::LogLevel min_level;
 	}
 }
 
 const LoggingConfig DEFAULT_LOGGING_CONFIG = {
-	.console = {
-		.enabled = true,
-		.min_level = log::LogLevel.INFO,
-	},
-	.file = {
-		.enabled = false,
-		.min_level = log::LogLevel.INFO,
-	}
+	.console = { .enabled = true, .min_level = log::LogLevel.INFO, },
+	.file = { .enabled = false, .min_level = log::LogLevel.INFO, }
 };
 
 <*
@@ -56,21 +51,39 @@ fn void LoggingConfig.parse_from_object(&self, Allocator allocator, Object* logg
 {
 	@pool()
 	{
-		self.console.enabled = logging_obj.get_bool("console.enabled") ?? DEFAULT_LOGGING_CONFIG.console.enabled;
+		Object* console_obj = logging_obj.get_or_create_obj("console");
+		self.console.enabled = console_obj.get_bool("enabled") ?? DEFAULT_LOGGING_CONFIG.console.enabled;
 
-		self.console.min_level = logging_obj.get_enum(
-			log::LogLevel,
-			"console.min_level"
-		) ?? DEFAULT_LOGGING_CONFIG.console.min_level;
+		if (try console_min_level = console_obj.get_string("min_level"))
+		{
+			self.console.min_level = log::from_string(console_min_level) ?? DEFAULT_LOGGING_CONFIG.console.min_level;
+		}
+		else
+		{
+			self.console.min_level = DEFAULT_LOGGING_CONFIG.console.min_level;
+		}
 
-		self.file.enabled = logging_obj.get_bool("file.enabled") ?? DEFAULT_LOGGING_CONFIG.file.enabled;
+		Object* file_obj = logging_obj.get_or_create_obj("file");
+		self.file.enabled = file_obj.get_bool("enabled") ?? DEFAULT_LOGGING_CONFIG.file.enabled;
 
-		self.file.min_level = logging_obj.get_enum(
-			log::LogLevel,
-			"file.min_level"
-		) ?? DEFAULT_LOGGING_CONFIG.file.min_level;
+		if (try file_min_level = file_obj.get_string("min_level"))
+		{
+			self.file.min_level = log::from_string(file_min_level) ?? DEFAULT_LOGGING_CONFIG.file.min_level;
+		}
+		else
+		{
+			self.file.min_level = DEFAULT_LOGGING_CONFIG.file.min_level;
+		}
 	};
 }
+
+
+macro Object.get_enum_string(&self, $EnumType, String key)
+{
+	String value = self.get_string(key)!;
+	return $EnumType.from_string(value);
+}
+
 
 <*
  Free resources owned by this logging config.
