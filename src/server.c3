@@ -13,6 +13,8 @@ struct Server
 {
 	config::Config* config;
 
+	Context ctx;
+
 	Router router;
 	TcpServerSocket server_socket;
 	bool should_close;
@@ -27,6 +29,19 @@ struct Server
 	}
 
 	Allocator allocator;
+}
+
+fn RequestFlow cors(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res) @private
+{
+	if (req.method == HttpVerb.OPTIONS)
+	{
+		Config* conf = ctx.resolve(Config)!!;
+
+		res.headers.set_header_value("Access-Control-Allow-Origin", conf.cors.allow_origin);
+		res.headers.set_header_value("Access-Control-Allow-Methods", conf.cors.allow_methods);
+		res.headers.set_header_value("Access-Control-Allow-Headers", conf.cors.allow_headers);
+	}
+	return RequestFlow.CONTINUE;
 }
 
 <*
@@ -76,7 +91,15 @@ fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger l
 		}
 
 		self.router.init(allocator, self.log);
+		self.ctx.init(allocator);
 		self.config = config;
+
+		io::printfn("cors %s", self.config.cors.enabled);
+		if (self.config.cors.enabled)
+		{
+			self.ctx.register(Config, self.config);
+			self.router.use_middleware(&cors);
+		}
 		return self;
 	};
 }
@@ -89,6 +112,11 @@ fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger l
 fn Router* Server.get_router(&self)
 {
 	return &self.router;
+}
+
+fn Context* Server.get_context(&self)
+{
+	return &self.ctx;
 }
 
 <*
@@ -140,6 +168,7 @@ fn void? Server.run(&self)
 
 	ProcessContext context;
 	context.logger = self.log;
+	context.ctx = &self.ctx;
 	context.router = &self.router;
 
 	while (!self.should_close)

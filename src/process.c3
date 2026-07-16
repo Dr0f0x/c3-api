@@ -19,6 +19,7 @@ struct ProcessContext
 {
 	TcpSocket socket;
 	Router* router;
+	Context* ctx;
 
 	log::Logger logger;
 }
@@ -42,6 +43,7 @@ fn int process(void* context_arg) @private
 			ProcessContext* context = context_arg;
 			TcpSocket* socket       = &context.socket;
 			Router* router          = context.router;
+			Context* ctx            = context.ctx;
 			log::Logger log         = context.logger;
 			defer alloc::free(mem, context);
 
@@ -88,7 +90,7 @@ fn int process(void* context_arg) @private
 			}
 			else
 			{
-				if (catch error = handle(tmem, &req, &res, socket, router, log))
+				if (catch error = handle(tmem, ctx, &req, &res, socket, router, log))
 				{
 					res.body = "";
 					res.status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -120,6 +122,7 @@ fn int process(void* context_arg) @private
 *>
 fn void? handle(
 	Allocator allocator,
+	Context* ctx,
 	HttpRequest* req,
 	HttpResponse* res,
 	TcpSocket* socket,
@@ -135,7 +138,7 @@ fn void? handle(
 	{
 		logger.trace("Received OPTIONS Request");
 		HandlerCollection*? handlers = router.get_handlers(req.uri, req, &middleware_collector);
-		if (!run_middlewares(allocator, req, res, &middleware_collector))
+		if (!run_middlewares(allocator, ctx, req, res, &middleware_collector))
 		{
 			// Middleware interrupted the request, do not continue processing
 			return;
@@ -143,7 +146,7 @@ fn void? handle(
 
 		if (catch err = handlers)
 		{
-			routing::e404(allocator, req, res);
+			routing::e404(allocator, ctx, req, res);
 		}
 		else
 		{
@@ -165,10 +168,10 @@ fn void? handle(
 	else if (try method = routing::from_http_verb(req.method))
 	{
 		handler = router.get_route(method, req.uri, req, &middleware_collector) ?? &routing::e404;
-		if (run_middlewares(allocator, req, res, &middleware_collector))
+		if (run_middlewares(allocator, ctx, req, res, &middleware_collector))
 		{
 			// Call the handler if middlewares did not interrupt the request
-			handler(allocator, req, res);
+			handler(allocator, ctx, req, res);
 		}
 	}
 
@@ -193,10 +196,11 @@ fn void? handle(
  @param [&inout] res : "HTTP response passed to each middleware"
  @param [&in] middlewares : "Middlewares to execute"
 
- @return "The resulting request flow state"
+ @return "false if the middleware chain produced an INTERRUPT, e.g. proessing should not continue, true otherwise"
 *>
 fn bool run_middlewares(
 	Allocator allocator,
+	Context* ctx,
 	HttpRequest* req,
 	HttpResponse* res,
 	List{MiddlewareFunc}* middlewares
@@ -204,7 +208,7 @@ fn bool run_middlewares(
 {
 	foreach (middleware : middlewares)
 	{
-		RequestFlow flow = middleware(allocator, req, res);
+		RequestFlow flow = middleware(allocator, ctx, req, res);
 		if (flow == RequestFlow.INTERRUPT)
 		{
 			return false;

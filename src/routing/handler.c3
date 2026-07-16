@@ -12,7 +12,7 @@ import c3api::http;
  @param [&inout] request : "Parsed request"
  @param [&inout] response : "Response to populate"
 *>
-alias HandleFunc = fn void(Allocator allocator, HttpRequest* request, HttpResponse* response);
+alias HandleFunc = fn void(Allocator allocator, Context* ctx, HttpRequest* request, HttpResponse* response);
 
 <*
  Built-in 404 JSON handler.
@@ -21,7 +21,7 @@ alias HandleFunc = fn void(Allocator allocator, HttpRequest* request, HttpRespon
  @param [&inout] req : "Incoming request"
  @param [&inout] res : "Outgoing response"
 *>
-fn void e404(Allocator allocator, HttpRequest* req, HttpResponse* res)
+fn void e404(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	res.status = HttpStatus.NOT_FOUND;
 	res.body = string::format(mem, `{"type":"error","status":404}`);

@@ -61,6 +61,7 @@ fn HandlerCollection*? Router.get_handlers(
 	List{MiddlewareFunc}* middleware_collector
 )
 {
+	middleware_collector.push_all(self.root_middlewares.array_view());
 	return routing::get_handlers(
 		uri,
 		&self.root_handlers,

@@ -19,4 +19,4 @@ enum RequestFlow
  @param [&inout] response : "Response being built"
  @return "CONTINUE to keep processing, INTERRUPT to stop"
 *>
-alias MiddlewareFunc = fn RequestFlow(Allocator allocator, HttpRequest* request, HttpResponse* response);
+alias MiddlewareFunc = fn RequestFlow(Allocator allocator, Context* ctx, HttpRequest* request, HttpResponse* response);

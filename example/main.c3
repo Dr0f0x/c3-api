@@ -8,7 +8,7 @@ import c3api;
 import c3api::config;
 import c3api::routing;
 
-fn void no_controller(Allocator allocator, HttpRequest* req, HttpResponse* res)
+fn void no_controller(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	@pool()
 	{
@@ -19,7 +19,7 @@ fn void no_controller(Allocator allocator, HttpRequest* req, HttpResponse* res)
 		res.body = string::format(allocator, greetings.tcopy_str(), req.method, req.uri);
 	};
 
-	//io::printfn("%s", res);
+	// io::printfn("%s", res);
 }
 
 struct JSONResponse
@@ -28,25 +28,25 @@ struct JSONResponse
 	String value;
 }
 
-fn RequestFlow router_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
+fn RequestFlow router_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
-	//io::printfn("[MIDDLEWARE] router %s %s", req.method, req.uri);
+	io::printfn("[MIDDLEWARE] router %s %s", req.method, req.uri);
 	return RequestFlow.CONTINUE;
 }
 
-fn RequestFlow group_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
+fn RequestFlow group_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
-	//io::printfn("[MIDDLEWARE] group %s %s", req.method, req.uri);
+	io::printfn("[MIDDLEWARE] group %s %s", req.method, req.uri);
 	return RequestFlow.CONTINUE;
 }
 
-fn RequestFlow endpoint_log_middleware(Allocator allocator, HttpRequest* req, HttpResponse* res)
+fn RequestFlow endpoint_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
-	//io::printfn("[MIDDLEWARE] endpoint %s %s", req.method, req.uri);
+	io::printfn("[MIDDLEWARE] endpoint %s %s", req.method, req.uri);
 	return RequestFlow.CONTINUE;
 }
 
-fn void static_no_controller(Allocator allocator, HttpRequest* req, HttpResponse* res)
+fn void static_no_controller(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("%s", req);
 
@@ -61,8 +61,7 @@ fn int main(String[] args)
 	config::Config config;
 	config.from_file(mem);
 	defer config.free(mem);
-	/*
-	log::C3ApiLogger logger;
+	/* log::C3ApiLogger logger;
 	logger.init(mem);
 
 	log::ConsoleSink console_sink;
@@ -76,8 +75,7 @@ fn int main(String[] args)
 		return 1;
 	}
 	defer file_sink.free();
-	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE));
-	*/
+	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE)); */
 
 	c3api::Server server;
 	server.init(tmem, &config);
@@ -89,7 +87,7 @@ fn int main(String[] args)
 	{
 		Group* example = router.group(tmem, "/v1/example");
 		example.use_middleware(&group_log_middleware);
-		example.add_middleware("/{name}", &endpoint_log_middleware); 
+		example.add_middleware("/{name}", &endpoint_log_middleware);
 
 		example.add_route(RouteMethod.GET, "/{name}", &no_controller, &endpoint_log_middleware);
 		example.add_route(RouteMethod.GET, "/static/test", &static_no_controller, &endpoint_log_middleware);
