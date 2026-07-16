@@ -8,6 +8,7 @@ module c3api::server @private;
 import std::io;
 import std::thread;
 import std::net::tcp;
+import std::collections::list;
 
 import c3api::routing;
 
@@ -57,6 +58,11 @@ fn int process(void* context_arg)
 				if (err == http::INVALID_VERB)
 				{
 					res.status = HttpStatus.METHOD_NOT_ALLOWED;
+				}
+				if (err == http::TLS_ON_HTTP_PORT)
+				{
+					logger.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
+					return 1;
 				}
 				else
 				{
@@ -108,9 +114,12 @@ fn void? handle(
 		else
 		{
 			HandleFunc handler;
+			List{MiddlewareFunc} middleware_collector;
+			middleware_collector.tinit();
+
 			if (try method = routing::from_http_verb(req.method))
 			{
-				handler = router.get_route(method, req.uri, req) ?? &routing::e404;
+				handler = router.get_route(method, req.uri, req, &middleware_collector) ?? &routing::e404;
 				handler(tmem, req, res);
 			}
 		}
@@ -119,11 +128,20 @@ fn void? handle(
 	else
 	{
 		HandleFunc handler;
+		List{MiddlewareFunc} middleware_collector;
+		middleware_collector.tinit();
+
 		io::printfn("%s", req);
 		if (req.method == HttpVerb.OPTIONS)
 		{
 			io::printn("in options");
-			HandlerCollection*? handlers = router.get_handlers(req.uri, req);
+			HandlerCollection*? handlers = router.get_handlers(req.uri, req, &middleware_collector);
+			if (!run_middlewares(tmem, req, res, middleware_collector))
+			{
+				// Middleware interrupted the request, do not continue processing
+				return;
+			}
+
 			if (catch err = handlers)
 			{
 				routing::e404(tmem, req, res);
@@ -144,8 +162,12 @@ fn void? handle(
 		}
 		else if (try method = routing::from_http_verb(req.method))
 		{
-			handler = router.get_route(method, req.uri, req) ?? &routing::e404;
-			handler(tmem, req, res);
+			handler = router.get_route(method, req.uri, req, &middleware_collector) ?? &routing::e404;
+			if (run_middlewares(tmem, req, res, middleware_collector))
+			{
+				// Call the handler if middlewares did not interrupt the request
+				handler(tmem, req, res);
+			}
 		}
 	}
 
@@ -153,6 +175,24 @@ fn void? handle(
 	{
 		res.body = "";
 	}
+}
+
+fn bool run_middlewares(
+	Allocator allocator,
+	HttpRequest* req,
+	HttpResponse* res,
+	List{MiddlewareFunc} middleware_collector
+) @private
+{
+	foreach (middleware : middleware_collector)
+	{
+		RequestFlow flow = middleware(allocator, req, res);
+		if (flow == RequestFlow.INTERRUPT)
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 import std::collections::object;
@@ -236,7 +276,7 @@ fn void? startServer(config::Config config, Router router, log::Logger logger = 
 		server_logger.infof(
 			"listening on <%s:%d>",
 			"server started listening",
-			log::_string("adress", &config.address),
+			log::_string("address", &config.address),
 			log::_uint("port", &config.port),
 		);
 

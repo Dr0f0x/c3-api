@@ -28,9 +28,21 @@ fn Router* Router.init(&self, Allocator allocator, Logger* logger)
 	return self;
 }
 
-fn HandlerCollection*? Router.get_handlers(&self, String uri, HttpRequest* request)
+fn HandlerCollection*? Router.get_handlers(
+	&self,
+	String uri,
+	HttpRequest* request,
+	List{MiddlewareFunc}* middleware_collector
+)
 {
-	return routing::get_handlers(uri, &self.root_handlers, &self.root_nodes, request, self.logger);
+	return routing::get_handlers(
+		uri,
+		&self.root_handlers,
+		&self.root_nodes,
+		request,
+		middleware_collector,
+		self.logger
+	);
 }
 
 <*
@@ -41,9 +53,16 @@ fn HandlerCollection*? Router.get_handlers(&self, String uri, HttpRequest* reque
 
  @return "The matching handler if found; otherwise ROUTE_NOT_FOUND~"
 *>
-fn HandleFunc? Router.get_route(&self, RouteMethod method, String uri, HttpRequest* request)
+fn HandleFunc? Router.get_route(
+	&self,
+	RouteMethod method,
+	String uri,
+	HttpRequest* request,
+	List{MiddlewareFunc}* middleware_collector
+)
 {
-	HandlerCollection*? handlers = self.get_handlers(uri, request);
+	middleware_collector.push_all(self.root_middlewares.array_view());
+	HandlerCollection* handlers = self.get_handlers(uri, request, middleware_collector)!;
 
 	HandleFunc? handler = handlers.get_handler(method);
 	if (try handler)
@@ -70,9 +89,35 @@ fn HandleFunc? Router.get_route(&self, RouteMethod method, String uri, HttpReque
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
-fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler)
+fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler, MiddlewareFunc ...middlewares)
 {
-	return routing::add_handler(uri, method, handler, &self.root_handlers, &self.root_nodes, self.logger);
+	return routing::add_handler(
+		uri,
+		method,
+		handler,
+		middlewares,
+		&self.root_handlers,
+		&self.root_middlewares,
+		&self.root_nodes,
+		self.logger
+	);
+}
+
+fn void Router.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
+{
+	if (try node = routing::get_or_create_node(uri, &self.root_nodes, self.logger))
+	{
+		node.middlewares.push_all(middlewares);
+	}
+	else
+	{
+		self.root_middlewares.push_all(middlewares);
+	}
+}
+
+fn void Router.use_middleware(&self, MiddlewareFunc ...middlewares)
+{
+	self.root_middlewares.push_all(middlewares);
 }
 
 <*

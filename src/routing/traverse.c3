@@ -1,6 +1,7 @@
 module c3api::routing;
 
 import std::collections::map;
+import std::collections::list;
 import std::io;
 
 import c3api::http;
@@ -10,6 +11,7 @@ fn HandlerCollection*? get_handlers(
 	HandlerCollection* start_handlers,
 	HashMap{String, RouteNode}* start_nodes,
 	HttpRequest* request,
+	List{MiddlewareFunc}* middleware_collector,
 	Logger* log,
 ) @private
 {
@@ -17,14 +19,6 @@ fn HandlerCollection*? get_handlers(
 	{
 		return start_handlers;
 	}
-
-	DString reverse_path = dstring::new(mem, uri);
-
-	if (uri[0] != '/')
-	{
-		reverse_path.insert_at(0, "/");
-	}
-	io::printfn("[ROUTER] Initial reverse path: '%s'", reverse_path.str_view());
 
 	String old_uri;
 	if (uri[0] == '/' && uri.len > 1)
@@ -37,22 +31,21 @@ fn HandlerCollection*? get_handlers(
 	String[] uri_segments = uri.tsplit("/");
 	io::printfn("[ROUTER] route segments: '%s'", uri_segments);
 
-	RouteNode*? cur_node = start_nodes.get_ref(uri_segments[0]);
+	String root_key = node_key(uri_segments[0]);
+	RouteNode*? cur_node = start_nodes.get_ref(root_key);
 	if (catch err = cur_node)
 	{
 		return ROUTE_NOT_FOUND~;
 	}
 
-	reverse_path.clear();
-	reverse_path.appendf("/%s", cur_node.name);
-
 	int i = 1;
 	while (cur_node != null && i < uri_segments.len)
 	{
+		if (cur_node.has_middleware()) middleware_collector.push_all(cur_node.middlewares.array_view());
+
 		if (uri_segments[i] == "") break;
 		io::printfn("[ROUTER] Looking for child '%s' under '%s'", uri_segments[i], cur_node.name);
 
-		io::printfn("cur: %s", cur_node);
 		cur_node = cur_node.get_next_node(uri_segments[i]) ?? null;
 
 		if (cur_node == null)
@@ -70,19 +63,16 @@ fn HandlerCollection*? get_handlers(
 			request.args.set_argument_value(key, uri_segments[i]);
 		}
 
-		reverse_path.appendf("/%s", cur_node.name);
-		io::printfn("[ROUTER] Reverse path now: '%s'", reverse_path.str_view());
 		i++;
 	}
 
 	if (cur_node == null)
 	{
 		io::printn("[ROUTER] No matching route found");
-		// args.set("reverse_path", "/e404");
 		return ROUTE_NOT_FOUND~;
 	}
-
-	io::printfn("[ROUTER] Final route: '%s'", reverse_path.str_view());
+	
+	middleware_collector.push_all(cur_node.middlewares.array_view());
 	return &cur_node.handlers;
 }
 
@@ -108,22 +98,22 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
 		String[] uri_segments = uri.tsplit("/");
 
 		RouteNode* cur_node;
+		String root_key = node_key(uri_segments[0]);
 
 		io::printfn("[ROUTER ADD] route segments %s", uri_segments);
 
 		// check if root node needs to be added
-		if (!start_nodes.has_key(uri_segments[0]))
+		if (!start_nodes.has_key(root_key))
 		{
 			io::printfn("[ROUTER ADD] Creating root node '%s'", uri_segments[0]);
-			String key = uri_segments[0].is_braced() ? "{}" : uri_segments[0];
 
-			start_nodes.set(key, new_route_node(uri_segments[0]));
-			cur_node = start_nodes.get_ref(key)!!;
+			start_nodes.set(root_key, new_route_node(uri_segments[0]));
+			cur_node = start_nodes.get_ref(root_key)!!;
 		}
 		else
 		{
 			io::printfn("[ROUTER ADD] Using existing root node '%s'", uri_segments[0]);
-			cur_node = start_nodes.get_ref(uri_segments[0])!!;
+			cur_node = start_nodes.get_ref(root_key)!!;
 		}
 
 		// traverse node tree down
@@ -136,7 +126,7 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
 				cur_node = new_cur_node;
 				continue;
 			}
-			String key = uri_segments[i + 1].is_braced() ? "{}" : uri_segments[i + 1];
+			String key = node_key(uri_segments[i + 1]);
 
 			io::printfn("[ROUTER ADD] Creating child key '%s'", key);
 			cur_node.sub_nodes[key] = new_route_node(uri_segments[i + 1]);
@@ -151,22 +141,33 @@ fn bool add_handler(
 	String uri,
 	RouteMethod method,
 	HandleFunc handler,
+	MiddlewareFunc[] middlewares,
 	HandlerCollection* start_handlers,
+	List{MiddlewareFunc}* start_middlewares,
 	HashMap{String, RouteNode}* start_nodes,
 	Logger* log
 ) @private
 {
 	RouteNode*? node = get_or_create_node(uri, start_nodes, log);
 	if(catch err = node){
+		start_middlewares.push_all(middlewares);
 		return start_handlers.set_handler(method, handler);
 	}
 	io::printfn("[ROUTER ADD] Assigning handler to '%s'", node.name);
+	io::printfn("Adding middlewares to node '%s' %s %s", node.name, middlewares.len, node.middlewares.len());
+	node.middlewares.push_all(middlewares);
+	io::printfn("Added middlewares to node '%s' %s %s", node.name, middlewares.len, node.middlewares.len());
 	return node.handlers.set_handler(method, handler);
 }
 
 fn bool String.is_braced(self)
 {
 	return self[0] == '{' && self[^1] == '}';
+}
+
+fn String node_key(String segment)
+{
+	return segment.is_braced() ? "{}" : segment;
 }
 
 macro RouteNode new_route_node(String name)

@@ -2,6 +2,10 @@ module c3api::routing;
 
 import c3api::http;
 
-alias NextFunc = fn void();
+enum RequestFlow
+{
+	CONTINUE,
+	INTERRUPT,
+}
 
-alias MiddlewareFunc = fn void(HttpRequest*, HttpResponse*, NextFunc);
+alias MiddlewareFunc = fn RequestFlow(Allocator allocator, HttpRequest*, HttpResponse*);

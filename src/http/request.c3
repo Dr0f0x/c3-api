@@ -25,7 +25,7 @@ struct HttpRequest
 }
 
 faultdef
-	NO_DATA, REQUEST_TOO_LARGE, MALFORMED_REQUEST, UNSUPPORTED_VERSION, UNIMPLEMENTED;
+	NO_DATA, REQUEST_TOO_LARGE, MALFORMED_REQUEST, UNSUPPORTED_VERSION, UNIMPLEMENTED, TLS_ON_HTTP_PORT;
 
 <*
  Initialize an HTTP request container with an allocator.
@@ -67,6 +67,11 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 
 		if (self.bytes.size == 0) return http::NO_DATA~;
 
+		if (self.bytes.size >= 3 && self.bytes[0] == 0x16 && self.bytes[1] == 0x03)
+		{
+			return http::TLS_ON_HTTP_PORT~;
+		}
+
 		bool found_header_terminator = false;
 		sz header_end                = 0;
 
@@ -106,7 +111,7 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 			String query = self.uri[query_start + 1..];
 			self.query.set_from_last_uri_segment(query)!;
 
-			self.uri = self.uri[0..query_start-1];
+			self.uri = self.uri[0..query_start - 1];
 		}
 
 		self.headers.set_from_lines(header_lines)!;
