@@ -27,12 +27,12 @@ fn LogLevel? from_string(String str)
 {
 	switch (str)
 	{
-		case "Trace": return LogLevel.TRACE;
-		case "Debug": return LogLevel.DEBUG;
-		case "Info": return LogLevel.INFO;
-		case "Warn": return LogLevel.WARN;
-		case "Error": return LogLevel.ERROR;
-		case "Fatal": return LogLevel.FATAL;
+		case "TRACE": return LogLevel.TRACE;
+		case "DEBUG": return LogLevel.DEBUG;
+		case "INFO": return LogLevel.INFO;
+		case "WARN": return LogLevel.WARN;
+		case "ERROR": return LogLevel.ERROR;
+		case "FATAL": return LogLevel.FATAL;
 		default:
 			return INVALID_LOG_LEVEL~;
 	}

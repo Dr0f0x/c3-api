@@ -23,6 +23,7 @@ struct Config
 
 	CorsConfig cors;
 	LoggingConfig logging;
+	ConcurrencyConfig concurrency;
 }
 
 const Config DEFAULT_CONFIG = {
@@ -30,7 +31,8 @@ const Config DEFAULT_CONFIG = {
 	.port = 8080,
 	.tcp_backlog = 10000,
 	.cors = DEFAULT_CORS_CONFIG,
-	.logging = DEFAULT_LOGGING_CONFIG
+	.logging = DEFAULT_LOGGING_CONFIG,
+	.concurrency = DEFAULT_CONCURRENCY_CONFIG,
 };
 
 <*
@@ -54,6 +56,10 @@ fn void Config.from_other(&self, Config* other, Allocator allocator)
 	LoggingConfig logging;
 	logging.from_other(&other.logging, allocator);
 	self.logging = logging;
+
+	ConcurrencyConfig concurrency;
+	concurrency.from_other(&other.concurrency, allocator);
+	self.concurrency = concurrency;
 }
 
 <*
@@ -151,6 +157,10 @@ fn void? Config.parse_from_file(&self, Allocator allocator, Path path)
 		LoggingConfig logging;
 		logging.parse_from_object(allocator, json.get_or_create_obj("logging"));
 		self.logging = logging;
+
+		ConcurrencyConfig concurrency;
+		concurrency.parse_from_object(allocator, json.get_or_create_obj("concurrency"));
+		self.concurrency = concurrency;
 	};
 }
 
@@ -164,4 +174,5 @@ fn void Config.free(&self, Allocator allocator)
 	alloc::free(allocator, self.address);
 	self.cors.free(allocator);
 	self.logging.free(allocator);
+	self.concurrency.free(allocator);
 }

@@ -1,4 +1,4 @@
-module c3api @private;
+module c3api;
 
 import std::io;
 import std::net::tcp;
@@ -34,7 +34,7 @@ struct ProcessContext
  Additionally it manages a temporary allocator "tmem" with @pool that is alive during the full request handling.
  @param [&in] context_arg : "Process Context to use for handling the connection"
 *>
-fn int process(void* context_arg) @private
+fn void process(ProcessContext* context_arg) @private
 {
 	@pool_init(mem, 2 * 1024, 8 * 1024)
 	{
@@ -80,12 +80,12 @@ fn int process(void* context_arg) @private
 				if (err == http::TLS_ON_HTTP_PORT)
 				{
 					log.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
-					return 1;
+					return;
 				}
 				else
 				{
 					log.errorf("Request Read Error: %s", "Error reading request", log::_error(&err));
-					return 1;
+					return;
 				}
 			}
 			else
@@ -103,7 +103,6 @@ fn int process(void* context_arg) @private
 			}
 		};
 	};
-	return 0;
 }
 
 <*

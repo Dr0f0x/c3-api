@@ -9,6 +9,8 @@ import c3api::routing;
 
 const uint BACKLOG = 10000;
 
+alias DispatchFunc = fn void?(void* dispatcher, RequestProcessFunc process_fn, ProcessContext* context);
+
 struct Server
 {
 	config::Config* config;
@@ -18,6 +20,14 @@ struct Server
 	Router router;
 	TcpServerSocket server_socket;
 	bool should_close;
+
+	union dispatch_opts
+	{
+		concurrency::PoolDispatcher pool;
+		concurrency::PerRequestDispatcher per_request;
+	}
+	void* dispatcher;
+	DispatchFunc dispatch_fn;
 
 	log::Logger log;
 
@@ -58,6 +68,7 @@ fn RequestFlow cors(Allocator allocator, Context* ctx, HttpRequest* req, HttpRes
 *>
 fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger logger = null)
 {
+	self.allocator = allocator;
 	@pool()
 	{
 		if (!logger)
@@ -94,7 +105,6 @@ fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger l
 		self.ctx.init(allocator);
 		self.config = config;
 
-		io::printfn("cors %s", self.config.cors.enabled);
 		if (self.config.cors.enabled)
 		{
 			self.ctx.register(Config, self.config);
@@ -127,6 +137,42 @@ fn Context* Server.get_context(&self)
 *>
 fn void? Server.run(&self)
 {
+	self.log.debugf(
+		"Using concurrency mode %s",
+		"Set concurrency mode",
+		log::_enum("mode", &self.config.concurrency.mode)
+	);
+	switch (self.config.concurrency.mode)
+	{
+		case ConcurrencyMode.THREAD_POOL:
+			ConcurrencyConfig* conf = &self.config.concurrency;
+			self.dispatch_opts.pool.init(
+				self.allocator,
+				(int)conf.thread_pool.max_threads,
+				conf.thread_pool.queue_capacity,
+				conf.thread_pool.keep_alive_ms,
+				self.log
+			)!;
+
+			self.dispatch_fn = (DispatchFunc)&PoolDispatcher.dispatch;
+			self.dispatcher = &self.dispatch_opts.pool;
+		case ConcurrencyMode.THREAD_PER_REQUEST:
+			self.dispatch_opts.per_request.init(self.allocator, self.log,)!;
+			self.dispatch_fn = (DispatchFunc)&PerRequestDispatcher.dispatch;
+			self.dispatcher = &self.dispatch_opts.per_request;
+	}
+	defer
+	{
+		switch (self.config.concurrency.mode)
+		{
+			case ConcurrencyMode.THREAD_POOL:
+				ConcurrencyConfig* conf = &self.config.concurrency;
+				self.dispatch_opts.pool.destroy();
+			case ConcurrencyMode.THREAD_PER_REQUEST:
+				self.dispatch_opts.per_request.destroy();
+		}
+	}
+
 	TcpServerSocket? server_socket = tcp::listen(
 		self.config.address,
 		(int)self.config.port,
@@ -181,18 +227,10 @@ fn void? Server.run(&self)
 		}
 		context.socket = socket;
 
-		thread::Thread thread;
-
-		if (catch err = thread.create(&process, @clone(context)))
+		if (catch err = self.dispatch_fn(self.dispatcher, &process, @clone(context)))
 		{
 			self.log.errorf("Thread creation failed: %s", "thread creation failed", log::_error(&err));
 			close_socket(&socket, self.log);
-			continue;
-		}
-
-		if (catch err = thread.detach())
-		{
-			self.log.errorf("Couldnt detach thread %s", "Thread detaching failed", log::_error(&err));
 			continue;
 		}
 	}

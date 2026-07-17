@@ -56,8 +56,16 @@ fn void static_no_controller(Allocator allocator, Context* ctx, HttpRequest* req
 	io::printfn("%s", res);
 }
 
+struct Test{
+	union {
+		HttpRequest req;
+		HttpRequest res;
+	}
+}
+
 fn int main(String[] args)
 {
+
 	config::Config config;
 	config.from_file(mem);
 	defer config.free(mem);

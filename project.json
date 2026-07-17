@@ -43,7 +43,7 @@
       "type": "static-lib",
       "sources": [
         "src/**"
-      ]
+      ],
       // Additional libraries, sources
       // and overrides of global settings here.
     }

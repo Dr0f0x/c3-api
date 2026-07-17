@@ -78,13 +78,6 @@ fn void LoggingConfig.parse_from_object(&self, Allocator allocator, Object* logg
 }
 
 
-macro Object.get_enum_string(&self, $EnumType, String key)
-{
-	String value = self.get_string(key)!;
-	return $EnumType.from_string(value);
-}
-
-
 <*
  Free resources owned by this logging config.
 

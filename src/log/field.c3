@@ -22,6 +22,12 @@ macro Field _field(String name, $Type, value)
 	return { name, any_make(value, $Type) };
 }
 
+macro Field _enum(String name, value)
+{
+	$assert $Typeof(*value)::kind == ENUM;
+    return _field(name, $Typeof(*value), value);
+}
+
 fn Field _string(String name, String* val) @inline
 {
 	return _field(name, String, val);
