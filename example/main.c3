@@ -3,13 +3,16 @@ module app;
 import std::collections::map;
 import std::io::path;
 import std::encoding::json;
+import std::time::datetime;
 
 import c3api;
+import c3api::http::cookies;
 import c3api::config;
 import c3api::routing;
 
 fn void no_controller(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
+	io::printfn("cookie %s", req.get_cookie("test") ?? "-");
 	@pool()
 	{
 		res.status = HttpStatus.OK;
@@ -38,6 +41,20 @@ fn void static_no_controller(void* self = null, Allocator allocator, Context* ct
 
 	res.status = HttpStatus.OK;
 	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" }, indent: Indent.SPACE_2);
+
+	DateTime expiration = datetime::now().add_hours(1);
+	res.set_cookie(
+		allocator,
+		"test",
+		"value",
+		{
+			.options = CookieOption.EXPIRES | CookieOption.SECURE | CookieOption.MAX_AGE | CookieOption.PATH,
+			.expires = expiration,
+			.max_age = cookies::HOUR,
+			.path = "/",
+			.secure = true,
+		}
+	);
 
 	io::printfn("%s", res);
 }

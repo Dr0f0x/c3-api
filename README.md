@@ -8,8 +8,7 @@ Here are some planned features and improvements for the `c3-api` project:
 - [ ] **Http 1.1. keep-alive**
 - [ ] **Performance Optimizations**
 - [ ] **Benchmarks**
-- [ ] **Cookies**
-- [ ] **Configuration Management**: Develop a configuration management system to easily manage server settings and environment variables.
+- [ ] **Pluggable Template rendering backend**
 - [ ] **Testing**: Robust test suite in c3 for unit tests and with python for integration tests.
 - [ ] **Documentation**: Improve documentation with detailed examples and usage guides.
 - [ ] **Pipeline**: Pipeline to build and test the library, including performance and memory leak tests
