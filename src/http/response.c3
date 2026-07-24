@@ -24,6 +24,13 @@ fn HttpResponse* HttpResponse.init(&self, Allocator allocator)
 	return self;
 }
 
+fn void HttpResponse.reset(HttpResponse* self)
+{
+	self.status = HttpStatus.UNKNOWN;
+	self.headers.header_map.clear();
+	self.body = { };
+}
+
 <*
  Serialize and write this response to a socket.
 

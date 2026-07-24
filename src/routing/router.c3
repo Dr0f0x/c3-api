@@ -62,14 +62,7 @@ fn HandlerCollection*? Router.get_handlers(
 )
 {
 	middleware_collector.push_all(self.root_middlewares.array_view());
-	return routing::get_handlers(
-		uri,
-		&self.root_handlers,
-		&self.root_nodes,
-		request,
-		middleware_collector,
-		self.log
-	);
+	return routing::get_handlers(uri, &self.root_handlers, &self.root_nodes, request, middleware_collector, self.log);
 }
 
 <*
@@ -82,7 +75,7 @@ fn HandlerCollection*? Router.get_handlers(
 
  @return "The matching handler if found; otherwise ROUTE_NOT_FOUND~"
 *>
-fn HandleFunc? Router.get_route(
+fn RegisteredHandler*? Router.get_route(
 	&self,
 	RouteMethod method,
 	String uri,
@@ -93,7 +86,7 @@ fn HandleFunc? Router.get_route(
 	middleware_collector.push_all(self.root_middlewares.array_view());
 	HandlerCollection* handlers = self.get_handlers(uri, request, middleware_collector)!;
 
-	HandleFunc? handler = handlers.get_handler(method);
+	RegisteredHandler*? handler = handlers.get_handler(method);
 	if (try handler)
 	{
 		return handler;
@@ -115,17 +108,17 @@ fn HandleFunc? Router.get_route(
  @param method : "HTTP method"
  @param [in] uri : "Route URI"
  @param handler : "Handler function"
- @param [in] middlewares : "Middleware callbacks for this route"
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
-fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler, MiddlewareFunc ...middlewares)
+fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler, void* controller = null)
 {
 	return routing::add_handler(
 		uri,
 		method,
 		handler,
-		middlewares,
+		controller,
+		{ },
 		&self.root_handlers,
 		&self.root_middlewares,
 		&self.root_nodes,

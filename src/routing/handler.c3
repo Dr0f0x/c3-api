@@ -8,11 +8,18 @@ import c3api::http;
 <*
  Route handler callback signature.
 
+ @param [&inout] self : "Controller instance if the handler was registered with one"
  @param [&inout] allocator : "Allocator available for response construction"
  @param [&inout] request : "Parsed request"
  @param [&inout] response : "Response to populate"
 *>
-alias HandleFunc = fn void(Allocator allocator, Context* ctx, HttpRequest* request, HttpResponse* response);
+alias HandleFunc = fn void(
+	void* self = null,
+	Allocator allocator,
+	Context* ctx,
+	HttpRequest* request,
+	HttpResponse* response
+);
 
 <*
  Built-in 404 JSON handler.
@@ -21,7 +28,7 @@ alias HandleFunc = fn void(Allocator allocator, Context* ctx, HttpRequest* reque
  @param [&inout] req : "Incoming request"
  @param [&inout] res : "Outgoing response"
 *>
-fn void e404(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void e404(void* self=null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	res.status = HttpStatus.NOT_FOUND;
 	res.body = string::format(mem, `{"type":"error","status":404}`);
@@ -30,11 +37,25 @@ fn void e404(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* 
 }
 
 <*
+ Registered route handler entry.
+
+ Stores the callback that should be invoked for a matched route along with
+ an optional controller instance. If the handler was registered as a member
+ function, `self` points to the owning controller object. For free functions,
+ `self` is `null`.
+*>
+struct RegisteredHandler
+{
+	void* self; /* Controller instance if handler was registered with one */
+	HandleFunc handler; /* actual handler func */
+}
+
+<*
  Method-indexed collection of route handlers.
 *>
 struct HandlerCollection (Printable)
 {
-	EnumMap{RouteMethod, HandleFunc} handler_map;
+	EnumMap{RouteMethod, RegisteredHandler} handler_map;
 }
 
 <*
@@ -44,7 +65,7 @@ struct HandlerCollection (Printable)
 *>
 fn HandlerCollection* HandlerCollection.init(&self)
 {
-	self.handler_map.init(null);
+	self.handler_map.init({ .self = null, .handler = null });
 	return self;
 }
 
@@ -55,33 +76,53 @@ fn HandlerCollection* HandlerCollection.init(&self)
  @param handler : "Handler callback"
  @return "True if an existing handler was replaced"
 *>
-fn bool HandlerCollection.set_handler(&self, RouteMethod method, HandleFunc handler)
+fn bool HandlerCollection.set_handler(&self, RouteMethod method, HandleFunc handler, void* controller = null)
 {
 	bool already_present = self.has_handler(method);
-	self.handler_map.set(method, handler);
+	self.handler_map.set(method, { .self = controller, .handler = handler });
 	return already_present;
 }
 
 <*
  Convenience wrapper for setting a GET handler.
 *>
-fn bool HandlerCollection.set_get(&self, HandleFunc handler) => self.set_handler(RouteMethod.GET, handler);
+fn bool HandlerCollection.set_get(
+	&self,
+	HandleFunc handler,
+	void* controller = null
+) => self.set_handler(RouteMethod.GET, handler, controller);
 <*
  Convenience wrapper for setting a PATCH handler.
 *>
-fn bool HandlerCollection.set_patch(&self, HandleFunc handler) => self.set_handler(RouteMethod.PATCH, handler);
+fn bool HandlerCollection.set_patch(
+	&self,
+	HandleFunc handler,
+	void* controller = null
+) => self.set_handler(RouteMethod.PATCH, handler, controller);
 <*
  Convenience wrapper for setting a PUT handler.
 *>
-fn bool HandlerCollection.set_put(&self, HandleFunc handler) => self.set_handler(RouteMethod.PUT, handler);
+fn bool HandlerCollection.set_put(
+	&self,
+	HandleFunc handler,
+	void* controller = null
+) => self.set_handler(RouteMethod.PUT, handler, controller);
 <*
  Convenience wrapper for setting a POST handler.
 *>
-fn bool HandlerCollection.set_post(&self, HandleFunc handler) => self.set_handler(RouteMethod.POST, handler);
+fn bool HandlerCollection.set_post(
+	&self,
+	HandleFunc handler,
+	void* controller = null
+) => self.set_handler(RouteMethod.POST, handler, controller);
 <*
  Convenience wrapper for setting a DELETE handler.
 *>
-fn bool HandlerCollection.set_delete(&self, HandleFunc handler) => self.set_handler(RouteMethod.DELETE, handler);
+fn bool HandlerCollection.set_delete(
+	&self,
+	HandleFunc handler,
+	void* controller = null
+) => self.set_handler(RouteMethod.DELETE, handler, controller);
 
 <*
  Retrieve the handler for a specific route method.
@@ -89,9 +130,9 @@ fn bool HandlerCollection.set_delete(&self, HandleFunc handler) => self.set_hand
  @param method : "Method to resolve"
  @return "Matching handler or NOT_FOUND~"
 *>
-fn HandleFunc? HandlerCollection.get_handler(&self, RouteMethod method)
+fn RegisteredHandler*? HandlerCollection.get_handler(&self, RouteMethod method)
 {
-	HandleFunc val = self.handler_map.get(method);
+	RegisteredHandler* val = self.handler_map.get_ref(method);
 	if (val == null)
 	{
 		return NOT_FOUND~;
@@ -102,23 +143,23 @@ fn HandleFunc? HandlerCollection.get_handler(&self, RouteMethod method)
 <*
  Convenience wrapper for retrieving a GET handler.
 *>
-fn HandleFunc? HandlerCollection.get_get(&self) => self.get_handler(RouteMethod.GET);
+fn RegisteredHandler*? HandlerCollection.get_get(&self) => self.get_handler(RouteMethod.GET);
 <*
  Convenience wrapper for retrieving a PATCH handler.
 *>
-fn HandleFunc? HandlerCollection.get_patch(&self) => self.get_handler(RouteMethod.PATCH);
+fn RegisteredHandler*? HandlerCollection.get_patch(&self) => self.get_handler(RouteMethod.PATCH);
 <*
  Convenience wrapper for retrieving a PUT handler.
 *>
-fn HandleFunc? HandlerCollection.get_put(&self) => self.get_handler(RouteMethod.PUT);
+fn RegisteredHandler*? HandlerCollection.get_put(&self) => self.get_handler(RouteMethod.PUT);
 <*
  Convenience wrapper for retrieving a POST handler.
 *>
-fn HandleFunc? HandlerCollection.get_post(&self) => self.get_handler(RouteMethod.POST);
+fn RegisteredHandler*? HandlerCollection.get_post(&self) => self.get_handler(RouteMethod.POST);
 <*
  Convenience wrapper for retrieving a DELETE handler.
 *>
-fn HandleFunc? HandlerCollection.get_delete(&self) => self.get_handler(RouteMethod.DELETE);
+fn RegisteredHandler*? HandlerCollection.get_delete(&self) => self.get_handler(RouteMethod.DELETE);
 
 <*
  Check whether a handler exists for a specific method.
@@ -128,7 +169,7 @@ fn HandleFunc? HandlerCollection.get_delete(&self) => self.get_handler(RouteMeth
 *>
 fn bool HandlerCollection.has_handler(&self, RouteMethod method)
 {
-	return self.handler_map.get(method) != null;
+	return self.handler_map.get_ref(method) != null;
 }
 
 <*
@@ -170,7 +211,7 @@ fn sz? HandlerCollection.to_format(&self, Formatter* formatter) @dynamic
 	foreach (i, &value : self.handler_map.values)
 	{
 		if (i != 0) len += formatter.print(", ")!;
-		len += formatter.printf("%s: %s", RouteMethod::from_ordinal(i), *value != null)!;
+		len += formatter.printf("%s: %s", RouteMethod::from_ordinal(i), value.handler != null)!;
 	}
 	len += formatter.print(" }")!;
 	return len;

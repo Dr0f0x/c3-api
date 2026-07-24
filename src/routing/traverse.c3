@@ -185,7 +185,7 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
  @param [in] uri : "Route pattern"
  @param method : "HTTP method"
  @param handler : "Handler callback"
- @param [in] middlewares : "Middleware callbacks for this route"
+ @param controller : "Optional controller instance passed as the handler's `self` argument; `null` for free functions"
  @param [&inout] start_handlers : "Root handler collection"
  @param [&inout] start_middlewares : "Root middleware collection"
  @param [&inout] start_nodes : "Root node map"
@@ -196,6 +196,7 @@ fn bool add_handler(
 	String uri,
 	RouteMethod method,
 	HandleFunc handler,
+	void* controller,
 	MiddlewareFunc[] middlewares,
 	HandlerCollection* start_handlers,
 	List{MiddlewareFunc}* start_middlewares,
@@ -212,7 +213,7 @@ fn bool add_handler(
 	log.tracef("Assigning handler to '%s'", "Assigned handler to node", log::_string("node", &node.name));
 	log.tracef("Adding middlewares to '%s'", "Adding middlewares to node", log::_string("node", &node.name));
 	node.middlewares.push_all(middlewares);
-	return node.handlers.set_handler(method, handler);
+	return node.handlers.set_handler(method, handler, controller);
 }
 
 <*

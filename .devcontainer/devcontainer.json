@@ -1,0 +1,33 @@
+{
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "features": {
+        "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
+    },
+    "forwardPorts": [
+        8080,
+        5500
+    ],
+    "portsAttributes": {
+        "5500": {
+            "label": "Live Server",
+            "onAutoForward": "openBrowser"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "astral-sh.ty",
+                "charliermarsh.ruff",
+                "tamasfe.even-better-toml",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "ms-python.vscode-python-envs",
+                "c3.vscode-c3",
+                "ritwickdey.liveserver"
+            ]
+        }
+    },
+    "postCreateCommand": "uv sync"
+}

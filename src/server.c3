@@ -104,6 +104,8 @@ fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger l
 		self.router.init(allocator, self.log);
 		self.ctx.init(allocator);
 		self.config = config;
+		
+		self.ctx.register(log::Logger, &self.log);
 
 		if (self.config.cors.enabled)
 		{

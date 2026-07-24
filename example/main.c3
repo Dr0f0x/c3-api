@@ -8,11 +8,10 @@ import c3api;
 import c3api::config;
 import c3api::routing;
 
-fn void no_controller(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void no_controller(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	@pool()
 	{
-		// Using pool because of dstring::temp_new();
 		res.status = HttpStatus.OK;
 		DString greetings = dstring::temp();
 		greetings.appendfn("Look, %s, no controllers!", req.args["name"]!!);
@@ -28,25 +27,12 @@ struct JSONResponse
 	String value;
 }
 
-fn RequestFlow router_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+struct Controller
 {
-	io::printfn("[MIDDLEWARE] router %s %s", req.method, req.uri);
-	return RequestFlow.CONTINUE;
+	int test;
 }
 
-fn RequestFlow group_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
-{
-	io::printfn("[MIDDLEWARE] group %s %s", req.method, req.uri);
-	return RequestFlow.CONTINUE;
-}
-
-fn RequestFlow endpoint_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
-{
-	io::printfn("[MIDDLEWARE] endpoint %s %s", req.method, req.uri);
-	return RequestFlow.CONTINUE;
-}
-
-fn void static_no_controller(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void static_no_controller(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("%s", req);
 
@@ -56,8 +42,56 @@ fn void static_no_controller(Allocator allocator, Context* ctx, HttpRequest* req
 	io::printfn("%s", res);
 }
 
-struct Test{
-	union {
+fn void Controller.static_controller(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+{
+	io::printfn("in controller %s", &self.test);
+
+	res.status = HttpStatus.OK;
+	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" }, indent: Indent.SPACE_2);
+
+	io::printfn("%s", res);
+}
+
+fn RequestFlow router_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+{
+	log::Logger* log = ctx.resolve(log::Logger)!!;
+	log.debugf(
+		"[MIDDLEWARE] router %s %s",
+		"middleware router",
+		log::_enum("method", &req.method),
+		log::_string("uri", &req.uri)
+	);
+	return RequestFlow.CONTINUE;
+}
+
+fn RequestFlow group_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+{
+	log::Logger* log = ctx.resolve(log::Logger)!!;
+	log.debugf(
+		"[MIDDLEWARE] group %s %s",
+		"middleware group",
+		log::_enum("method", &req.method),
+		log::_string("uri", &req.uri)
+	);
+	return RequestFlow.CONTINUE;
+}
+
+fn RequestFlow endpoint_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+{
+	log::Logger* log = ctx.resolve(log::Logger)!!;
+	log.debugf(
+		"[MIDDLEWARE] endpoint %s %s",
+		"middleware endpoint",
+		log::_enum("method", &req.method),
+		log::_string("uri", &req.uri)
+	);
+	return RequestFlow.CONTINUE;
+}
+
+struct Test
+{
+	union
+	{
 		HttpRequest req;
 		HttpRequest res;
 	}
@@ -65,7 +99,6 @@ struct Test{
 
 fn int main(String[] args)
 {
-
 	config::Config config;
 	config.from_file(mem);
 	defer config.free(mem);
@@ -91,6 +124,8 @@ fn int main(String[] args)
 	routing::Router* router = server.get_router();
 	router.use_middleware(&router_log_middleware);
 
+	Controller controller = { .test = 2 };
+
 	@pool()
 	{
 		Group* example = router.group(tmem, "/v1/example");
@@ -99,6 +134,14 @@ fn int main(String[] args)
 
 		example.add_route(RouteMethod.GET, "/{name}", &no_controller, &endpoint_log_middleware);
 		example.add_route(RouteMethod.GET, "/static/test", &static_no_controller, &endpoint_log_middleware);
+		
+		// TODO find nicer way than casting to (HandleFunc)
+		example.add_route(
+			RouteMethod.GET,
+			"/staticc/test",
+			(HandleFunc)&Controller.static_controller,
+			&endpoint_log_middleware
+		);
 
 		io::printfn("%s", *example);
 	};

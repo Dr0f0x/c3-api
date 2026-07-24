@@ -71,35 +71,58 @@ fn void process(ProcessContext* context_arg) @private
 			res.init(tmem);
 			defer res.free();
 
-			if (catch err = req.read(socket))
+			sz done_requests = 0;
+			sz max_request   = 1000;
+
+			while (done_requests < max_request)
 			{
-				if (err == http::INVALID_VERB)
+				if (catch err = req.read(socket))
 				{
-					res.status = HttpStatus.METHOD_NOT_ALLOWED;
-				}
-				if (err == http::TLS_ON_HTTP_PORT)
-				{
-					log.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
-					return;
+					if (err == http::INVALID_VERB)
+					{
+						res.status = HttpStatus.METHOD_NOT_ALLOWED;
+						done_requests++;
+						req.reset();
+						res.reset();
+						continue;
+					}
+					if (err == http::TLS_ON_HTTP_PORT)
+					{
+						log.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
+						done_requests++;
+						req.reset();
+						res.reset();
+						continue;
+					}
+					else
+					{
+						done_requests++;
+						req.reset();
+						res.reset();
+						continue;
+					}
 				}
 				else
 				{
-					log.errorf("Request Read Error: %s", "Error reading request", log::_error(&err));
-					return;
+					if (catch error = handle(tmem, ctx, &req, &res, socket, router, log))
+					{
+						res.body = "";
+						res.status = HttpStatus.INTERNAL_SERVER_ERROR;
+					}
 				}
-			}
-			else
-			{
-				if (catch error = handle(tmem, ctx, &req, &res, socket, router, log))
-				{
-					res.body = "";
-					res.status = HttpStatus.INTERNAL_SERVER_ERROR;
-				}
-			}
 
-			if (catch err = res.write(socket))
-			{
-				log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
+				if (done_requests == max_request)
+				{
+					res.headers.set_header_values("Connection", "close");
+				}
+
+				if (catch err = res.write(socket))
+				{
+					log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
+				}
+				done_requests++;
+				req.reset();
+				res.reset();
 			}
 		};
 	};
@@ -129,7 +152,7 @@ fn void? handle(
 	log::Logger logger,
 ) @private
 {
-	HandleFunc handler;
+	RegisteredHandler* registered_handler;
 	List{MiddlewareFunc} middleware_collector;
 	middleware_collector.tinit();
 
@@ -145,7 +168,7 @@ fn void? handle(
 
 		if (catch err = handlers)
 		{
-			routing::e404(allocator, ctx, req, res);
+			routing::e404(null, allocator, ctx, req, res);
 		}
 		else
 		{
@@ -154,7 +177,7 @@ fn void? handle(
 			res.status = HttpStatus.NO_CONTENT;
 			foreach (i, &value : handlers.handler_map.values)
 			{
-				if (*value != null)
+				if (value.handler != null)
 				{
 					res.headers.add_header_value(
 						"Allow",
@@ -166,16 +189,17 @@ fn void? handle(
 	}
 	else if (try method = routing::from_http_verb(req.method))
 	{
-		handler = router.get_route(method, req.uri, req, &middleware_collector) ?? &routing::e404;
-		if (run_middlewares(allocator, ctx, req, res, &middleware_collector))
+		registered_handler = router.get_route(method, req.uri, req, &middleware_collector) ?? null;
+		if (registered_handler == null)
+		{
+			routing::e404(null, allocator, ctx, req, res);
+		}
+		else if (run_middlewares(allocator, ctx, req, res, &middleware_collector))
 		{
 			// Call the handler if middlewares did not interrupt the request
-			handler(allocator, ctx, req, res);
+			registered_handler.handler(registered_handler.self, allocator, ctx, req, res);
 		}
 	}
-
-	// server doesnt support keep-alive yet
-	res.headers.set_header_values("Connection", "close");
 
 	if (req.method == HttpVerb.HEAD)
 	{

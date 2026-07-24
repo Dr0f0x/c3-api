@@ -41,13 +41,20 @@ fn Group* Group.init(&self, RouteNode* node, log::Logger log)
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
-fn bool Group.add_route(&self, RouteMethod method, String uri, HandleFunc handler, MiddlewareFunc ...middlewares)
+fn bool Group.add_route(
+	&self,
+	RouteMethod method,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+)
 {
 	return routing::add_handler(
 		uri,
 		method,
 		handler,
-		middlewares,
+		controller,
+		{},
 		&self.node.handlers,
 		&self.node.middlewares,
 		&self.node.sub_nodes,

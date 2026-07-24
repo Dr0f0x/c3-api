@@ -46,6 +46,20 @@ fn HttpRequest* HttpRequest.init(&self, Allocator allocator)
 	return self;
 }
 
+fn void HttpRequest.reset(HttpRequest* self)
+{
+    self.method = HttpVerb.UNKNOWN;
+    self.uri = "";
+
+    self.headers.header_map.clear();
+    self.query.param_map.clear();
+    self.args.argument_map.clear();
+
+    self.body = {};
+
+    self.bytes.clear();
+}
+
 <*
  Read and parse an HTTP/1.1 request from a socket.
 

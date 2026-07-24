@@ -7,7 +7,6 @@
   ],
   // Directories where C3 library files may be found.
   "dependency-search-paths": [
-    "lib",
     "build"
   ],
   // Libraries to use for all targets.
