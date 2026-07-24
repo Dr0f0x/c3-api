@@ -153,7 +153,7 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
 		}
 
 		// traverse node tree down
-		foreach (i, segment : uri_segments[..^2])
+		foreach (i, segment : uri_segments[1..^1])
 		{
 			if (try new_cur_node = cur_node.get_next_node(segment))
 			{
@@ -165,10 +165,11 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
 				cur_node = new_cur_node;
 				continue;
 			}
-			String key = node_key(uri_segments[i + 1]);
+			String key = node_key(segment);
 
 			log.tracef("Creating new route node '%s'", "Created new route node", log::_string("name", &key));
-			cur_node.sub_nodes[key] = new_route_node(uri_segments[i + 1]);
+			
+			cur_node.sub_nodes[key] = new_route_node(segment);
 			cur_node = cur_node.sub_nodes.get_ref(key)!!;
 		}
 

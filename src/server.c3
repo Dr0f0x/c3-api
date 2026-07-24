@@ -41,19 +41,6 @@ struct Server
 	Allocator allocator;
 }
 
-fn RequestFlow cors(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res) @private
-{
-	if (req.method == HttpVerb.OPTIONS)
-	{
-		Config* conf = ctx.resolve(Config)!!;
-
-		res.headers.set_header_value("Access-Control-Allow-Origin", conf.cors.allow_origin);
-		res.headers.set_header_value("Access-Control-Allow-Methods", conf.cors.allow_methods);
-		res.headers.set_header_value("Access-Control-Allow-Headers", conf.cors.allow_headers);
-	}
-	return RequestFlow.CONTINUE;
-}
-
 <*
  Initialize the Server instance.
 
@@ -104,13 +91,17 @@ fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger l
 		self.router.init(allocator, self.log);
 		self.ctx.init(allocator);
 		self.config = config;
-		
+
 		self.ctx.register(log::Logger, &self.log);
 
 		if (self.config.cors.enabled)
 		{
 			self.ctx.register(Config, self.config);
 			self.router.use_middleware(&cors);
+		}
+		if (logger == null)
+		{
+			self.router.use_middleware(&logging);
 		}
 		return self;
 	};

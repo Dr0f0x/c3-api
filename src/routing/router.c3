@@ -202,3 +202,31 @@ fn sz? Router.to_format(&self, Formatter* formatter) @dynamic
 
 	return len += formatter.print(" }")!;
 }
+
+fn sz? Router.to_route_format(&self, Formatter* formatter)
+{
+	sz len = 0;
+	foreach (node : self.root_nodes.value_iter())
+	{
+		len += node.to_route_format(formatter, 0)!;
+	}
+	return len;
+}
+
+fn void? append_fn(void* data, char c) @private
+{
+	DString* s = data;
+	s.append_char(c) @inline;
+}
+
+macro void print_routes(router)
+{
+	DString output = dstring::temp();
+
+	Formatter formatter;
+	formatter.init(&append_fn, &output);
+
+	router.to_route_format(&formatter)!!;
+
+	io::print(output.str_view());
+}

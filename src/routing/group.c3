@@ -110,3 +110,9 @@ fn sz? Group.to_format(&self, Formatter* formatter) @dynamic
 
 	return len += formatter.print(" }")!;
 }
+
+fn sz? Group.to_route_format(&self, Formatter* formatter)
+{
+	sz len = self.node.to_route_format(formatter, 0)!;
+	return len;
+}

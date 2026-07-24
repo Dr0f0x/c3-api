@@ -44,8 +44,6 @@ fn void static_no_controller(void* self = null, Allocator allocator, Context* ct
 
 fn void Controller.static_controller(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
-	io::printfn("in controller %s", &self.test);
-
 	res.status = HttpStatus.OK;
 	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" }, indent: Indent.SPACE_2);
 
@@ -133,20 +131,28 @@ fn int main(String[] args)
 		example.add_middleware("/{name}", &endpoint_log_middleware);
 
 		example.add_route(RouteMethod.GET, "/{name}", &no_controller, &endpoint_log_middleware);
-		example.add_route(RouteMethod.GET, "/static/test", &static_no_controller, &endpoint_log_middleware);
-		
+		example.add_route(RouteMethod.GET, "/static/yay", &static_no_controller, &endpoint_log_middleware);
+
 		// TODO find nicer way than casting to (HandleFunc)
 		example.add_route(
 			RouteMethod.GET,
-			"/staticc/test",
+			"/staticc/ctrl",
 			(HandleFunc)&Controller.static_controller,
 			&endpoint_log_middleware
 		);
 
-		io::printfn("%s", *example);
+		io::print("\nGroup routes\n");
+		routing::print_routes(example);
 	};
 
-	io::printfn("%s", router);
+	Path cwd = path::tcwd()!!;
+	Path dir = cwd.tappend("example/public")!!;
+
+	router.serve_static("/files", dir)!!;
+
+	io::print("\nRouter routes\n");
+	routing::print_routes(router);
+	io::print("\n");
 
 	server.run()!!;
 

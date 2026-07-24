@@ -73,19 +73,58 @@ fn void RouteNode.free(&self)
 *>
 fn sz? RouteNode.to_format(&self, Formatter* formatter) @dynamic
 {
-    sz len = formatter.print("RouteNode { ")!;
+	sz len = formatter.print("RouteNode { ")!;
 
-    len += formatter.print("name: ")!;
-    len += formatter.print(self.name)!;
+	len += formatter.print("name: ")!;
+	len += formatter.print(self.name)!;
 
-    len += formatter.print(", handlers: ")!;
-    len += formatter.printf("%s", self.handlers)!;
+	len += formatter.print(", handlers: ")!;
+	len += formatter.printf("%s", self.handlers)!;
 
-    len += formatter.print(", middleware_count: ")!;
-    len += formatter.printf("%d", self.middlewares.len())!;
+	len += formatter.print(", middleware_count: ")!;
+	len += formatter.printf("%d", self.middlewares.len())!;
 
-    len += formatter.print(", sub_nodes: ")!;
-    len += formatter.printf("%s", self.sub_nodes)!;
+	len += formatter.print(", sub_nodes: ")!;
+	len += formatter.printf("%s", self.sub_nodes)!;
 
-    return len += formatter.print(" }")!;
+	return len += formatter.print(" }")!;
+}
+
+fn sz? RouteNode.to_route_format(&self, Formatter* formatter, sz indent = 0)
+{
+	sz len = 0;
+
+	for (sz i = 0; i < indent; i++)
+	{
+		len += formatter.print(" ")!;
+	}
+
+	len += formatter.printf("%s", self.name)!;
+
+	bool first = true;
+	foreach (i, &value : self.handlers.handler_map.values)
+	{
+		if (value.handler == null) continue;
+
+		if (first)
+		{
+			len += formatter.print(" - ")!;
+			first = false;
+		}
+		else
+		{
+			len += formatter.print(", ")!;
+		}
+
+		len += formatter.printf("%s", RouteMethod::from_ordinal(i))!;
+	}
+
+	len += formatter.print("\n")!;
+
+	foreach (node : self.sub_nodes.value_iter())
+	{
+		len += node.to_route_format(formatter, indent + 2)!;
+	}
+
+	return len;
 }
