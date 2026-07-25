@@ -36,94 +36,101 @@ struct ProcessContext
 *>
 fn void process(ProcessContext* context_arg) @private
 {
-	@pool_init(mem, 2 * 1024, 8 * 1024)
+	@stack_mem(2 * 1024; Allocator allocator)
 	{
-		@pool()
+		@pool_init(allocator, 2 * 1024, 8 * 1024)
 		{
-			ProcessContext* context = context_arg;
-			TcpSocket* socket       = &context.socket;
-			Router* router          = context.router;
-			Context* ctx            = context.ctx;
-			log::Logger log         = context.logger;
-			defer alloc::free(mem, context);
-
-			defer
+			@pool()
 			{
-				if (catch err = socket.shutdown(SocketShutdownHow.SEND))
+				ProcessContext* context = context_arg;
+				TcpSocket* socket       = &context.socket;
+				Router* router          = context.router;
+				Context* ctx            = context.ctx;
+				log::Logger log         = context.logger;
+				defer alloc::free(mem, context);
+
+				defer
 				{
-					log.errorf(
-						"Got Error while shutting down socket %s",
-						"Error while shutting down socket",
-						log::_error(&err)
-					);
-				}
-				if (catch err = socket.close())
-				{
-					log.errorf("Got Error while closing socket %s", "Error while closing socket", log::_error(&err));
-				}
-			}
-
-			http::HttpRequest req;
-			req.init(tmem);
-			defer req.free();
-
-			http::HttpResponse res;
-			res.init(tmem);
-			defer res.free();
-
-			sz done_requests = 0;
-			sz max_request   = 1000;
-
-			while (done_requests < max_request)
-			{
-				if (catch err = req.read(socket))
-				{
-					if (err == http::INVALID_VERB)
+					if (catch err = socket.shutdown(SocketShutdownHow.SEND))
 					{
-						res.status = HttpStatus.METHOD_NOT_ALLOWED;
-						done_requests++;
-						req.reset();
-						res.reset();
-						continue;
+						log.errorf(
+							"Got Error while shutting down socket %s",
+							"Error while shutting down socket",
+							log::_error(&err)
+						);
 					}
-					if (err == http::TLS_ON_HTTP_PORT)
+					if (catch err = socket.close())
 					{
-						log.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
-						done_requests++;
-						req.reset();
-						res.reset();
-						continue;
+						log.errorf(
+							"Got Error while closing socket %s",
+							"Error while closing socket",
+							log::_error(&err)
+						);
+					}
+				}
+
+				http::HttpRequest req;
+				req.init(tmem);
+				defer req.free();
+
+				http::HttpResponse res;
+				res.init(tmem);
+				defer res.free();
+
+				sz done_requests = 0;
+				sz max_request   = 1000;
+
+				while (done_requests < max_request)
+				{
+					if (catch err = req.read(socket))
+					{
+						if (err == http::INVALID_VERB)
+						{
+							res.status = HttpStatus.METHOD_NOT_ALLOWED;
+							done_requests++;
+							req.reset();
+							res.reset();
+							continue;
+						}
+						if (err == http::TLS_ON_HTTP_PORT)
+						{
+							log.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
+							done_requests++;
+							req.reset();
+							res.reset();
+							continue;
+						}
+						else
+						{
+							done_requests++;
+							req.reset();
+							res.reset();
+							continue;
+						}
 					}
 					else
 					{
-						done_requests++;
-						req.reset();
-						res.reset();
-						continue;
+						if (catch error = handle(allocator, ctx, &req, &res, socket, router, log))
+						{
+							res.body = "";
+							res.status = HttpStatus.INTERNAL_SERVER_ERROR;
+						}
 					}
-				}
-				else
-				{
-					if (catch error = handle(tmem, ctx, &req, &res, socket, router, log))
+
+					if (done_requests == max_request)
 					{
-						res.body = "";
-						res.status = HttpStatus.INTERNAL_SERVER_ERROR;
+						res.headers.set_header_values("Connection", "close");
 					}
-				}
 
-				if (done_requests == max_request)
-				{
-					res.headers.set_header_values("Connection", "close");
+					if (catch err = res.write(socket))
+					{
+						log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
+					}
+					done_requests++;
+					req.reset();
+					res.reset();
 				}
-
-				if (catch err = res.write(socket))
-				{
-					log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
-				}
-				done_requests++;
-				req.reset();
-				res.reset();
-			}
+			};
 		};
 	};
 }

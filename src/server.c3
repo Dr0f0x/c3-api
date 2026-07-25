@@ -66,17 +66,20 @@ fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger l
 			if (config.logging.console.enabled)
 			{
 				self.default_logging.console_sink = alloc::new(allocator, ConsoleSink);
-				self.default_logging.console_sink.init();
-				self.default_logging.logger.add_sink(
-					self.default_logging.console_sink,
-					log::min_level_enabler(config.logging.console.min_level)
-				);
+
+				if (try self.default_logging.console_sink.init()!!)
+				{
+					self.default_logging.logger.add_sink(
+						self.default_logging.console_sink,
+						log::min_level_enabler(config.logging.console.min_level)
+					);
+				}
 			}
 
 			if (config.logging.file.enabled)
 			{
 				self.default_logging.file_sink = alloc::new(allocator, FileSink);
-				if (try error = self.default_logging.file_sink.init(path::tnew("c3api.log")!!))
+				if (try self.default_logging.file_sink.init(path::tnew("c3api.log")!!))
 				{
 					self.default_logging.logger.add_sink(
 						self.default_logging.file_sink,

@@ -9,6 +9,8 @@ import c3api;
 import c3api::http::cookies;
 import c3api::config;
 import c3api::routing;
+import c3api::routing::router;
+import c3api::routing::group;
 
 fn void no_controller(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
@@ -136,7 +138,7 @@ fn int main(String[] args)
 	c3api::Server server;
 	server.init(tmem, &config);
 
-	routing::Router* router = server.get_router();
+	Router* router = server.get_router();
 	router.use_middleware(&router_log_middleware);
 
 	Controller controller = { .test = 2 };
@@ -147,16 +149,17 @@ fn int main(String[] args)
 		example.use_middleware(&group_log_middleware);
 		example.add_middleware("/{name}", &endpoint_log_middleware);
 
-		example.add_route(RouteMethod.GET, "/{name}", &no_controller, &endpoint_log_middleware);
-		example.add_route(RouteMethod.GET, "/static/yay", &static_no_controller, &endpoint_log_middleware);
-
+		example.get("/{name}", &no_controller);
+		group::get{void}(example, "/static/yay", &static_no_controller);
 		// TODO find nicer way than casting to (HandleFunc)
-		example.add_route(
+		/* example.route(
 			RouteMethod.GET,
 			"/staticc/ctrl",
-			(HandleFunc)&Controller.static_controller,
+			&Controller.static_controller,
 			&endpoint_log_middleware
-		);
+		); */
+		group::get{Controller}(example, "/staticc/ctrl", &Controller.static_controller, &controller);
+
 
 		io::print("\nGroup routes\n");
 		routing::print_routes(example);

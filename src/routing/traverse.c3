@@ -1,4 +1,4 @@
-module c3api::routing;
+module c3api::routing::internal;
 
 import std::collections::map;
 import std::collections::list;
@@ -21,14 +21,14 @@ import c3api::log;
  @param [&in] log : "Logger"
  @return "Matching handler collection or ROUTE_NOT_FOUND~"
 *>
-fn HandlerCollection*? get_handlers(
+fn HandlerCollection*? _get_handlers(
 	String uri,
 	HandlerCollection* start_handlers,
 	HashMap{String, RouteNode}* start_nodes,
 	HttpRequest* request,
 	List{MiddlewareFunc}* middleware_collector,
 	log::Logger log,
-) @private
+)
 {
 	log.tracef("Getting handlers for route %s", "Retrieving handlers", log::_string("uri", &uri));
 
@@ -52,7 +52,7 @@ fn HandlerCollection*? get_handlers(
 	RouteNode*? cur_node = start_nodes.get_ref(root_key);
 	if (catch err = cur_node)
 	{
-		return ROUTE_NOT_FOUND~;
+		return routing::ROUTE_NOT_FOUND~;
 	}
 
 	int i = 1;
@@ -66,7 +66,7 @@ fn HandlerCollection*? get_handlers(
 
 		if (cur_node == null)
 		{
-			return ROUTE_NOT_FOUND~;
+			return routing::ROUTE_NOT_FOUND~;
 		}
 
 		if (cur_node.name[0] == '{' && cur_node.name[^1] == '}')
@@ -81,7 +81,7 @@ fn HandlerCollection*? get_handlers(
 	if (cur_node == null)
 	{
 		log.trace("No matching route found");
-		return ROUTE_NOT_FOUND~;
+		return routing::ROUTE_NOT_FOUND~;
 	}
 
 	middleware_collector.push_all(cur_node.middlewares.array_view());
@@ -104,7 +104,7 @@ faultdef REFERS_TO_ROOT;
  @param [&in] log : "Logger"
  @return "Resolved node pointer or REFERS_TO_ROOT~"
 *>
-fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_nodes, log::Logger log) @private
+fn RouteNode*? _get_or_create_node(String uri, HashMap{String, RouteNode}* start_nodes, log::Logger log)
 {
 	@pool()
 	{
@@ -193,7 +193,7 @@ fn RouteNode*? get_or_create_node(String uri, HashMap{String, RouteNode}* start_
  @param [&in] log : "Logger"
  @return "True if an existing handler for method was replaced"
 *>
-fn bool add_handler(
+fn bool _add_handler(
 	String uri,
 	RouteMethod method,
 	HandleFunc handler,
@@ -203,9 +203,9 @@ fn bool add_handler(
 	List{MiddlewareFunc}* start_middlewares,
 	HashMap{String, RouteNode}* start_nodes,
 	log::Logger log
-) @private
+)
 {
-	RouteNode*? node = get_or_create_node(uri, start_nodes, log);
+	RouteNode*? node = internal::_get_or_create_node(uri, start_nodes, log);
 	if (catch err = node)
 	{
 		start_middlewares.push_all(middlewares);

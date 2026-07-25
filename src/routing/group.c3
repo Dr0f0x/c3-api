@@ -1,8 +1,9 @@
-module c3api::routing;
+module c3api::routing::group;
 
 import std::io;
 
 import c3api::log;
+import c3api::routing::internal;
 
 <*
  Route group scoped to a trie node.
@@ -41,26 +42,115 @@ fn Group* Group.init(&self, RouteNode* node, log::Logger log)
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
-fn bool Group.add_route(
-	&self,
-	RouteMethod method,
-	String uri,
-	HandleFunc handler,
-	void* controller = null
-)
+fn bool Group.add_route(&self, RouteMethod method, String uri, HandleFunc handler, void* controller = null)
 {
-	return routing::add_handler(
+	return internal::_add_handler(
 		uri,
 		method,
 		handler,
 		controller,
-		{},
+		{ },
 		&self.node.handlers,
 		&self.node.middlewares,
 		&self.node.sub_nodes,
 		self.log
 	);
 }
+
+macro bool Group.get(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.GET, uri, handler, controller);
+
+macro bool Group.post(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.POST, uri, handler, controller);
+
+macro bool Group.put(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.PUT, uri, handler, controller);
+
+macro bool Group.patch(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.PATCH, uri, handler, controller);
+
+macro bool Group.delete(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.DELETE, uri, handler, controller);
+
+macro bool Group.head(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.HEAD, uri, handler, controller);
+
+macro bool route(
+	Group* group,
+	RouteMethod method,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type>
+{
+	return group.add_route(method, uri, (HandleFunc)handler, controller);
+}
+
+macro bool get(
+	Group* group,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => group.add_route(RouteMethod.GET, uri, (HandleFunc)handler, controller);
+
+macro bool post(
+	Group* group,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => group.add_route(RouteMethod.POST, uri, (HandleFunc)handler, controller);
+
+macro bool put(
+	Group* group,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => group.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, controller);
+
+macro bool patch(
+	Group* group,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => group.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, controller);
+
+macro bool delete(
+	Group* group,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => group.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, controller);
+
+macro bool head(
+	Group* group,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => group.add_route(RouteMethod.HEAD, uri, (HandleFunc)handler, controller);
 
 <*
  Add middleware to a relative route within this group.
@@ -72,7 +162,7 @@ fn bool Group.add_route(
 *>
 fn void Group.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
 {
-	if (try node = routing::get_or_create_node(uri, &self.node.sub_nodes, self.log))
+	if (try node = internal::_get_or_create_node(uri, &self.node.sub_nodes, self.log))
 	{
 		node.middlewares.push_all(middlewares);
 	}

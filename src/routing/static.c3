@@ -7,6 +7,7 @@ import std::io::file;
 
 import c3api::http;
 import c3api::log;
+import c3api::routing::internal;
 
 fn void? Router.serve_static(&self, String uri, Path path, bool indexing = true, bool clean_urls = true)
 {
@@ -143,7 +144,7 @@ fn void register_static_file(
 		log::_string("path", &path)
 	);
 
-	add_handler(
+	internal::_add_handler(
 		uri,
 		RouteMethod.GET,
 		(HandleFunc)&StaticFile.serve_file,

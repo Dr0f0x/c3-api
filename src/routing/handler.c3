@@ -21,6 +21,14 @@ alias HandleFunc = fn void(
 	HttpResponse* response
 );
 
+alias HandleFuncGen<Type> = fn void(
+	Type* self = null,
+	Allocator allocator,
+	Context* ctx,
+	HttpRequest* request,
+	HttpResponse* response
+);
+
 <*
  Built-in 404 JSON handler.
 

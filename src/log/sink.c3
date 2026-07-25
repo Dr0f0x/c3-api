@@ -1,6 +1,8 @@
 module c3api::log;
 
 import std::io;
+import std::thread;
+
 
 <*
  Destination for encoded log entries.
@@ -32,6 +34,7 @@ interface LogSink
 *>
 struct ConsoleSink (LogSink)
 {
+	Mutex mutex;
 	EncoderFunc encoder;
 }
 
@@ -41,9 +44,10 @@ struct ConsoleSink (LogSink)
  @param encoder : "Encoder callback to apply to each entry"
  @return "Initialized console sink"
 *>
-fn ConsoleSink* ConsoleSink.init(&self, EncoderFunc encoder = &plain_encode)
+fn ConsoleSink*? ConsoleSink.init(&self, EncoderFunc encoder = &plain_encode)
 {
 	self.encoder = encoder;
+	self.mutex.init()!;
 	return self;
 }
 
@@ -58,15 +62,18 @@ fn void ConsoleSink.write(&self, LogEntry* entry) @dynamic
 {
 	@pool()
 	{
-		String encoded = self.encoder(tmem, entry);
-		if (entry.level > LogLevel.ERROR)
+		self.mutex.@in_lock()
 		{
-			io::eprint(encoded);
-		}
-		else
-		{
-			io::printn(encoded);
-		}
+			String encoded = self.encoder(tmem, entry);
+			if (entry.level > LogLevel.ERROR)
+			{
+				io::eprint(encoded);
+			}
+			else
+			{
+				io::printn(encoded);
+			}
+		};
 	};
 }
 
@@ -75,7 +82,10 @@ fn void ConsoleSink.write(&self, LogEntry* entry) @dynamic
 *>
 fn void? ConsoleSink.sync(&self) @dynamic
 {
-	io::stdout().flush()!;
+	self.mutex.@in_lock()
+	{
+		io::stdout().flush()!;
+	};
 }
 
 <*
@@ -94,6 +104,7 @@ fn void ConsoleSink.set_encoder(&self, EncoderFunc encoder) @dynamic
 fn void ConsoleSink.free(&self)
 {
 	self.sync()!!;
+	self.mutex.destroy();
 }
 
 <*
@@ -102,6 +113,7 @@ fn void ConsoleSink.free(&self)
 struct FileSink (LogSink)
 {
 	File file;
+	Mutex mutex;
 	EncoderFunc encoder;
 }
 
@@ -143,6 +155,7 @@ fn FileSink*? FileSink.init(
 		}
 
 		self.file = file::open_path(actual_path, "a")!;
+		self.mutex.init()!;
 		return self;
 	};
 }
@@ -156,9 +169,12 @@ fn void FileSink.write(&self, LogEntry* entry) @dynamic
 {
 	@pool()
 	{
-		String encoded = self.encoder(tmem, entry);
-		self.file.write(encoded)!!;
-		self.file.write("\n")!!;
+		self.mutex.@in_lock()
+		{
+			String encoded = self.encoder(tmem, entry);
+			self.file.write(encoded)!!;
+			self.file.write("\n")!!;
+		};
 	};
 }
 
@@ -167,7 +183,10 @@ fn void FileSink.write(&self, LogEntry* entry) @dynamic
 *>
 fn void? FileSink.sync(&self) @dynamic
 {
-	self.file.flush()!;
+	self.mutex.@in_lock()
+	{
+		self.file.flush()!;
+	};
 }
 
 <*
@@ -187,4 +206,5 @@ fn void FileSink.free(&self)
 {
 	self.sync()!!;
 	self.file.close()!!;
+	self.mutex.destroy();
 }

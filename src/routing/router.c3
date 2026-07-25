@@ -1,4 +1,4 @@
-module c3api::routing;
+module c3api::routing::router;
 
 import std::collections::map;
 import std::collections::list;
@@ -6,12 +6,8 @@ import std::io;
 
 import c3api::http;
 import c3api::log;
-
-<*
- ROUTE_NOT_FOUND: no route or method match for the request.
- ROUTE_ALREADY_PRESENT: route existed before replacement.
-*>
-faultdef ROUTE_NOT_FOUND, ROUTE_ALREADY_PRESENT;
+import c3api::routing::internal;
+import c3api::routing::group;
 
 <*
  HTTP router using a trie of route nodes.
@@ -62,7 +58,7 @@ fn HandlerCollection*? Router.get_handlers(
 )
 {
 	middleware_collector.push_all(self.root_middlewares.array_view());
-	return routing::get_handlers(uri, &self.root_handlers, &self.root_nodes, request, middleware_collector, self.log);
+	return internal::_get_handlers(uri, &self.root_handlers, &self.root_nodes, request, middleware_collector, self.log);
 }
 
 <*
@@ -96,7 +92,7 @@ fn RegisteredHandler*? Router.get_route(
 	{
 		if (try get_handler = handlers.get_handler(RouteMethod.GET)) return get_handler;
 	}
-	return ROUTE_NOT_FOUND~;
+	return routing::ROUTE_NOT_FOUND~;
 }
 
 <*
@@ -113,7 +109,7 @@ fn RegisteredHandler*? Router.get_route(
 *>
 fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler, void* controller = null)
 {
-	return routing::add_handler(
+	return internal::_add_handler(
 		uri,
 		method,
 		handler,
@@ -126,6 +122,101 @@ fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handl
 	);
 }
 
+macro bool Router.get(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.GET, uri, handler, controller);
+
+macro bool Router.post(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.POST, uri, handler, controller);
+
+macro bool Router.put(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.PUT, uri, handler, controller);
+
+macro bool Router.patch(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.PATCH, uri, handler, controller);
+
+macro bool Router.delete(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.DELETE, uri, handler, controller);
+
+macro bool Router.head(
+	&self,
+	String uri,
+	HandleFunc handler,
+	void* controller = null
+) => self.add_route(RouteMethod.HEAD, uri, handler, controller);
+
+macro bool route(
+	Router* router,
+	RouteMethod method,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type>
+{
+	return router.add_route(method, uri, (HandleFunc)handler, controller);
+}
+
+macro bool get(
+	Router* router,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => router.add_route(RouteMethod.GET, uri, (HandleFunc)handler, controller);
+
+macro bool post(
+	Router* router,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => router.add_route(RouteMethod.POST, uri, (HandleFunc)handler, controller);
+
+macro bool put(
+	Router* router,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => router.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, controller);
+
+macro bool patch(
+	Router* router,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => router.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, controller);
+
+macro bool delete(
+	Router* router,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => router.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, controller);
+
+macro bool head(
+	Router* router,
+	String uri,
+	HandleFuncGen{Type} handler,
+	Type* controller = null
+) <Type> => router.add_route(RouteMethod.HEAD, uri, (HandleFunc)handler, controller);
+
 <*
  Add middleware to a router route.
 
@@ -136,7 +227,7 @@ fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handl
 *>
 fn void Router.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
 {
-	if (try node = routing::get_or_create_node(uri, &self.root_nodes, self.log))
+	if (try node = internal::_get_or_create_node(uri, &self.root_nodes, self.log))
 	{
 		node.middlewares.push_all(middlewares);
 	}
@@ -170,7 +261,7 @@ fn void Router.use_middleware(&self, MiddlewareFunc ...middlewares)
 fn Group* Router.group(&self, Allocator allocator, String uri)
 {
 	Group* group    = alloc::new(allocator, Group);
-	RouteNode* node = routing::get_or_create_node(uri, &self.root_nodes, self.log)!!;
+	RouteNode* node = internal::_get_or_create_node(uri, &self.root_nodes, self.log)!!;
 	return group.init(node, self.log);
 }
 
@@ -211,22 +302,4 @@ fn sz? Router.to_route_format(&self, Formatter* formatter)
 		len += node.to_route_format(formatter, 0)!;
 	}
 	return len;
-}
-
-fn void? append_fn(void* data, char c) @private
-{
-	DString* s = data;
-	s.append_char(c) @inline;
-}
-
-macro void print_routes(router)
-{
-	DString output = dstring::temp();
-
-	Formatter formatter;
-	formatter.init(&append_fn, &output);
-
-	router.to_route_format(&formatter)!!;
-
-	io::print(output.str_view());
 }
