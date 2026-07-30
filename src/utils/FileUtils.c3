@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::utils;
 
 import std::collections::map;
@@ -20,3 +23,8 @@ fn String? format_path(String format, HashMap{String, String}* args) {
         return format;
     };
 }
+
+
+
+
+

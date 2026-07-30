@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::http::cookies;
 
 import std::time;
@@ -197,3 +200,7 @@ fn void HttpResponse.set_cookie(
 
 	self.headers.add_header_value("Set-Cookie", cookie_str);
 }
+
+
+
+

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api;
 
 import std::io;
@@ -12,6 +15,21 @@ fn Context* Context.init(&self, Allocator allocator)
 {
 	self.objects.init(allocator);
 	return self;
+}
+
+<*
+ Copy all registered objects from another context.
+
+ Existing entries with the same type id will be overwritten.
+
+ @param [&in] other : "Source context to copy registrations from"
+*>
+fn void Context.add_from(&self, Context* other)
+{
+	other.objects.@each_entry(; map::Entry{typeid, void*}* entry)
+	{
+		self.objects.set(entry.key, entry.value);
+	};
 }
 
 macro void Context.register(&self, $Type, value)
@@ -34,3 +52,12 @@ fn sz? Context.to_format(&self, Formatter* formatter) @dynamic
 {
 	return self.objects.to_format(formatter);
 }
+
+fn void Context.free(&self)
+{
+	self.objects.free();
+}
+
+
+
+

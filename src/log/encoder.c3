@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::log;
 
 import std::time;
@@ -156,3 +159,8 @@ fn String json_encode(Allocator allocator, LogEntry* entry)
 
 	return out.str_view();
 }
+
+
+
+
+

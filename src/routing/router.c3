@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::routing::router;
 
 import std::collections::map;
@@ -17,7 +20,7 @@ struct Router (Printable)
 	HashMap{String, RouteNode} root_nodes;
 
 	HandlerCollection root_handlers;
-	List{MiddlewareFunc} root_middlewares;
+	List{RegisteredMiddleware} root_middlewares;
 
 	log::Logger log;
 	Allocator allocator;
@@ -54,7 +57,7 @@ fn HandlerCollection*? Router.get_handlers(
 	&self,
 	String uri,
 	HttpRequest* request,
-	List{MiddlewareFunc}* middleware_collector
+	List{RegisteredMiddleware}* middleware_collector
 )
 {
 	middleware_collector.push_all(self.root_middlewares.array_view());
@@ -76,7 +79,7 @@ fn RegisteredHandler*? Router.get_route(
 	RouteMethod method,
 	String uri,
 	HttpRequest* request,
-	List{MiddlewareFunc}* middleware_collector
+	List{RegisteredMiddleware}* middleware_collector
 )
 {
 	middleware_collector.push_all(self.root_middlewares.array_view());
@@ -107,13 +110,13 @@ fn RegisteredHandler*? Router.get_route(
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
-fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler, void* controller = null)
+fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler, void* instance = null)
 {
 	return internal::_add_handler(
 		uri,
 		method,
 		handler,
-		controller,
+		instance,
 		{ },
 		&self.root_handlers,
 		&self.root_middlewares,
@@ -126,126 +129,128 @@ macro bool Router.get(
 	&self,
 	String uri,
 	HandleFunc handler,
-	void* controller = null
-) => self.add_route(RouteMethod.GET, uri, handler, controller);
+	void* instance = null
+) => self.add_route(RouteMethod.GET, uri, handler, instance);
 
 macro bool Router.post(
 	&self,
 	String uri,
 	HandleFunc handler,
-	void* controller = null
-) => self.add_route(RouteMethod.POST, uri, handler, controller);
+	void* instance = null
+) => self.add_route(RouteMethod.POST, uri, handler, instance);
 
 macro bool Router.put(
 	&self,
 	String uri,
 	HandleFunc handler,
-	void* controller = null
-) => self.add_route(RouteMethod.PUT, uri, handler, controller);
+	void* instance = null
+) => self.add_route(RouteMethod.PUT, uri, handler, instance);
 
 macro bool Router.patch(
 	&self,
 	String uri,
 	HandleFunc handler,
-	void* controller = null
-) => self.add_route(RouteMethod.PATCH, uri, handler, controller);
+	void* instance = null
+) => self.add_route(RouteMethod.PATCH, uri, handler, instance);
 
 macro bool Router.delete(
 	&self,
 	String uri,
 	HandleFunc handler,
-	void* controller = null
-) => self.add_route(RouteMethod.DELETE, uri, handler, controller);
+	void* instance = null
+) => self.add_route(RouteMethod.DELETE, uri, handler, instance);
 
 macro bool Router.head(
 	&self,
 	String uri,
 	HandleFunc handler,
-	void* controller = null
-) => self.add_route(RouteMethod.HEAD, uri, handler, controller);
+	void* instance = null
+) => self.add_route(RouteMethod.HEAD, uri, handler, instance);
 
 macro bool route(
 	Router* router,
 	RouteMethod method,
 	String uri,
 	HandleFuncGen{Type} handler,
-	Type* controller = null
+	Type* instance = null
 ) <Type>
 {
-	return router.add_route(method, uri, (HandleFunc)handler, controller);
+	return router.add_route(method, uri, (HandleFunc)handler, instance);
 }
 
 macro bool get(
 	Router* router,
 	String uri,
 	HandleFuncGen{Type} handler,
-	Type* controller = null
-) <Type> => router.add_route(RouteMethod.GET, uri, (HandleFunc)handler, controller);
+	Type* instance = null
+) <Type> => router.add_route(RouteMethod.GET, uri, (HandleFunc)handler, instance);
 
 macro bool post(
 	Router* router,
 	String uri,
 	HandleFuncGen{Type} handler,
-	Type* controller = null
-) <Type> => router.add_route(RouteMethod.POST, uri, (HandleFunc)handler, controller);
+	Type* instance = null
+) <Type> => router.add_route(RouteMethod.POST, uri, (HandleFunc)handler, instance);
 
 macro bool put(
 	Router* router,
 	String uri,
 	HandleFuncGen{Type} handler,
-	Type* controller = null
-) <Type> => router.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, controller);
+	Type* instance = null
+) <Type> => router.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, instance);
 
 macro bool patch(
 	Router* router,
 	String uri,
 	HandleFuncGen{Type} handler,
-	Type* controller = null
-) <Type> => router.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, controller);
+	Type* instance = null
+) <Type> => router.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, instance);
 
 macro bool delete(
 	Router* router,
 	String uri,
 	HandleFuncGen{Type} handler,
-	Type* controller = null
-) <Type> => router.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, controller);
+	Type* instance = null
+) <Type> => router.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, instance);
 
 macro bool head(
 	Router* router,
 	String uri,
 	HandleFuncGen{Type} handler,
-	Type* controller = null
-) <Type> => router.add_route(RouteMethod.HEAD, uri, (HandleFunc)handler, controller);
+	Type* instance = null
+) <Type> => router.add_route(RouteMethod.HEAD, uri, (HandleFunc)handler, instance);
 
 <*
  Add middleware to a router route.
 
- If uri refers to router root, middleware is attached at root level.
-
  @param [in] uri : "Route pattern"
- @param [in] middlewares : "Middleware callbacks to append"
+ @param middleware : "Middleware callback to append"
 *>
-fn void Router.add_middleware(&self, String uri, MiddlewareFunc ...middlewares)
+fn void Router.use_middleware(&self, String uri, MiddlewareFunc middleware, void* instance = null)
 {
 	if (try node = internal::_get_or_create_node(uri, &self.root_nodes, self.log))
 	{
-		node.middlewares.push_all(middlewares);
+		node.middlewares.push({ .middleware = middleware, .self = instance });
 	}
 	else
 	{
-		self.root_middlewares.push_all(middlewares);
+		self.root_middlewares.push({ .middleware = middleware, .self = instance });
 	}
 }
 
-<*
- Add middleware to the router root.
+macro void Router.use(
+	&self,
+	String uri,
+	MiddlewareFunc middleware,
+	void* instance = null
+) => self.use_middleware(uri, middleware, instance);
 
- @param [in] middlewares : "Middleware callbacks to append"
-*>
-fn void Router.use_middleware(&self, MiddlewareFunc ...middlewares)
-{
-	self.root_middlewares.push_all(middlewares);
-}
+macro void use(
+	Router* router,
+	String uri,
+	MiddlewareFuncGen{Type} middleware,
+	Type* instance = null
+) <Type> => router.use_middleware(uri, (MiddlewareFunc)middleware, instance);
 
 <*
  Create a group wrapper around a route node.
@@ -260,7 +265,8 @@ fn void Router.use_middleware(&self, MiddlewareFunc ...middlewares)
 *>
 fn Group* Router.group(&self, Allocator allocator, String uri)
 {
-	Group* group    = alloc::new(allocator, Group);
+	Group* group = alloc::new(allocator, Group);
+
 	RouteNode* node = internal::_get_or_create_node(uri, &self.root_nodes, self.log)!!;
 	return group.init(node, self.log);
 }
@@ -303,3 +309,8 @@ fn sz? Router.to_route_format(&self, Formatter* formatter)
 	}
 	return len;
 }
+
+
+
+
+

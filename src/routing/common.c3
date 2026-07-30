@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::routing;
 
 import std::io;
@@ -25,3 +28,7 @@ macro void print_routes(router)
 
 	io::print(output.str_view());
 }
+
+
+
+

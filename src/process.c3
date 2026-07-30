@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api;
 
 import std::io;
 import std::net::tcp;
+import std::net;
 import std::collections::map;
 import std::collections::list;
 import std::net::os;
@@ -19,7 +23,8 @@ struct ProcessContext
 {
 	TcpSocket socket;
 	Router* router;
-	Context* ctx;
+	Context* initial_ctx;
+	Config* conf;
 
 	log::Logger logger;
 }
@@ -36,7 +41,7 @@ struct ProcessContext
 *>
 fn void process(ProcessContext* context_arg) @private
 {
-	@stack_mem(2 * 1024; Allocator allocator)
+	@stack_mem(2 * 1024 ; Allocator allocator)
 	{
 		@pool_init(allocator, 2 * 1024, 8 * 1024)
 		{
@@ -45,7 +50,8 @@ fn void process(ProcessContext* context_arg) @private
 				ProcessContext* context = context_arg;
 				TcpSocket* socket       = &context.socket;
 				Router* router          = context.router;
-				Context* ctx            = context.ctx;
+				Context* initial_ctx    = context.initial_ctx;
+				Config* conf            = context.conf;
 				log::Logger log         = context.logger;
 				defer alloc::free(mem, context);
 
@@ -77,62 +83,195 @@ fn void process(ProcessContext* context_arg) @private
 				res.init(tmem);
 				defer res.free();
 
-				sz done_requests = 0;
-				sz max_request   = 1000;
+				Context ctx;
+				ctx.init(tmem);
+				ctx.add_from(initial_ctx);
+				defer ctx.free();
 
-				while (done_requests < max_request)
+				if (conf.http.keep_alive.enabled)
 				{
-					if (catch err = req.read(socket))
-					{
-						if (err == http::INVALID_VERB)
-						{
-							res.status = HttpStatus.METHOD_NOT_ALLOWED;
-							done_requests++;
-							req.reset();
-							res.reset();
-							continue;
-						}
-						if (err == http::TLS_ON_HTTP_PORT)
-						{
-							log.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
-							done_requests++;
-							req.reset();
-							res.reset();
-							continue;
-						}
-						else
-						{
-							done_requests++;
-							req.reset();
-							res.reset();
-							continue;
-						}
-					}
-					else
-					{
-						if (catch error = handle(allocator, ctx, &req, &res, socket, router, log))
-						{
-							res.body = "";
-							res.status = HttpStatus.INTERNAL_SERVER_ERROR;
-						}
-					}
-
-					if (done_requests == max_request)
-					{
-						res.headers.set_header_values("Connection", "close");
-					}
-
-					if (catch err = res.write(socket))
-					{
-						log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
-					}
-					done_requests++;
-					req.reset();
-					res.reset();
+					process_keep_alive(tmem, conf, &ctx, &req, &res, socket, router, log);
+				}
+				else
+				{
+					process_single(tmem, conf, &ctx, &req, &res, socket, router, log);
 				}
 			};
 		};
 	};
+}
+
+enum ProcessResult
+{
+	CONTINUE,
+	CLOSE,
+	ERROR
+}
+
+fn ProcessResult process_single(
+	Allocator allocator,
+	Config* conf,
+	Context* ctx,
+	HttpRequest* req,
+	HttpResponse* res,
+	TcpSocket* socket,
+	Router* router,
+	log::Logger log
+) @private
+{
+	// check idle timeout
+	Poll[] p = { { .socket = socket.sock, .events = PollSubscribe.ANY_READ, } };
+
+	ulong? ready = net::poll_ms(p, (long)conf.http.keep_alive.idle_timeout_ms);
+	if (catch err = ready)
+	{
+		log.errorf("Poll failed: %s", "Poll failed", log::_error(&err));
+		return ProcessResult.ERROR;
+	}
+
+	if (ready == 0)
+	{
+		return ProcessResult.CLOSE;
+	}
+
+	// handle errors when reading
+	if (catch err = req.read(socket))
+	{
+		res.headers.set_header_values("Connection", "close");
+
+		if (err == http::INVALID_VERB)
+		{
+			res.status = HttpStatus.METHOD_NOT_ALLOWED;
+		}
+		else if (err == http::MALFORMED_REQUEST)
+		{
+			res.status = HttpStatus.BAD_REQUEST;
+		}
+		else if (err == http::TLS_ON_HTTP_PORT)
+		{
+			// Cannot safely respond with HTTP because the client is speaking TLS.
+			log.errorf("TLS on HTTP Port: %s", "TLS on HTTP Port", log::_error(&err));
+			return ProcessResult.ERROR;
+		}
+		else
+		{
+			return ProcessResult.ERROR;
+		}
+
+		if (catch write_err = res.write(socket))
+		{
+			log.errorf("Failed to write: %s", "Failed to write response", log::_error(&write_err));
+		}
+
+		return ProcessResult.CLOSE;
+	}
+
+	// handle trace verb and regular method
+	ProcessResult result;
+	if (req.method == HttpVerb.TRACE)
+	{
+		if (conf.http.trace_enabled)
+		{
+			DString out = dstring::new_with_capacity(allocator, 256);
+
+			out.appendfn("%s %s HTTP/1.1", req.method, req.uri);
+
+			req.headers.@each(; String key, List{String} values)
+			{
+				foreach (value : values)
+				{
+					out.appendfn("%s: %s", key, value);
+				}
+			};
+
+			out.append("\r\n");
+
+			if (req.body.len > 0)
+			{
+				out.append(req.body);
+			}
+
+			res.status = HttpStatus.OK;
+			res.body = out.str_view();
+		}
+		else
+		{
+			res.status = HttpStatus.METHOD_NOT_ALLOWED;
+			res.headers.set_header_values("Connection", "close");
+			res.body = "";
+			result = ProcessResult.CLOSE;
+		}
+	}
+	else if (catch error = handle(allocator, ctx, req, res, socket, router, log))
+	{
+		res.body = "";
+		res.status = HttpStatus.INTERNAL_SERVER_ERROR;
+		result = ProcessResult.ERROR;
+	}
+
+
+	// check if clients wants to close
+	bool close_connection = result == ProcessResult.CLOSE;
+
+	if (try values = req.headers.get_header_values("Connection"))
+	{
+		foreach (value : values)
+		{
+			if (value.compare_to_ignore_case("close") == 0)
+			{
+				close_connection = true;
+				break;
+			}
+		}
+	}
+
+	if (close_connection)
+	{
+		res.headers.set_header_values("Connection", "close");
+	}
+
+	// write response
+	if (catch err = res.write(socket))
+	{
+		log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
+		return ProcessResult.ERROR;
+	}
+
+	if (result != ProcessResult.CONTINUE)
+	{
+		return result;
+	}
+	return close_connection ? ProcessResult.CLOSE : ProcessResult.CONTINUE;
+}
+
+fn void process_keep_alive(
+	Allocator allocator,
+	Config* conf,
+	Context* ctx,
+	HttpRequest* req,
+	HttpResponse* res,
+	TcpSocket* socket,
+	Router* router,
+	log::Logger log
+) @private
+{
+	sz done_requests = 0;
+	bool loop        = true;
+
+	while (done_requests < conf.http.keep_alive.max_requests_per_connection)
+	{
+		ProcessResult result = process_single(allocator, conf, ctx, req, res, socket, router, log);
+
+		done_requests++;
+
+		if (result != ProcessResult.CONTINUE)
+		{
+			break;
+		}
+
+		req.reset();
+		res.reset();
+	}
 }
 
 <*
@@ -160,7 +299,7 @@ fn void? handle(
 ) @private
 {
 	RegisteredHandler* registered_handler;
-	List{MiddlewareFunc} middleware_collector;
+	List{RegisteredMiddleware} middleware_collector;
 	middleware_collector.tinit();
 
 	if (req.method == HttpVerb.OPTIONS)
@@ -233,12 +372,14 @@ fn bool run_middlewares(
 	Context* ctx,
 	HttpRequest* req,
 	HttpResponse* res,
-	List{MiddlewareFunc}* middlewares
+	List{RegisteredMiddleware}* middlewares
 ) @private
 {
-	foreach (middleware : middlewares)
+	RequestFlow flow;
+	foreach (registered : middlewares)
 	{
-		RequestFlow flow = middleware(allocator, ctx, req, res);
+		flow = registered.middleware(registered.self, allocator, ctx, req, res);
+
 		if (flow == RequestFlow.INTERRUPT)
 		{
 			return false;
@@ -246,3 +387,8 @@ fn bool run_middlewares(
 	}
 	return true;
 }
+
+
+
+
+

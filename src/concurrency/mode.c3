@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::concurrency;
 
 enum ConcurrencyMode
@@ -18,3 +21,7 @@ fn ConcurrencyMode? from_string(String str)
 			return INVALID_CONCURRENCY_MODE~;
 	}
 }
+
+
+
+

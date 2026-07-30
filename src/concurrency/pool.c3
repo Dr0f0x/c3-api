@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::concurrency;
 
 import std::time;
@@ -43,3 +46,8 @@ fn void PoolDispatcher.destroy(&self)
 {
 	self.threads.destroy();
 }
+
+
+
+
+

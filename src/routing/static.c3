@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::routing;
 
 import std::io::path;
@@ -43,7 +46,7 @@ fn void? serve_static(
 	bool indexing,
 	bool clean_urls,
 	HandlerCollection* handlers,
-	List{MiddlewareFunc}* middlewares,
+	List{RegisteredMiddleware}* middlewares,
 	HashMap{String, RouteNode}* nodes,
 	log::Logger log
 ) @private
@@ -91,7 +94,7 @@ struct StaticWalkData
 	bool clean_urls;
 
 	HandlerCollection* handlers;
-	List{MiddlewareFunc}* middlewares;
+	List{RegisteredMiddleware}* middlewares;
 	HashMap{String, RouteNode}* nodes;
 	log::Logger log;
 }
@@ -129,7 +132,7 @@ fn void register_static_file(
 	String uri,
 	Path path,
 	HandlerCollection* handlers,
-	List{MiddlewareFunc}* middlewares,
+	List{RegisteredMiddleware}* middlewares,
 	HashMap{String, RouteNode}* nodes,
 	log::Logger log
 )
@@ -235,3 +238,8 @@ fn String mime_type(Path path)
 			return "application/octet-stream";
 	}
 }
+
+
+
+
+

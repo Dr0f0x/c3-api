@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::http;
 
 import std::io;
@@ -74,3 +77,7 @@ fn HttpVerb? parse_verb(String verb)
 			return http::INVALID_VERB~;
 	}
 }
+
+
+
+

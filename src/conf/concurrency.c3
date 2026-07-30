@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::config;
 
 import std::collections::object;
@@ -33,6 +36,10 @@ const ConcurrencyConfig DEFAULT_CONCURRENCY_CONFIG = {
 fn void ConcurrencyConfig.from_other(&self, ConcurrencyConfig* other, Allocator allocator)
 {
 	self.mode = other.mode;
+
+	self.thread_pool.max_threads = other.thread_pool.max_threads;
+	self.thread_pool.queue_capacity = other.thread_pool.queue_capacity;
+	self.thread_pool.keep_alive_ms = other.thread_pool.keep_alive_ms;
 }
 
 <*
@@ -87,3 +94,8 @@ fn void ConcurrencyConfig.free(&self, Allocator allocator)
 {
 	// No dynamic memory to free for ConcurrencyConfig
 }
+
+
+
+
+

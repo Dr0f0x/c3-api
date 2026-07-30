@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api;
 
 import std::io::path;
@@ -15,9 +18,8 @@ struct Server
 {
 	config::Config* config;
 
-	Context ctx;
-
 	Router router;
+	Context initial_ctx;
 	TcpServerSocket server_socket;
 	bool should_close;
 
@@ -33,9 +35,16 @@ struct Server
 
 	struct default_logging
 	{
+		bool in_use;
 		C3ApiLogger* logger;
 		ConsoleSink* console_sink;
 		FileSink* file_sink;
+	}
+
+	BuiltinMiddleware builtin_middleware;
+	struct builtin
+	{
+		bool logging_middleware;
 	}
 
 	Allocator allocator;
@@ -49,21 +58,30 @@ struct Server
 
  @param [&inout] allocator : "Allocator to use for internal allocations"
  @param [&in] config : "Server Configuration to use"
- @param [&in] logger : "Logger to use"
 
  @return "Initialized Server instance"
 *>
-fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger logger = null)
+fn Server* Server.init(&self, Allocator allocator, Config* config = null, log::Logger logger = null)
 {
 	self.allocator = allocator;
 	@pool()
 	{
-		if (!logger)
+		if (config == null)
 		{
+			self.config = &config::DEFAULT_CONFIG;
+		}
+		else
+		{
+			self.config = config;
+		}
+
+		if (logger == null)
+		{
+			self.default_logging.in_use = true;
 			self.default_logging.logger = alloc::new(allocator, C3ApiLogger);
 			self.default_logging.logger.init(mem);
 
-			if (config.logging.console.enabled)
+			if (self.config.logging.console.enabled)
 			{
 				self.default_logging.console_sink = alloc::new(allocator, ConsoleSink);
 
@@ -71,43 +89,61 @@ fn Server* Server.init(&self, Allocator allocator, Config* config, log::Logger l
 				{
 					self.default_logging.logger.add_sink(
 						self.default_logging.console_sink,
-						log::min_level_enabler(config.logging.console.min_level)
+						log::min_level_enabler(self.config.logging.console.min_level)
 					);
 				}
 			}
 
-			if (config.logging.file.enabled)
+			if (self.config.logging.file.enabled)
 			{
 				self.default_logging.file_sink = alloc::new(allocator, FileSink);
 				if (try self.default_logging.file_sink.init(path::tnew("c3api.log")!!))
 				{
 					self.default_logging.logger.add_sink(
 						self.default_logging.file_sink,
-						log::min_level_enabler(config.logging.file.min_level)
+						log::min_level_enabler(self.config.logging.file.min_level)
 					);
 				}
 			}
-
+			self.log = self.default_logging.logger;
+		}
+		else
+		{
 			self.log = self.default_logging.logger;
 		}
 
 		self.router.init(allocator, self.log);
-		self.ctx.init(allocator);
-		self.config = config;
+		self.initial_ctx.init(allocator);
 
-		self.ctx.register(log::Logger, &self.log);
-
+		self.builtin_middleware.conf = self.config;
+		self.builtin.logging_middleware = true;
 		if (self.config.cors.enabled)
 		{
-			self.ctx.register(Config, self.config);
-			self.router.use_middleware(&cors);
+			router::use{BuiltinMiddleware}(&self.router, "/", &BuiltinMiddleware.cors, &self.builtin_middleware);
 		}
-		if (logger == null)
-		{
-			self.router.use_middleware(&logging);
-		}
+
 		return self;
 	};
+}
+
+fn void Server.use_builtin_logging_middleware(&self, bool enabled)
+{
+	self.builtin.logging_middleware = enabled;
+}
+
+fn Logger* Server.get_logger(&self)
+{
+	return &self.log;
+}
+
+fn Config* Server.get_config(&self)
+{
+	return self.config;
+}
+
+fn Context* Server.get_context(&self)
+{
+	return &self.initial_ctx;
 }
 
 <*
@@ -120,11 +156,6 @@ fn Router* Server.get_router(&self)
 	return &self.router;
 }
 
-fn Context* Server.get_context(&self)
-{
-	return &self.ctx;
-}
-
 <*
  Run the server accept loop.
 
@@ -133,6 +164,12 @@ fn Context* Server.get_context(&self)
 *>
 fn void? Server.run(&self)
 {
+	self.builtin_middleware.log = self.log;
+	if (self.builtin.logging_middleware)
+	{
+		router::use{BuiltinMiddleware}(&self.router, "/", &BuiltinMiddleware.logging, &self.builtin_middleware);
+	}
+
 	self.log.debugf(
 		"Using concurrency mode %s",
 		"Set concurrency mode",
@@ -210,8 +247,9 @@ fn void? Server.run(&self)
 
 	ProcessContext context;
 	context.logger = self.log;
-	context.ctx = &self.ctx;
 	context.router = &self.router;
+	context.conf = self.config;
+	context.initial_ctx = &self.initial_ctx;
 
 	while (!self.should_close)
 	{
@@ -251,7 +289,16 @@ fn void close_socket(TcpSocket* socket, log::Logger log) @private
 *>
 fn void Server.free(&self)
 {
-	if (self.default_logging.logger != null) self.default_logging.logger.free();
-	if (self.default_logging.file_sink != null) self.default_logging.file_sink.free();
-	if (self.default_logging.console_sink != null) self.default_logging.console_sink.free();
+	if (self.default_logging.in_use)
+	{
+		if (self.default_logging.logger != null) self.default_logging.logger.free();
+		if (self.default_logging.file_sink != null) self.default_logging.file_sink.free();
+		if (self.default_logging.console_sink != null) self.default_logging.console_sink.free();
+	}
+	self.initial_ctx.free();
 }
+
+
+
+
+

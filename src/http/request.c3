@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::http;
 
 import std::io;
@@ -48,16 +51,16 @@ fn HttpRequest* HttpRequest.init(&self, Allocator allocator)
 
 fn void HttpRequest.reset(HttpRequest* self)
 {
-    self.method = HttpVerb.UNKNOWN;
-    self.uri = "";
+	self.method = HttpVerb.UNKNOWN;
+	self.uri = "";
 
-    self.headers.header_map.clear();
-    self.query.param_map.clear();
-    self.args.argument_map.clear();
+	self.headers.header_map.clear();
+	self.query.param_map.clear();
+	self.args.argument_map.clear();
 
-    self.body = {};
+	self.body = { };
 
-    self.bytes.clear();
+	self.bytes.clear();
 }
 
 <*
@@ -71,12 +74,46 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 	@pool()
 	{
 		char[256] buffer;
-		while (try sz bytes_read = socket.read(&buffer))
+		while (true)
 		{
+			sz? bytes_read = socket.read(&buffer);
+			if (catch bytes_read)
+			{
+				return http::NO_DATA~;
+			}
+
+			if (bytes_read == 0)
+			{
+				break;
+			}
+
 			self.bytes.push_all(buffer[:bytes_read]);
 
-			if ((ulong)self.bytes.size >= MAX_READ_SIZE) return http::REQUEST_TOO_LARGE~;
-			if (bytes_read < 256) break;
+			if ((ulong)self.bytes.size >= MAX_READ_SIZE)
+			{
+				return http::REQUEST_TOO_LARGE~;
+			}
+
+			// Stop reading once the HTTP header terminator is present
+			bool found_header_terminator = false;
+
+			if (self.bytes.size >= 4)
+			{
+				for (sz i = 0; i + 3 < self.bytes.size; i++)
+				{
+					if (self.bytes[i] == '\r' && self.bytes[i + 1] == '\n' && self.bytes[i + 2] == '\r'
+						&& self.bytes[i + 3] == '\n')
+					{
+						found_header_terminator = true;
+						break;
+					}
+				}
+			}
+
+			if (found_header_terminator)
+			{
+				break;
+			}
 		}
 
 		if (self.bytes.size == 0) return http::NO_DATA~;
@@ -103,12 +140,17 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 
 		if (!found_header_terminator) return http::MALFORMED_REQUEST~;
 
-		self.bytes[header_end] = '\0';
-
-		char[] body = self.bytes.entries[header_end + 4..self.bytes.size];
+		sz body_end = self.bytes.size;
+		if (self.bytes.entries[body_end-1] == '\0')
+		{
+			body_end--;
+		}
+		
+		char[] body = self.bytes.entries[header_end + 4..body_end-1];
 
 		List{String} header_lines;
-		header_lines.init_with_array(tmem, ((ZString)self.bytes.entries).str_view().tsplit("\r\n"));
+		String headers = (String)self.bytes.entries[:header_end];
+		header_lines.init_with_array(tmem, headers.tsplit("\r\n"));
 
 		String[] status_line = header_lines.pop_first()!.tsplit(" ");
 		if (status_line.len != 3) return http::MALFORMED_REQUEST~;
@@ -174,3 +216,8 @@ fn sz? HttpRequest.to_format(&self, Formatter* formatter) @dynamic
 
 	return len += formatter.print(" }")!;
 }
+
+
+
+
+

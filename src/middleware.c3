@@ -1,23 +1,29 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api;
 
+import c3api::config;
 
-fn RequestFlow cors(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res) @private
+struct BuiltinMiddleware @private
+{
+	config::Config* conf;
+	log::Logger log;
+}
+
+fn RequestFlow BuiltinMiddleware.cors(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	if (req.method == HttpVerb.OPTIONS)
 	{
-		Config* conf = ctx.resolve(Config)!!;
-
-		res.headers.set_header_value("Access-Control-Allow-Origin", conf.cors.allow_origin);
-		res.headers.set_header_value("Access-Control-Allow-Methods", conf.cors.allow_methods);
-		res.headers.set_header_value("Access-Control-Allow-Headers", conf.cors.allow_headers);
+		res.headers.set_header_value("Access-Control-Allow-Origin", self.conf.cors.allow_origin);
+		res.headers.set_header_value("Access-Control-Allow-Methods", self.conf.cors.allow_methods);
+		res.headers.set_header_value("Access-Control-Allow-Headers", self.conf.cors.allow_headers);
 	}
 	return RequestFlow.CONTINUE;
 }
 
-fn RequestFlow logging(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn RequestFlow BuiltinMiddleware.logging(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
-	log::Logger* log = ctx.resolve(log::Logger)!!;
-
 	DString user_agent     = dstring::temp();
 	DString content_type   = dstring::temp();
 	DString content_length = dstring::temp();
@@ -53,7 +59,7 @@ fn RequestFlow logging(Allocator allocator, Context* ctx, HttpRequest* req, Http
 	String content_type_str   = content_type.len() ? content_type.str_view() : "-";
 	String content_length_str = content_length.len() ? content_length.str_view() : "-";
 
-	log.infof(
+	self.log.infof(
 		"%s %s | %s | %s | %s | %s | %s",
 		"request",
 		log::_enum("method", &req.method),
@@ -65,3 +71,8 @@ fn RequestFlow logging(Allocator allocator, Context* ctx, HttpRequest* req, Http
 
 	return RequestFlow.CONTINUE;
 }
+
+
+
+
+

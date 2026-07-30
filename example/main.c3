@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module app;
 
 import std::collections::map;
@@ -69,7 +72,13 @@ fn void Controller.static_controller(&self, Allocator allocator, Context* ctx, H
 	io::printfn("%s", res);
 }
 
-fn RequestFlow router_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn RequestFlow router_log_middleware(
+	void* self = null,
+	Allocator allocator,
+	Context* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	log::Logger* log = ctx.resolve(log::Logger)!!;
 	log.debugf(
@@ -81,7 +90,13 @@ fn RequestFlow router_log_middleware(Allocator allocator, Context* ctx, HttpRequ
 	return RequestFlow.CONTINUE;
 }
 
-fn RequestFlow group_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn RequestFlow group_log_middleware(
+	void* self = null,
+	Allocator allocator,
+	Context* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	log::Logger* log = ctx.resolve(log::Logger)!!;
 	log.debugf(
@@ -93,7 +108,13 @@ fn RequestFlow group_log_middleware(Allocator allocator, Context* ctx, HttpReque
 	return RequestFlow.CONTINUE;
 }
 
-fn RequestFlow endpoint_log_middleware(Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn RequestFlow endpoint_log_middleware(
+	void* self = null,
+	Allocator allocator,
+	Context* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	log::Logger* log = ctx.resolve(log::Logger)!!;
 	log.debugf(
@@ -137,27 +158,29 @@ fn int main(String[] args)
 
 	c3api::Server server;
 	server.init(tmem, &config);
+	server.get_context().register(Logger, server.get_logger());
 
 	Router* router = server.get_router();
-	router.use_middleware(&router_log_middleware);
+	router.use("/", &router_log_middleware);
 
 	Controller controller = { .test = 2 };
 
 	@pool()
 	{
 		Group* example = router.group(tmem, "/v1/example");
-		example.use_middleware(&group_log_middleware);
-		example.add_middleware("/{name}", &endpoint_log_middleware);
+		example.use("/", &group_log_middleware);
+		example.use("/{name}", &endpoint_log_middleware);
 
 		example.get("/{name}", &no_controller);
 		group::get{void}(example, "/static/yay", &static_no_controller);
-		// TODO find nicer way than casting to (HandleFunc)
+		// TODO find nicer way then casting to (HandleFunc)
 		/* example.route(
 			RouteMethod.GET,
 			"/staticc/ctrl",
 			&Controller.static_controller,
 			&endpoint_log_middleware
 		); */
+
 		group::get{Controller}(example, "/staticc/ctrl", &Controller.static_controller, &controller);
 
 
@@ -178,3 +201,8 @@ fn int main(String[] args)
 
 	return 0;
 }
+
+
+
+
+

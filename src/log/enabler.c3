@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::log;
 
 <*
@@ -55,3 +58,7 @@ fn EnablerFunc min_level_enabler(LogLevel min_level)
 		case LogLevel.FATAL: return &min_level_fatal_enabler;
 	}
 }
+
+
+
+

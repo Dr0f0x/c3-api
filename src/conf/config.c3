@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::config;
 
 import std::io;
@@ -21,15 +24,17 @@ struct Config
 	uint port;
 	int tcp_backlog;
 
+	HttpConfig http;
 	CorsConfig cors;
-	LoggingConfig logging;
 	ConcurrencyConfig concurrency;
+	LoggingConfig logging;
 }
 
 const Config DEFAULT_CONFIG = {
 	.address = "127.0.0.1",
 	.port = 8080,
 	.tcp_backlog = 10000,
+	.http = http::DEFAULT_HTTP_CONFIG,
 	.cors = DEFAULT_CORS_CONFIG,
 	.logging = DEFAULT_LOGGING_CONFIG,
 	.concurrency = DEFAULT_CONCURRENCY_CONFIG,
@@ -48,6 +53,10 @@ fn void Config.from_other(&self, Config* other, Allocator allocator)
 	self.address = other.address.copy(allocator);
 	self.port = other.port;
 	self.tcp_backlog = other.tcp_backlog;
+
+	HttpConfig http;
+	http.from_other(&other.http, allocator);
+	self.http = http;
 
 	CorsConfig cors;
 	cors.from_other(&other.cors, allocator);
@@ -150,6 +159,10 @@ fn void? Config.parse_from_file(&self, Allocator allocator, Path path)
 		self.port = json.get_uint("port") ?? DEFAULT_CONFIG.port;
 		self.tcp_backlog = json.get_int("tcp_backlog") ?? DEFAULT_CONFIG.tcp_backlog;
 
+		HttpConfig http;
+		http.parse_from_object(allocator, json.get_or_create_obj("http"));
+		self.http = http;
+
 		CorsConfig cors;
 		cors.parse_from_object(allocator, json.get_or_create_obj("cors"));
 		self.cors = cors;
@@ -172,7 +185,13 @@ fn void? Config.parse_from_file(&self, Allocator allocator, Path path)
 fn void Config.free(&self, Allocator allocator)
 {
 	alloc::free(allocator, self.address);
+	self.http.free(allocator);
 	self.cors.free(allocator);
 	self.logging.free(allocator);
 	self.concurrency.free(allocator);
 }
+
+
+
+
+

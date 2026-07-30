@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::http;
 
 import std::io;
@@ -140,3 +143,8 @@ fn sz? HttpResponse.to_format(&self, Formatter* formatter) @dynamic
 
 	return len += formatter.print(" }")!;
 }
+
+
+
+
+

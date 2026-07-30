@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::http;
 
 import std::collections;
@@ -147,3 +150,8 @@ fn sz? HttpQueryParams.to_format(&self, Formatter* formatter) @dynamic
 {
 	return self.param_map.to_format(formatter);
 }
+
+
+
+
+

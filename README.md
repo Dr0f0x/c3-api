@@ -5,7 +5,6 @@
 Here are some planned features and improvements for the `c3-api` project:
 
 - [ ] **Http 2.0**
-- [ ] **Http 1.1. keep-alive**
 - [ ] **Performance Optimizations**
 - [ ] **Benchmarks**
 - [ ] **Pluggable Template rendering backend**
@@ -13,15 +12,16 @@ Here are some planned features and improvements for the `c3-api` project:
 - [ ] **Documentation**: Improve documentation with detailed examples and usage guides.
 - [ ] **Pipeline**: Pipeline to build and test the library, including performance and memory leak tests
 
-## Contributing
+## Docker Networking
 
-Contributions are welcome! Please follow these steps:
+When running the server in Docker, configure it to listen on `0.0.0.0` inside the container. To make
+it accessible only from your local machine, publish the port on the host's loopback interface:
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Commit your changes (`git commit -am 'Add new feature'`).
-4. Push to the branch (`git push origin feature-branch`).
-5. Create a new Pull Request.
+```sh
+docker run -p 127.0.0.1:8080:8080 c3api-demo
+```
+
+This allows connections from `localhost` on the host while preventing access from other devices on the network.
 
 ## License
 

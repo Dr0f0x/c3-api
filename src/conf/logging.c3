@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::config;
 
 import std::collections::object;
@@ -89,3 +92,8 @@ fn void LoggingConfig.free(&self, Allocator allocator)
 {
 	// No dynamic memory to free for LoggingConfig
 }
+
+
+
+
+

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::config;
 
 import std::collections::object;
@@ -76,3 +79,7 @@ fn void CorsConfig.free(&self, Allocator allocator)
 	alloc::free(allocator, self.allow_headers);
 	alloc::free(allocator, self.allow_origin);
 }
+
+
+
+

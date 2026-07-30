@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::routing;
 
 import std::io;
@@ -141,7 +144,7 @@ fn bool HandlerCollection.set_delete(
 fn RegisteredHandler*? HandlerCollection.get_handler(&self, RouteMethod method)
 {
 	RegisteredHandler* val = self.handler_map.get_ref(method);
-	if (val == null)
+	if (val == null || val.handler == null)
 	{
 		return NOT_FOUND~;
 	}
@@ -224,3 +227,7 @@ fn sz? HandlerCollection.to_format(&self, Formatter* formatter) @dynamic
 	len += formatter.print(" }")!;
 	return len;
 }
+
+
+
+

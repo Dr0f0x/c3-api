@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 module c3api::routing::internal;
 
 import std::collections::map;
@@ -26,7 +29,7 @@ fn HandlerCollection*? _get_handlers(
 	HandlerCollection* start_handlers,
 	HashMap{String, RouteNode}* start_nodes,
 	HttpRequest* request,
-	List{MiddlewareFunc}* middleware_collector,
+	List{RegisteredMiddleware}* middleware_collector,
 	log::Logger log,
 )
 {
@@ -118,7 +121,7 @@ fn RouteNode*? _get_or_create_node(String uri, HashMap{String, RouteNode}* start
 
 		// remove leading slash
 		if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
-
+		
 		String[] uri_segments = uri.tsplit("/");
 
 		RouteNode* cur_node;
@@ -198,9 +201,9 @@ fn bool _add_handler(
 	RouteMethod method,
 	HandleFunc handler,
 	void* controller,
-	MiddlewareFunc[] middlewares,
+	RegisteredMiddleware[] middlewares,
 	HandlerCollection* start_handlers,
-	List{MiddlewareFunc}* start_middlewares,
+	List{RegisteredMiddleware}* start_middlewares,
 	HashMap{String, RouteNode}* start_nodes,
 	log::Logger log
 )
@@ -250,3 +253,8 @@ macro RouteNode new_route_node(String name) @private
 	node.init(mem, name);
 	return node;
 }
+
+
+
+
+
