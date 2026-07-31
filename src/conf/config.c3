@@ -10,6 +10,7 @@ import std::io::path;
 import std::collections::object;
 import std::encoding::json;
 import std::core::string;
+import std::time::datetime;
 
 const Path DEFAULT_CONF_PATH = "c3api.conf.json";
 
@@ -34,7 +35,7 @@ const Config DEFAULT_CONFIG = {
 	.address = "127.0.0.1",
 	.port = 8080,
 	.tcp_backlog = 10000,
-	.http = http::DEFAULT_HTTP_CONFIG,
+	.http = DEFAULT_HTTP_CONFIG,
 	.cors = DEFAULT_CORS_CONFIG,
 	.logging = DEFAULT_LOGGING_CONFIG,
 	.concurrency = DEFAULT_CONCURRENCY_CONFIG,
@@ -153,11 +154,11 @@ fn void? Config.parse_from_file(&self, Allocator allocator, Path path)
 		Object* json   = json::tparse(content)!!;
 		file.close()!;
 
-		String parsed_address = json.get_string("address") ?? DEFAULT_CONFIG.address;
+		String parsed_address = get_or_default{String}(json, "address", DEFAULT_CONFIG.address);
 
 		self.address = parsed_address.copy(allocator);
-		self.port = json.get_uint("port") ?? DEFAULT_CONFIG.port;
-		self.tcp_backlog = json.get_int("tcp_backlog") ?? DEFAULT_CONFIG.tcp_backlog;
+		self.port = get_or_default{uint}(json, "port", DEFAULT_CONFIG.port);
+		self.tcp_backlog = get_or_default{int}(json, "tcp_backlog", DEFAULT_CONFIG.tcp_backlog);
 
 		HttpConfig http;
 		http.parse_from_object(allocator, json.get_or_create_obj("http"));
@@ -192,6 +193,48 @@ fn void Config.free(&self, Allocator allocator)
 }
 
 
+macro Type get_or_default(Object* obj, String key, Type default_val) <Type> @private
+{
+	$switch Type:
+		$case String:
+			return get_specific(obj, &Object.get_string, key, default_val);
+		$case uint:
+			return get_specific(obj, &Object.get_uint, key, default_val);
+		$case int:
+			return get_specific(obj, &Object.get_int, key, default_val);
+		$case long:
+			return get_specific(obj, &Object.get_long, key, default_val);
+		$case bool:
+			return get_specific(obj, &Object.get_bool, key, default_val);
+		$default:
+			@compile_error("get_or_default: unsupported type");
+	$endswitch
+}
 
+alias ObjGetFunc <Type> @private = fn Type?(Object* self, String key);
 
+macro Type get_specific(Object* obj, ObjGetFunc{Type} getter, String key, Type default_val) <Type> @private
+{
+	if (try val = getter(obj, key))
+	{
+		return val;
+	}
+	io::printfn(
+		"[%s] [WARN] parsed config contained no or invalid value for %s, falling back to default %s",
+		datetime::now()
+		.format(tmem, DateTimeFormat.UNIXDATE), key, default_val);
+	return default_val;
+}
 
+alias ParseFunc <Type> @private = fn Type?(String str);
+
+macro Type parse_or_default(String key, String str, ParseFunc{Type} parse, Type default_val) <Type> @private
+{
+	if (try val = parse(str))
+	{
+		return val;
+	}
+	io::printfn("[%s] [WARN] parsed config contained invalid value %s for %s, falling back to default %s", datetime::now()
+		.format(tmem, DateTimeFormat.UNIXDATE), str, key, default_val);
+	return default_val;
+}

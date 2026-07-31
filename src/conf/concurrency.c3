@@ -24,7 +24,11 @@ struct ConcurrencyConfig
 
 const ConcurrencyConfig DEFAULT_CONCURRENCY_CONFIG = {
 	.mode = ConcurrencyMode.THREAD_POOL,
-	.thread_pool = { .max_threads = 32, .queue_capacity = 10000, .keep_alive_ms = (Duration)30 * time::SEC, },
+	.thread_pool = {
+		.max_threads = 32,
+		.queue_capacity = 10000,
+		.keep_alive_ms = (Duration)((30 * time::SEC) / time::MS),
+	},
 };
 
 <*
@@ -52,31 +56,41 @@ fn void ConcurrencyConfig.parse_from_object(&self, Allocator allocator, Object* 
 {
 	@pool()
 	{
-		if (try mode = concurrency_obj.get_string("mode"))
-		{
-			self.mode = concurrency::from_string(mode) ?? DEFAULT_CONCURRENCY_CONFIG.mode;
-		}
-		else
-		{
-			self.mode = DEFAULT_CONCURRENCY_CONFIG.mode;
-		}
+		String mode = get_or_default{String}(
+			concurrency_obj,
+			"mode",
+			DEFAULT_CONCURRENCY_CONFIG.mode.to_constant_string()
+		);
+		self.mode = parse_or_default{concurrency::ConcurrencyMode}(
+			"mode",
+			mode,
+			&concurrency::from_string,
+			DEFAULT_CONCURRENCY_CONFIG.mode
+		);
 
 		switch (self.mode)
 		{
 			case ConcurrencyMode.THREAD_POOL:
 				Object* thread_pool_obj = concurrency_obj.get_or_create_obj("thread_pool");
 
-				self.thread_pool.max_threads = thread_pool_obj.get_uint(
-					"max_threads"
-				) ?? DEFAULT_CONCURRENCY_CONFIG.thread_pool.max_threads;
+				self.thread_pool.max_threads = get_or_default{uint}(
+					thread_pool_obj,
+					"max_threads",
+					DEFAULT_CONCURRENCY_CONFIG.thread_pool.max_threads
+				);
 
-				self.thread_pool.queue_capacity = thread_pool_obj.get_uint(
-					"queue_capacity"
-				) ?? DEFAULT_CONCURRENCY_CONFIG.thread_pool.queue_capacity;
+				self.thread_pool.queue_capacity = get_or_default{uint}(
+					thread_pool_obj,
+					"queue_capacity",
+					DEFAULT_CONCURRENCY_CONFIG.thread_pool.queue_capacity
+				);
 
-				self.thread_pool.keep_alive_ms = (Duration)thread_pool_obj.get_long(
-					"keep_alive_ms"
-				) * time::MS ?? DEFAULT_CONCURRENCY_CONFIG.thread_pool.keep_alive_ms;
+				self.thread_pool.keep_alive_ms = (Duration)get_or_default{long}(
+					thread_pool_obj,
+					"keep_alive_ms",
+					(long)(DEFAULT_CONCURRENCY_CONFIG.thread_pool.keep_alive_ms / time::MS)
+				) * time::MS;
+
 			case ConcurrencyMode.THREAD_PER_REQUEST:
 			// nothing to handle
 		}
@@ -94,8 +108,3 @@ fn void ConcurrencyConfig.free(&self, Allocator allocator)
 {
 	// No dynamic memory to free for ConcurrencyConfig
 }
-
-
-
-
-

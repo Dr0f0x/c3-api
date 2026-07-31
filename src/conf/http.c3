@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api::config::http;
+module c3api::config;
 
 import std::collections::object;
 import std::time;
@@ -26,7 +26,11 @@ struct HttpConfig
 
 const HttpConfig DEFAULT_HTTP_CONFIG = {
 	.trace_enabled = false,
-	.keep_alive = { .enabled = true, .max_requests_per_connection = 500, .idle_timeout_ms = (Duration)10 * time::SEC, }
+	.keep_alive = {
+		.enabled = true,
+		.max_requests_per_connection = 500,
+		.idle_timeout_ms = (Duration)((10 * time::SEC) / time::MS),
+	}
 };
 
 <*
@@ -57,16 +61,27 @@ fn void HttpConfig.parse_from_object(&self, Allocator allocator, Object* http_ob
 {
 	@pool()
 	{
-		self.trace_enabled = http_obj.get_bool("trace_enabled") ?? false;
+		self.trace_enabled = get_or_default{bool}(http_obj, "trace_enabled", false);
 
 		Object* keep_alive_obj = http_obj.get_or_create_obj("keep_alive");
-		self.keep_alive.enabled = keep_alive_obj.get_bool("enabled") ?? DEFAULT_HTTP_CONFIG.keep_alive.enabled;
-		self.keep_alive.max_requests_per_connection = keep_alive_obj.get_uint(
-			"max_requests_per_connection"
-		) ?? DEFAULT_HTTP_CONFIG.keep_alive.max_requests_per_connection;
-		self.keep_alive.idle_timeout_ms = (Duration)keep_alive_obj.get_long(
-			"idle_timeout_ms"
-		) * time::MS ?? DEFAULT_HTTP_CONFIG.keep_alive.idle_timeout_ms;
+
+		self.keep_alive.enabled = get_or_default{bool}(
+			keep_alive_obj,
+			"enabled",
+			DEFAULT_HTTP_CONFIG.keep_alive.enabled
+		);
+
+		self.keep_alive.max_requests_per_connection = get_or_default{uint}(
+			keep_alive_obj,
+			"max_requests_per_connection",
+			DEFAULT_HTTP_CONFIG.keep_alive.max_requests_per_connection
+		);
+
+		self.keep_alive.idle_timeout_ms = (Duration)get_or_default{long}(
+			keep_alive_obj,
+			"idle_timeout_ms",
+			(long)(DEFAULT_HTTP_CONFIG.keep_alive.idle_timeout_ms / time::MS)
+		) * time::MS;
 	};
 }
 
@@ -82,8 +97,3 @@ fn void HttpConfig.free(&self, Allocator allocator)
 {
 	// No dynamic memory to free for HttpConfig
 }
-
-
-
-
-

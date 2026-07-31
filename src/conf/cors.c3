@@ -51,17 +51,19 @@ fn void CorsConfig.parse_from_object(&self, Allocator allocator, Object* cors_ob
 {
 	@pool()
 	{
-		String parsed_allow_methods = cors_obj.get_string(
-			"Access-Control-Allow-Methods"
-		) ?? DEFAULT_CORS_CONFIG.allow_methods;
-		String parsed_allow_headers = cors_obj.get_string(
-			"Access-Control-Allow-Headers"
-		) ?? DEFAULT_CORS_CONFIG.allow_headers;
-		String parsed_allow_origin  = cors_obj.get_string(
-			"Access-Control-Allow-Origin"
-		) ?? DEFAULT_CORS_CONFIG.allow_origin;
+		String parsed_allow_methods = get_or_default{String}(
+			cors_obj,
+			"allow_methods",
+			DEFAULT_CORS_CONFIG.allow_methods
+		);
+		String parsed_allow_headers = get_or_default{String}(
+			cors_obj,
+			"allow_methods",
+			DEFAULT_CORS_CONFIG.allow_headers
+		);
+		String parsed_allow_origin = get_or_default{String}(cors_obj, "allow_origin", DEFAULT_CORS_CONFIG.allow_origin);
 
-		self.enabled = cors_obj.get_bool("enabled") ?? DEFAULT_CORS_CONFIG.enabled;
+		self.enabled = get_or_default{bool}(cors_obj, "enabled", DEFAULT_CORS_CONFIG.enabled);
 		self.allow_methods = parsed_allow_methods.copy(allocator);
 		self.allow_headers = parsed_allow_headers.copy(allocator);
 		self.allow_origin = parsed_allow_origin.copy(allocator);
@@ -79,7 +81,3 @@ fn void CorsConfig.free(&self, Allocator allocator)
 	alloc::free(allocator, self.allow_headers);
 	alloc::free(allocator, self.allow_origin);
 }
-
-
-
-

@@ -55,28 +55,34 @@ fn void LoggingConfig.parse_from_object(&self, Allocator allocator, Object* logg
 	@pool()
 	{
 		Object* console_obj = logging_obj.get_or_create_obj("console");
-		self.console.enabled = console_obj.get_bool("enabled") ?? DEFAULT_LOGGING_CONFIG.console.enabled;
+		self.console.enabled = get_or_default{bool}(console_obj, "enabled", DEFAULT_LOGGING_CONFIG.console.enabled);
 
-		if (try console_min_level = console_obj.get_string("min_level"))
-		{
-			self.console.min_level = log::from_string(console_min_level) ?? DEFAULT_LOGGING_CONFIG.console.min_level;
-		}
-		else
-		{
-			self.console.min_level = DEFAULT_LOGGING_CONFIG.console.min_level;
-		}
+		String console_min_level = get_or_default{String}(
+			console_obj,
+			"min_level",
+			DEFAULT_LOGGING_CONFIG.console.min_level.to_constant_string()
+		);
+		self.console.min_level = parse_or_default{LogLevel}(
+			"min_level",
+			console_min_level,
+			&log::from_string,
+			DEFAULT_LOGGING_CONFIG.console.min_level
+		);
 
 		Object* file_obj = logging_obj.get_or_create_obj("file");
-		self.file.enabled = file_obj.get_bool("enabled") ?? DEFAULT_LOGGING_CONFIG.file.enabled;
+		self.file.enabled = get_or_default{bool}(file_obj, "enabled", DEFAULT_LOGGING_CONFIG.file.enabled);
 
-		if (try file_min_level = file_obj.get_string("min_level"))
-		{
-			self.file.min_level = log::from_string(file_min_level) ?? DEFAULT_LOGGING_CONFIG.file.min_level;
-		}
-		else
-		{
-			self.file.min_level = DEFAULT_LOGGING_CONFIG.file.min_level;
-		}
+		String file_min_level = get_or_default{String}(
+			file_obj,
+			"min_level",
+			DEFAULT_LOGGING_CONFIG.file.min_level.to_constant_string()
+		);
+		self.file.min_level = parse_or_default{LogLevel}(
+			"min_level",
+			file_min_level,
+			&log::from_string,
+			DEFAULT_LOGGING_CONFIG.file.min_level
+		);
 	};
 }
 
@@ -92,8 +98,3 @@ fn void LoggingConfig.free(&self, Allocator allocator)
 {
 	// No dynamic memory to free for LoggingConfig
 }
-
-
-
-
-
