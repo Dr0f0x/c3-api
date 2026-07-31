@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api;
+module c3api::context;
 
 import std::io;
 import std::collections::map;

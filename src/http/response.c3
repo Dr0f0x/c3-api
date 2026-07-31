@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api::http;
+module c3api::http::response;
 
 import std::io;
 import std::net;
@@ -9,13 +9,15 @@ import std::collections;
 import std::core::string;
 import std::core::dstring;
 
+import c3api::http::headers;
+
 <*
  HTTP response container.
 *>
 struct HttpResponse (Printable)
 {
 	HttpStatus status;
-	HttpHeaders headers;
+	headers::HttpHeaders headers;
 	char[] body;
 }
 

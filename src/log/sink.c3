@@ -47,7 +47,7 @@ struct ConsoleSink (LogSink)
  @param encoder : "Encoder callback to apply to each entry"
  @return "Initialized console sink"
 *>
-fn ConsoleSink*? ConsoleSink.init(&self, EncoderFunc encoder = &plain_encode)
+fn ConsoleSink*? ConsoleSink.init(&self, EncoderFunc encoder = &log::plain_encode)
 {
 	self.encoder = encoder;
 	self.mutex.init()!;
@@ -134,7 +134,7 @@ fn FileSink*? FileSink.init(
 	Path file,
 	bool from_cwd = true,
 	bool create_if_missing = true,
-	EncoderFunc encoder = &json_encode
+	EncoderFunc encoder = &log::json_encode
 )
 {
 	@pool()

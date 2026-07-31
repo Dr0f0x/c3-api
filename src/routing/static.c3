@@ -10,6 +10,7 @@ import std::io::file;
 
 import c3api::http;
 import c3api::log;
+import c3api::context;
 import c3api::routing::internal;
 
 fn void? Router.serve_static(&self, String uri, Path path, bool indexing = true, bool clean_urls = true)

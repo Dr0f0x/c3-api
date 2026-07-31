@@ -9,6 +9,9 @@ import std::io;
 
 import c3api::http;
 import c3api::log;
+import c3api::routing::handler;
+import c3api::routing::node;
+import c3api::routing::middleware;
 
 <*
  Traverse the route trie and return handlers for a URI.

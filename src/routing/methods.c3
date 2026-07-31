@@ -56,7 +56,7 @@ faultdef UNSUPPORTED_HTTP_VERB;
 
  @return "The corresponding routing method, or UNSUPPORTED_HTTP_VERB~ if the verb is not routable"
 *>
-fn RouteMethod? from_http_verb(HttpVerb verb)
+fn RouteMethod? route_method_from_http_verb(HttpVerb verb)
 {
 	switch (verb)
 	{

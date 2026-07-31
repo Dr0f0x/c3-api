@@ -6,11 +6,6 @@ module c3api::http;
 import std::io;
 
 <*
- Fault raised when an HTTP method token cannot be parsed.
-*>
-faultdef INVALID_VERB;
-
-<*
  Supported HTTP request methods.
 *>
 enum HttpVerb (Printable)
@@ -77,7 +72,5 @@ fn HttpVerb? parse_verb(String verb)
 			return http::INVALID_VERB~;
 	}
 }
-
-
 
 

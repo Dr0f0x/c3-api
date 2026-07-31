@@ -9,9 +9,6 @@ import std::encoding::json;
 import std::time::datetime;
 
 import c3api;
-import c3api::http::cookies;
-import c3api::config;
-import c3api::routing;
 import c3api::routing::router;
 import c3api::routing::group;
 
@@ -201,8 +198,3 @@ fn int main(String[] args)
 
 	return 0;
 }
-
-
-
-
-

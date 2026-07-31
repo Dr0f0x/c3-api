@@ -20,29 +20,6 @@ enum LogLevel (Printable) : int (String name, String name_upper)
 	FATAL { "Fatal", "FATAL" }
 }
 
-faultdef INVALID_LOG_LEVEL;
-
-<*
- Parse an loglevel token into a [LogLevel].
-
- @param [in] str : "The loglevel token from the request line"
- @return "A parsed [LogLevel] value"
-*>
-fn LogLevel? from_string(String str)
-{
-	switch (str)
-	{
-		case "TRACE": return LogLevel.TRACE;
-		case "DEBUG": return LogLevel.DEBUG;
-		case "INFO": return LogLevel.INFO;
-		case "WARN": return LogLevel.WARN;
-		case "ERROR": return LogLevel.ERROR;
-		case "FATAL": return LogLevel.FATAL;
-		default:
-			return INVALID_LOG_LEVEL~;
-	}
-}
-
 fn String LogLevel.to_constant_string(&self) @dynamic
 {
 	switch (*self)

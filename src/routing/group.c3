@@ -6,6 +6,9 @@ module c3api::routing::group;
 import std::io;
 
 import c3api::log;
+import c3api::routing::handler;
+import c3api::routing::node;
+import c3api::routing::middleware;
 import c3api::routing::internal;
 
 <*
@@ -211,8 +214,3 @@ fn sz? Group.to_route_format(&self, Formatter* formatter)
 	sz len = self.node.to_route_format(formatter, 0)!;
 	return len;
 }
-
-
-
-
-

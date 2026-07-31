@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api;
+module c3api @private;
 
 import std::io;
 import std::net::tcp;
@@ -10,8 +10,10 @@ import std::collections::map;
 import std::collections::list;
 import std::net::os;
 
-import c3api::utils;
 import c3api::http;
+import c3api::routing;
+import c3api::http::request;
+import c3api::http::response;
 
 <*
  Context passed to each worker thread.
@@ -75,15 +77,15 @@ fn void process(ProcessContext* context_arg) @private
 					}
 				}
 
-				http::HttpRequest req;
+				request::HttpRequest req;
 				req.init(tmem);
 				defer req.free();
 
-				http::HttpResponse res;
+				response::HttpResponse res;
 				res.init(tmem);
 				defer res.free();
 
-				Context ctx;
+				context::Context ctx;
 				ctx.init(tmem);
 				ctx.add_from(initial_ctx);
 				defer ctx.free();
@@ -314,7 +316,7 @@ fn void? handle(
 
 		if (catch err = handlers)
 		{
-			routing::e404(null, allocator, ctx, req, res);
+			routing::handler::e404(null, allocator, ctx, req, res);
 		}
 		else
 		{
@@ -333,12 +335,12 @@ fn void? handle(
 			}
 		}
 	}
-	else if (try method = routing::from_http_verb(req.method))
+	else if (try method = routing::route_method_from_http_verb(req.method))
 	{
 		registered_handler = router.get_route(method, req.uri, req, &middleware_collector) ?? null;
 		if (registered_handler == null)
 		{
-			routing::e404(null, allocator, ctx, req, res);
+			routing::handler::e404(null, allocator, ctx, req, res);
 		}
 		else if (run_middlewares(allocator, ctx, req, res, &middleware_collector))
 		{

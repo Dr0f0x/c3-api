@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api::routing;
+module c3api::routing::middleware;
 
 import c3api::http;
+import c3api::context;
 
 <*
  Control signal returned by middleware execution.

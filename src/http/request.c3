@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api::http;
+module c3api::http::request;
 
 import std::io;
 import std::net;
 import std::collections;
 import std::core::string;
+
+import c3api::http::headers;
+import c3api::http::params;
+import c3api::http::args;
 
 const ulong MAX_READ_SIZE = /* 5 MiB */ 1024 * 1024 * 5;
 
@@ -18,17 +22,14 @@ struct HttpRequest
 	HttpVerb method;
 	String uri;
 
-	HttpHeaders headers;
-	HttpQueryParams query;
-	HttpPathArguments args;
+	headers::HttpHeaders headers;
+	params::HttpQueryParams query;
+	args::HttpPathArguments args;
 
 	char[] body;
 
 	List{char} bytes;
 }
-
-faultdef
-	NO_DATA, REQUEST_TOO_LARGE, MALFORMED_REQUEST, UNSUPPORTED_VERSION, UNIMPLEMENTED, TLS_ON_HTTP_PORT;
 
 <*
  Initialize an HTTP request container with an allocator.
@@ -158,7 +159,7 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 		String version = status_line[2];
 		if (version != "HTTP/1.1") return http::UNSUPPORTED_VERSION~;
 
-		self.method = parse_verb(status_line[0])!;
+		self.method = http::parse_verb(status_line[0])!;
 		self.uri = status_line[1];
 
 		sz query_start = self.uri.index_of_char('?') ?? -1;
@@ -216,8 +217,5 @@ fn sz? HttpRequest.to_format(&self, Formatter* formatter) @dynamic
 
 	return len += formatter.print(" }")!;
 }
-
-
-
 
 

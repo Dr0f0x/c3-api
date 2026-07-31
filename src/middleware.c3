@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api;
+module c3api @private;
 
 import c3api::config;
+import c3api::context;
 
-struct BuiltinMiddleware @private
+struct BuiltinMiddleware
 {
 	config::Config* conf;
 	log::Logger log;

@@ -32,7 +32,7 @@ fn String plain_encode(Allocator allocator, LogEntry* entry)
 		"[%s] [%s] %s",
 		entry.timestamp.format(allocator, DateTimeFormat.UNIXDATE),
 		entry.level.name_upper,
-		string::format(allocator, entry.fmt_msg, ...values(allocator, entry.fields))
+		string::format(allocator, entry.fmt_msg, ...log::values(allocator, entry.fields))
 	);
 }
 
@@ -67,7 +67,7 @@ fn String color_encode(Allocator allocator, LogEntry* entry)
 		color,
 		entry.timestamp.format(allocator, DateTimeFormat.UNIXDATE),
 		entry.level.name_upper,
-		string::format(allocator, entry.fmt_msg, ...values(allocator, entry.fields)),
+		string::format(allocator, entry.fmt_msg, ...log::values(allocator, entry.fields)),
 		Ansi.RESET
 	);
 }

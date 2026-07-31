@@ -9,10 +9,11 @@ import std::thread;
 
 import c3api::config;
 import c3api::routing;
+import c3api::concurrency::pool;
+import c3api::concurrency::spawn;
 
-const uint BACKLOG = 10000;
-
-alias DispatchFunc = fn void?(void* dispatcher, RequestProcessFunc process_fn, ProcessContext* context);
+alias RequestProcessFunc @private = fn void(ProcessContext* context);
+alias DispatchFunc @private = fn void?(void* dispatcher, RequestProcessFunc process_fn, ProcessContext* context);
 
 struct Server
 {
@@ -25,8 +26,8 @@ struct Server
 
 	union dispatch_opts
 	{
-		concurrency::PoolDispatcher pool;
-		concurrency::PerRequestDispatcher per_request;
+		pool::PoolDispatcher pool;
+		spawn::PerRequestDispatcher per_request;
 	}
 	void* dispatcher;
 	DispatchFunc dispatch_fn;
@@ -261,7 +262,7 @@ fn void? Server.run(&self)
 		}
 		context.socket = socket;
 
-		if (catch err = self.dispatch_fn(self.dispatcher, &process, @clone(context)))
+		if (catch err = self.dispatch_fn(self.dispatcher, (RequestProcessFunc)&process, @clone(context)))
 		{
 			self.log.errorf("Thread creation failed: %s", "thread creation failed", log::_error(&err));
 			close_socket(&socket, self.log);
@@ -297,8 +298,3 @@ fn void Server.free(&self)
 	}
 	self.initial_ctx.free();
 }
-
-
-
-
-

@@ -1,6 +1,6 @@
 // copy of the std/lib threadpool as that needs to be enabled with a compile flag
 
-module c3api::concurrency;
+module c3api::concurrency::pool @private;
 
 import std::collections::deque, std::time, std::atomic::types;
 import std::thread;

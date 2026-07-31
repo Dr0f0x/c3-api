@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api::routing;
+module c3api::routing::node;
 
 import std::collections::map;
 import std::collections::list;
 import std::io;
+
+import c3api::routing::handler;
+import c3api::routing::middleware;
 
 <*
  Node in the route trie.

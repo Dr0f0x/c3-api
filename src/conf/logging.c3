@@ -5,7 +5,6 @@ module c3api::config;
 
 import std::collections::object;
 import c3api::log;
-
 <*
  Logging configuration.
 
@@ -65,7 +64,7 @@ fn void LoggingConfig.parse_from_object(&self, Allocator allocator, Object* logg
 		self.console.min_level = parse_or_default{LogLevel}(
 			"min_level",
 			console_min_level,
-			&log::from_string,
+			&parse_log_level,
 			DEFAULT_LOGGING_CONFIG.console.min_level
 		);
 
@@ -80,7 +79,7 @@ fn void LoggingConfig.parse_from_object(&self, Allocator allocator, Object* logg
 		self.file.min_level = parse_or_default{LogLevel}(
 			"min_level",
 			file_min_level,
-			&log::from_string,
+			&parse_log_level,
 			DEFAULT_LOGGING_CONFIG.file.min_level
 		);
 	};

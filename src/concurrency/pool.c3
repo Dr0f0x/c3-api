@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module c3api::concurrency;
+module c3api::concurrency::pool;
 
 import std::time;
 import std::thread;
@@ -11,12 +11,10 @@ import c3api::log;
 
 struct PoolDispatcher
 {
-	concurrency::ThreadPool threads;
+	pool::ThreadPool threads;
 
 	log::Logger log;
 }
-
-alias RequestProcessFunc = fn void(ProcessContext* context);
 
 fn void? PoolDispatcher.init(
 	&self,
@@ -32,22 +30,17 @@ fn void? PoolDispatcher.init(
 }
 
 
-fn void? PoolDispatcher.dispatch(&self, RequestProcessFunc process_fn, ProcessContext* context)
+fn void? PoolDispatcher.dispatch(&self, ThreadPoolTaskFn process_fn, void* context)
 {
-	return self.threads.add_task((ThreadPoolTaskFn)process_fn, context);
+	return self.threads.add_task(process_fn, context);
 }
 
-fn void? PoolDispatcher.try_dispatch(&self, RequestProcessFunc process_fn, ProcessContext* context)
+fn void? PoolDispatcher.try_dispatch(&self, ThreadPoolTaskFn process_fn, void* context)
 {
-	return self.threads.try_add_task((ThreadPoolTaskFn)process_fn, context);
+	return self.threads.try_add_task(process_fn, context);
 }
 
 fn void PoolDispatcher.destroy(&self)
 {
 	self.threads.destroy();
 }
-
-
-
-
-

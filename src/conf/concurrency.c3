@@ -64,7 +64,7 @@ fn void ConcurrencyConfig.parse_from_object(&self, Allocator allocator, Object* 
 		self.mode = parse_or_default{concurrency::ConcurrencyMode}(
 			"mode",
 			mode,
-			&concurrency::from_string,
+			&parse_concurrency_mode,
 			DEFAULT_CONCURRENCY_CONFIG.mode
 		);
 

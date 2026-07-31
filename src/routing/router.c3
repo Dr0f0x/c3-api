@@ -11,6 +11,9 @@ import c3api::http;
 import c3api::log;
 import c3api::routing::internal;
 import c3api::routing::group;
+import c3api::routing::handler;
+import c3api::routing::node;
+import c3api::routing::middleware;
 
 <*
  HTTP router using a trie of route nodes.
