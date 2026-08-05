@@ -137,7 +137,7 @@ fn ProcessResult process_single(
 	}
 
 	// handle errors when reading
-	if (catch err = req.read(socket))
+	if (catch err = req.read(socket, conf.http.max_read_size))
 	{
 		res.headers.set_header_values("Connection", "close");
 

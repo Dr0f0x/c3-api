@@ -72,6 +72,11 @@ fn void Config.from_other(&self, Config* other, Allocator allocator)
 	self.concurrency = concurrency;
 }
 
+fn void Config.from_default(&self, Allocator allocator)
+{
+	self.from_other(&DEFAULT_CONFIG, allocator);
+}
+
 <*
  Load configuration from `config.json` in the current working directory.
 
@@ -204,6 +209,8 @@ macro Type get_or_default(Object* obj, String key, Type default_val) <Type> @pri
 			return get_specific(obj, &Object.get_int, key, default_val);
 		$case long:
 			return get_specific(obj, &Object.get_long, key, default_val);
+		$case ulong:
+			return get_specific(obj, &Object.get_ulong, key, default_val);
 		$case bool:
 			return get_specific(obj, &Object.get_bool, key, default_val);
 		$default:

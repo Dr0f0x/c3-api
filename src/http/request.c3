@@ -12,8 +12,6 @@ import c3api::http::headers;
 import c3api::http::params;
 import c3api::http::args;
 
-const ulong MAX_READ_SIZE = /* 5 MiB */ 1024 * 1024 * 5;
-
 <*
  Parsed HTTP request container.
 *>
@@ -24,7 +22,7 @@ struct HttpRequest
 
 	headers::HttpHeaders headers;
 	params::HttpQueryParams query;
-	args::HttpPathArguments args;
+	args::HttpPathParams params;
 
 	char[] body;
 
@@ -43,7 +41,7 @@ fn HttpRequest* HttpRequest.init(&self, Allocator allocator)
 	self.uri = "";
 	self.headers.init(allocator);
 	self.query.init(allocator);
-	self.args.init(allocator);
+	self.params.init(allocator);
 
 	self.body = { };
 	self.bytes.init(allocator, 256);
@@ -57,7 +55,7 @@ fn void HttpRequest.reset(HttpRequest* self)
 
 	self.headers.header_map.clear();
 	self.query.param_map.clear();
-	self.args.argument_map.clear();
+	self.params.param_map.clear();
 
 	self.body = { };
 
@@ -70,7 +68,7 @@ fn void HttpRequest.reset(HttpRequest* self)
  @param [in] socket : "The socket to read request bytes from"
  @require socket != null : "Socket must be valid"
 *>
-fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
+fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket, ulong max_read_size)
 {
 	@pool()
 	{
@@ -90,7 +88,7 @@ fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket)
 
 			self.bytes.push_all(buffer[:bytes_read]);
 
-			if ((ulong)self.bytes.size >= MAX_READ_SIZE)
+			if ((ulong)self.bytes.size >= max_read_size)
 			{
 				return http::REQUEST_TOO_LARGE~;
 			}
@@ -185,7 +183,7 @@ fn void HttpRequest.free(HttpRequest* self)
 {
 	self.headers.free();
 	self.query.free();
-	self.args.free();
+	self.params.free();
 	self.bytes.free();
 
 	self.uri = "";
@@ -204,7 +202,7 @@ fn sz? HttpRequest.to_format(&self, Formatter* formatter) @dynamic
 	len += formatter.print(self.uri)!;
 
 	len += formatter.print(", arguments: ")!;
-	len += formatter.printf("%s", self.args)!;
+	len += formatter.printf("%s", self.params)!;
 
 	len += formatter.print(", params: ")!;
 	len += formatter.printf("%s", self.query)!;

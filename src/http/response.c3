@@ -97,8 +97,6 @@ fn void? HttpResponse.write(&self, TcpSocket* socket)
 	};
 }
 
-faultdef NO_DATA_WRITTEN;
-
 <*
  Write a complete byte array to the Socket
 

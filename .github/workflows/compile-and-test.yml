@@ -1,0 +1,45 @@
+name: Compile and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install C3
+        run: | 
+          curl -L https://github.com/c3lang/c3c/releases/latest/download/c3-linux-static.tar.gz -o c3.tar.gz
+          mkdir c3
+          tar -xzf c3.tar.gz -C c3 --strip-components=1
+          sudo mv c3/c3c /usr/local/bin/
+          c3c --version
+      - name: Build project
+        run: |
+          c3c build c3api
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install C3
+        run: |
+          wget https://github.com/c3lang/c3c/releases/latest/download/c3-ubuntu.tar.gz
+          tar -xzf c3-ubuntu.tar.gz
+          sudo mv c3/c3c /usr/local/bin/
+          c3c --version
+
+      - name: Build project
+        run: |
+          c3c test c3api

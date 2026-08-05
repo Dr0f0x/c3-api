@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Dr0f0x
 
-module app;
+module main;
 
 import std::collections::map;
 import std::io::path;
@@ -19,7 +19,7 @@ fn void no_controller(void* self = null, Allocator allocator, Context* ctx, Http
 	{
 		res.status = HttpStatus.OK;
 		DString greetings = dstring::temp();
-		greetings.appendfn("Look, %s, no controllers!", req.args["name"]!!);
+		greetings.appendfn("Look, %s, no controllers!", req.params["name"]!!);
 		res.body = string::format(allocator, greetings.tcopy_str(), req.method, req.uri);
 	};
 
@@ -135,7 +135,8 @@ struct Test
 fn int main(String[] args)
 {
 	config::Config config;
-	config.from_file(mem);
+	config.from_default(mem);
+	config.from_file(mem, config::DEFAULT_CONF_PATH, true);
 	defer config.free(mem);
 	/* log::C3ApiLogger logger;
 	logger.init(mem);
@@ -154,7 +155,8 @@ fn int main(String[] args)
 	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE)); */
 
 	c3api::Server server;
-	server.init(tmem, &config);
+	server.init(tmem);
+	defer server.free();
 	server.get_context().register(Logger, server.get_logger());
 
 	Router* router = server.get_router();
@@ -179,14 +181,14 @@ fn int main(String[] args)
 		); */
 
 		group::get{Controller}(example, "/staticc/ctrl", &Controller.static_controller, &controller);
-
+		router.get("/staticc/ctrl", (HandleFunc)&Controller.static_controller, &controller);
 
 		io::print("\nGroup routes\n");
 		routing::print_routes(example);
 	};
 
 	Path cwd = path::tcwd()!!;
-	Path dir = cwd.tappend("example/public")!!;
+	Path dir = cwd.tappend("examples/todo/public")!!;
 
 	router.serve_static("/files", dir)!!;
 

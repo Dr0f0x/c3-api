@@ -18,6 +18,7 @@ alias DispatchFunc @private = fn void?(void* dispatcher, RequestProcessFunc proc
 struct Server
 {
 	config::Config* config;
+	bool config_owned;
 
 	Router router;
 	Context initial_ctx;
@@ -58,7 +59,8 @@ struct Server
  file sinks according to the provided configuration.
 
  @param [&inout] allocator : "Allocator to use for internal allocations"
- @param [&in] config : "Server Configuration to use"
+ @param config : "Server Configuration to use"
+ @param logger : "Logger to use"
 
  @return "Initialized Server instance"
 *>
@@ -69,11 +71,14 @@ fn Server* Server.init(&self, Allocator allocator, Config* config = null, log::L
 	{
 		if (config == null)
 		{
-			self.config = &config::DEFAULT_CONFIG;
+			self.config = alloc::new(allocator, Config);
+			self.config.from_file(allocator);
+			self.config_owned = true;
 		}
 		else
 		{
 			self.config = config;
+			self.config_owned = false;
 		}
 
 		if (logger == null)
@@ -110,7 +115,7 @@ fn Server* Server.init(&self, Allocator allocator, Config* config = null, log::L
 		}
 		else
 		{
-			self.log = self.default_logging.logger;
+			self.log = logger;
 		}
 
 		self.router.init(allocator, self.log);
@@ -295,6 +300,11 @@ fn void Server.free(&self)
 		if (self.default_logging.logger != null) self.default_logging.logger.free();
 		if (self.default_logging.file_sink != null) self.default_logging.file_sink.free();
 		if (self.default_logging.console_sink != null) self.default_logging.console_sink.free();
+	}
+	if (self.config_owned && self.config != null)
+	{
+		self.config.free(self.allocator);
+		alloc::free(self.allocator, self.config);
 	}
 	self.initial_ctx.free();
 }

@@ -15,6 +15,7 @@ import std::time;
 struct HttpConfig
 {
 	bool trace_enabled;
+	ulong max_read_size;
 
 	struct keep_alive
 	{
@@ -26,6 +27,7 @@ struct HttpConfig
 
 const HttpConfig DEFAULT_HTTP_CONFIG = {
 	.trace_enabled = false,
+	.max_read_size = 1024 * 1024 * 5, /* 5 MiB */
 	.keep_alive = {
 		.enabled = true,
 		.max_requests_per_connection = 500,
@@ -42,6 +44,7 @@ const HttpConfig DEFAULT_HTTP_CONFIG = {
 fn void HttpConfig.from_other(&self, HttpConfig* other, Allocator allocator)
 {
 	self.trace_enabled = other.trace_enabled;
+	self.max_read_size = other.max_read_size;
 
 	self.keep_alive.enabled = other.keep_alive.enabled;
 	self.keep_alive.max_requests_per_connection = other.keep_alive.max_requests_per_connection;
@@ -61,7 +64,8 @@ fn void HttpConfig.parse_from_object(&self, Allocator allocator, Object* http_ob
 {
 	@pool()
 	{
-		self.trace_enabled = get_or_default{bool}(http_obj, "trace_enabled", false);
+		self.trace_enabled = get_or_default{bool}(http_obj, "trace_enabled", DEFAULT_HTTP_CONFIG.trace_enabled);
+		self.max_read_size = get_or_default{ulong}(http_obj, "max_read_size", DEFAULT_HTTP_CONFIG.max_read_size);
 
 		Object* keep_alive_obj = http_obj.get_or_create_obj("keep_alive");
 

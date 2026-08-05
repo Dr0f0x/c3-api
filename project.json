@@ -31,12 +31,6 @@
   // "target": "windows-x64",
   // Targets.
   "targets": {
-    "c3api-demo": {
-      "type": "executable",
-      "sources": [
-        "example/main.c3"
-      ]
-    },
     "c3api": {
       // Executable or library.
       "type": "static-lib",
@@ -45,7 +39,19 @@
       ],
       // Additional libraries, sources
       // and overrides of global settings here.
-    }
+    },
+    "c3api-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/todo/main.c3"
+      ]
+    },
+    "minimal-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/minimal/main.c3"
+      ]
+    },
   },
   // Global settings.
   // CPU name, used for optimizations in the LLVM backend.

@@ -78,7 +78,7 @@ fn HandlerCollection*? _get_handlers(
 		if (cur_node.name[0] == '{' && cur_node.name[^1] == '}')
 		{
 			String key = cur_node.name[1:^2];
-			request.args.set_argument_value(key, uri_segments[i]);
+			request.params.set_argument_value(key, uri_segments[i]);
 		}
 
 		i++;
