@@ -137,7 +137,7 @@ fn ProcessResult process_single(
 	}
 
 	// handle errors when reading
-	if (catch err = req.read(socket, conf.http.max_read_size))
+	if (catch err = req.read(socket, conf.http.max_read_size, 1))
 	{
 		res.headers.set_header_values("Connection", "close");
 
@@ -160,7 +160,7 @@ fn ProcessResult process_single(
 			return ProcessResult.ERROR;
 		}
 
-		if (catch write_err = res.write(socket))
+		if (catch write_err = res.write(socket, 1))
 		{
 			log.errorf("Failed to write: %s", "Failed to write response", log::_error(&write_err));
 		}
@@ -233,7 +233,7 @@ fn ProcessResult process_single(
 	}
 
 	// write response
-	if (catch err = res.write(socket))
+	if (catch err = res.write(socket, 1))
 	{
 		log.errorf("Failed to write: %s", "Failed to write response", log::_error(&err));
 		return ProcessResult.ERROR;

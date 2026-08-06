@@ -11,6 +11,7 @@ import std::time::datetime;
 import c3api;
 import c3api::routing::router;
 import c3api::routing::group;
+import c3api::encoding;
 
 fn void no_controller(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
@@ -132,6 +133,46 @@ struct Test
 	}
 }
 
+struct TodoRequest (Printable)
+{
+	String title @Json("title", true) @Xml("title", true) @Form("title", true);
+	String description @Json("description", true) @Xml("description", true) @Form("description", true);
+	bool completed @Json("completed", true) @Xml("completed", true) @Form("completed", true);
+}
+
+fn sz? TodoRequest.to_format(&self, Formatter* formatter) @dynamic
+{
+	sz len = formatter.print("TodoRequest { ")!;
+
+	len += formatter.print("title: ")!;
+	len += formatter.print(self.title)!;
+
+	len += formatter.print(", description: ")!;
+	len += formatter.print(self.description)!;
+
+	len += formatter.print(", completed: ")!;
+	len += formatter.printf("%b", self.completed)!;
+
+	return len += formatter.print(" }")!;
+}
+
+fn void todo_handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+{
+	io::printfn("req %s", req);
+	io::printfn("req body %s", (String)req.body);
+
+	TodoRequest*? todo = request::from_form{TodoRequest}(req, allocator);
+	if (catch err = todo)
+	{
+		res.status = HttpStatus.BAD_REQUEST;
+		res.body = string::format(allocator, `{"type":"error","message":"%s"}`, err);
+		return;
+	}
+	io::printfn("%s", todo);
+	res.status = HttpStatus.CREATED;
+	response::as_form{TodoRequest}(res, allocator, todo);
+}
+
 fn int main(String[] args)
 {
 	config::Config config;
@@ -191,6 +232,8 @@ fn int main(String[] args)
 	Path dir = cwd.tappend("examples/todo/public")!!;
 
 	router.serve_static("/files", dir)!!;
+
+	router.post("/todo", &todo_handler);
 
 	io::print("\nRouter routes\n");
 	routing::print_routes(router);

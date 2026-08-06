@@ -215,11 +215,12 @@ fn bool _add_handler(
 	if (catch err = node)
 	{
 		start_middlewares.push_all(middlewares);
-		return start_handlers.set_handler(method, handler);
+		return start_handlers.set_handler(method, handler, controller);
 	}
 	log.tracef("Assigning handler to '%s'", "Assigned handler to node", log::_string("node", &node.name));
 	log.tracef("Adding middlewares to '%s'", "Adding middlewares to node", log::_string("node", &node.name));
 	node.middlewares.push_all(middlewares);
+	
 	return node.handlers.set_handler(method, handler, controller);
 }
 

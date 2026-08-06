@@ -33,25 +33,70 @@
   "targets": {
     "c3api": {
       // Executable or library.
-      "type": "static-lib",
-      "sources": [
-        "src/**"
-      ],
-      // Additional libraries, sources
-      // and overrides of global settings here.
+      "type": "static-lib"
     },
-    "c3api-demo": {
-      "type": "executable",
-      "sources": [
-        "examples/todo/main.c3"
-      ]
-    },
+    
+    // example projects run with c3c run '<target-name>'
     "minimal-demo": {
       "type": "executable",
       "sources": [
         "examples/minimal/main.c3"
       ]
     },
+    "handler-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/handlers/main.c3"
+      ]
+    },
+    "middleware-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/middleware/main.c3"
+      ]
+    },
+    "path-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/path/main.c3"
+      ]
+    },
+    "query-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/query/main.c3"
+      ]
+    },
+    "cookie-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/cookie/main.c3"
+      ]
+    },
+    "encoding-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/encoding/main.c3"
+      ]
+    },
+    "static-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/static/main.c3"
+      ]
+    },
+    "logger-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/logger/main.c3"
+      ]
+    },
+    "todo-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/todo/main.c3"
+      ]
+    }
   },
   // Global settings.
   // CPU name, used for optimizations in the LLVM backend.

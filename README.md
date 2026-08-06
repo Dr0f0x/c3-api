@@ -70,13 +70,13 @@ fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpReques
     @pool()
     {
         // Build the response message.
-        DString greetings = dstring::temp();
+        DString greeting = dstring::temp();
 
         // Access the path parameter under "name".
-        greetings.appendfn("hello %s, c3-api is running!", req.args["name"]!!);
+        greeting.appendfn("hello %s, c3-api is running!", req.params["name"]!!);
 
         // Write the response body.
-        res.body = string::format(allocator, greetings.tcopy_str(), req.method, req.uri);
+        res.body = string::format(allocator, greeting.tcopy_str(), req.method, req.uri);
     };
 }
 
@@ -364,7 +364,7 @@ server.init(tmem, &config);
 defer server.free();
 ```
 
-Alternatively you can use `Config.from_file()`. This allows you to specify both the configuration file path and whether the file should be created automatically if it is missing. This is the same mechanism that `Server.init()` uses internally when no configuration is supplied.
+Another option is to use `Config.from_file()`. This allows you to specify both the configuration file path and whether the file should be created automatically if it is missing. This is the same mechanism that `Server.init()` uses internally when no configuration is supplied.
 
 ```c3
 config::Config config;
@@ -422,7 +422,7 @@ The snippet below shows the configuration structure and the default values. If y
 
 ## Docker
 
-c3-api can obviously be deployed in Docker containers, however when not running in `host` networking mode, configure it to listen on `0.0.0.0`, otherwise you application wont be reachable from the outside.
+c3-api can obviously be deployed in Docker containers, however when not running in `host` networking mode, configure it to listen on `0.0.0.0`, otherwise your application wont be reachable from the outside.
 
 Simple examples for both `docker` and `docker-compose` are available in the root of this project:
 
@@ -433,13 +433,13 @@ Simple examples for both `docker` and `docker-compose` are available in the root
 
 Here are some planned features and improvements for the `c3-api` project:
 
+- [ ] **Testing**: Robust test suite in c3 for unit tests and with python for integration tests.
+- [ ] **Documentation**: Improve documentation with detailed examples and usage guides (e.g. the mkdocs site).
+- [ ] **Pipeline**: Pipeline to build and test the library, including performance and memory leak tests
 - [ ] **Http 2.0**: Full support for the different encoding, as well as features like multiplexing
+- [ ] **Pluggable Template rendering backend**: Similar to the way express does it
 - [ ] **Performance Optimizations**: Especially in the router (target should be 0 allocs)
 - [ ] **Benchmarks**
-- [ ] **Pluggable Template rendering backend**: Similar to the way epxress does it
-- [ ] **Testing**: Robust test suite in c3 for unit tests and with python for integration tests.
-- [ ] **Documentation**: Improve documentation with detailed examples and usage guides (e.g. the mkdocs size).
-- [ ] **Pipeline**: Pipeline to build and test the library, including performance and memory leak tests
 
 ## Contributing
 

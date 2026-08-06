@@ -8,8 +8,12 @@ import std::net;
 import std::collections;
 import std::core::string;
 import std::core::dstring;
+import std::encoding::json;
 
 import c3api::http::headers;
+import c3api::http::v1;
+import c3api::encoding::form;
+import c3api::encoding::xml;
 
 <*
  HTTP response container.
@@ -45,75 +49,16 @@ fn void HttpResponse.reset(HttpResponse* self)
  @param [in] socket : "Destination socket"
  @require socket != null : "Socket must be valid"
 *>
-fn void? HttpResponse.write(&self, TcpSocket* socket)
+fn void? HttpResponse.write(&self, TcpSocket* socket, sz version)
 {
-	@pool()
+	switch (version)
 	{
-		List{char} bytes;
-		bytes.init(tmem, 256);
-
-		bytes.push_all(string::tformat("HTTP/1.1 %d %s\r\n", self.status.code, self.status.message));
-		Formatter formatter;
-
-		if (self.body.len > 0)
-		{
-			self.headers.set_header_values("Content-Length", string::tformat("%d", self.body.len));
-		}
-
-		self.headers.@each(; String key, List{String} values)
-		{
-			// set cookie needs to be handled differently (each value on new line)
-			if (key == "Set-Cookie")
-			{
-				foreach (value : values)
-				{
-					bytes.push_all(string::tformat("%s: %s\r\n", key, value));
-				}
-			}
-			else
-			{
-				DString vals = dstring::temp();
-
-				bool first = true;
-				foreach (value : values)
-				{
-					if (!first) vals.append(", ");
-					vals.append(value);
-					first = false;
-				}
-
-				bytes.push_all(string::tformat("%s: %s\r\n", key, vals.str_view()));
-			}
-		};
-
-		bytes.push_all("\r\n");
-
-		write_all(socket, bytes.array_view())!;
-
-		if (self.body.len > 0)
-		{
-			write_all(socket, self.body)!;
-		}
-	};
-}
-
-<*
- Write a complete byte array to the Socket
-
- @param [&in] socket : " The Socket to write to"
- @param [in] bytes : "array of bytes to write"
-*>
-fn void? write_all(Socket* socket, char[] bytes) @private
-{
-	sz total = 0;
-
-	while (total < bytes.len)
-	{
-		sz written = socket.write(bytes[total..])!;
-		total += written;
+		case 1:
+			v1::write_response(self, socket)!;
+		default:
+			return http::UNSUPPORTED_VERSION~;
 	}
 }
-
 
 <*
  Free owned response resources.
@@ -144,7 +89,58 @@ fn sz? HttpResponse.to_format(&self, Formatter* formatter) @dynamic
 	return len += formatter.print(" }")!;
 }
 
+<*
+ Set a plain text response body and Content-Type.
 
+ @param allocator: "Allocator used to copy the text body"
+ @param value: "Text response body"
+*>
+fn void as_text(HttpResponse* res, Allocator allocator, Printable value) <Type>
+{
+	res.headers.set_header_value("Content-Type", "text/plain; charset=utf-8");
+	res.body = string::format(allocator, "%s", value);
+}
 
+<*
+ Set a JSON response body and Content-Type.
 
+ @param allocator: "Allocator used for the JSON payload"
+ @param value: "Value to marshal as JSON"
+ @param indent: "Indentation preference"
+ @require Type::kind == STRUCT
+ @require json::may_serialize(Type) : "Expected a serializable type"
+*>
+fn void as_json(HttpResponse* res, Allocator allocator, Type* value, json::Indent indent = json::Indent.NONE) <Type>
+{
+	res.headers.set_header_value("Content-Type", "application/json; charset=utf-8");
+	res.body = json::marshal(allocator, *value, indent: indent);
+}
 
+<*
+ Set an XML response body and Content-Type.
+
+ @param allocator: "Allocator used for the XML payload"
+ @param value: "Value to marshal as XML"
+ @param root: "Root element name"
+ @require Type::kind == STRUCT
+ @require xml::may_serialize(Type) : "Expected a serializable type"
+*>
+fn void as_xml(HttpResponse* res, Allocator allocator, Type* value, String root = "response") <Type>
+{
+	res.headers.set_header_value("Content-Type", "application/xml; charset=utf-8");
+	res.body = xml::marshal_xml(allocator, *value, root);
+}
+
+<*
+ Set a form-encoded response body and Content-Type.
+
+ @param allocator: "Allocator used for the form payload"
+ @param value: "Value to marshal as form data"
+ @require Type::kind == STRUCT
+ @require form::may_serialize(Type) : "Expected a serializable type"
+*>
+fn void as_form(HttpResponse* res, Allocator allocator, Type* value) <Type>
+{
+	res.headers.set_header_value("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+	res.body = form::marshal_form(allocator, *value);
+}
