@@ -85,7 +85,6 @@ fn RegisteredHandler*? Router.get_route(
 	List{RegisteredMiddleware}* middleware_collector
 )
 {
-	middleware_collector.push_all(self.root_middlewares.array_view());
 	HandlerCollection* handlers = self.get_handlers(uri, request, middleware_collector)!;
 
 	RegisteredHandler*? handler = handlers.get_handler(method);

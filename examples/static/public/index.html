@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>c3-api Static Demo</title>
+    <meta name="description" content="This is a static site served by c3-api.">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="bg-orb orb-one" aria-hidden="true"></div>
+    <div class="bg-orb orb-two" aria-hidden="true"></div>
+
+    <header class="site-header">
+        <a class="brand" href="#" aria-label="Home">
+            <img src="./favicon.svg" alt="c3-api logo" width="40" height="40">
+            <span>c3-api static demo</span>
+        </a>
+
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+            <span class="theme-label">Toggle theme</span>
+            <span id="theme-state" class="theme-state">Light</span>
+        </button>
+    </header>
+
+    <main class="container">
+        <section class="hero card">
+            <p>This is a static site served by c3-api.</p>
+        </section>
+
+        <p class="resource-note">Check out these for further resources.</p>
+
+
+        <nav class="link-grid" aria-label="Project links">
+            <a class="link-card" href="https://github.com/Dr0f0x/c3-api" target="_blank"
+                rel="noopener noreferrer">GitHub</a>
+            <a class="link-card" href="https://github.com/Dr0f0x/c3-api#api-reference" target="_blank"
+                rel="noopener noreferrer">API Reference</a>
+            <a class="link-card" href="https://github.com/Dr0f0x/c3-api#documentation" target="_blank"
+                rel="noopener noreferrer">Documentation</a>
+        </nav>
+    </main>
+
+    <footer class="site-footer">
+        <small>
+            View this example directory:
+            <a href="https://github.com/Dr0f0x/c3-api/tree/main/examples/static" target="_blank" rel="noopener noreferrer">examples/static</a>
+        </small>
+    </footer>
+
+    <script>
+        (function () {
+            var root = document.documentElement;
+            var toggle = document.getElementById("theme-toggle");
+            var state = document.getElementById("theme-state");
+            var storageKey = "demo-theme";
+
+            function applyTheme(theme) {
+                root.setAttribute("data-theme", theme);
+                state.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+            }
+
+            var saved = localStorage.getItem(storageKey);
+            var initial =
+                saved === "light" || saved === "dark"
+                    ? saved
+                    : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            applyTheme(initial);
+
+            toggle.addEventListener("click", function () {
+                var current = root.getAttribute("data-theme");
+                var next = current === "dark" ? "light" : "dark";
+                localStorage.setItem(storageKey, next);
+                applyTheme(next);
+            });
+        })();
+    </script>
+</body>
+
+</html>

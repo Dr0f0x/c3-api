@@ -177,7 +177,7 @@ fn void StaticFile.serve_file(&self, Allocator allocator, Context* ctx, HttpRequ
 	}
 
 	// Read entire file into response body.
-	File? file = file::open_path(self.path, "r");
+	File? file = file::open_path(self.path, "rb");
 	if (catch error = file)
 	{
 		res.status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -186,13 +186,18 @@ fn void StaticFile.serve_file(&self, Allocator allocator, Context* ctx, HttpRequ
 	defer file.close();
 
 	sz size     = file::get_size(self.path)!!;
-	char[] body = alloc::new_array(allocator, char, size + 1);
+	char[] body = alloc::new_array(allocator, char, size);
 
-	sz read = file.read(body)!!;
-	body[read] = 0;
+	sz read_total = 0;
+	while (read_total < size)
+	{
+		sz read = file.read(body[read_total..])!!;
+		if (read == 0) break;
+		read_total += read;
+	}
 
 	res.status = HttpStatus.OK;
-	res.body = body;
+	res.body = body[0..read_total-1];
 	res.headers.set_header_value("Content-Type", mime_type(self.path));
 }
 

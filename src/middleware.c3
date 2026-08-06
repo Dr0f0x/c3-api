@@ -3,6 +3,8 @@
 
 module c3api @private;
 
+import std::io;
+
 import c3api::config;
 import c3api::context;
 
@@ -55,13 +57,13 @@ fn RequestFlow BuiltinMiddleware.logging(&self, Allocator allocator, Context* ct
 			content_length.append(value);
 		}
 	}
-
+	
 	String user_agent_str     = user_agent.len() ? user_agent.str_view() : "-";
 	String content_type_str   = content_type.len() ? content_type.str_view() : "-";
 	String content_length_str = content_length.len() ? content_length.str_view() : "-";
 
 	self.log.infof(
-		"%s %s | %s | %s | %s | %s | %s",
+		"%s | %s | %s | %s | %s",
 		"request",
 		log::_enum("method", &req.method),
 		log::_string("uri", &req.uri),

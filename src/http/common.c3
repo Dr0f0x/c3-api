@@ -8,3 +8,5 @@ faultdef
  Fault raised when an HTTP method token cannot be parsed.
 *>
 faultdef INVALID_VERB;
+
+faultdef INVALID_CONTENT_LENGTH;
