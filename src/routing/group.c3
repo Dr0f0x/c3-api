@@ -191,6 +191,30 @@ macro void use(
 ) <Type> => group.use_middleware(uri, (MiddlewareFunc)middleware, instance);
 
 <*
+ Create a group wrapper around a route node.
+
+ @require uri != "" : "Nested group must specify a route path"
+ @require uri != "/" : "Nested group must specify a route path"
+
+ @param [&inout] allocator : "Allocator used by the group"
+ @param [in] uri : "Route pattern relative to the current group"
+
+ @return "Group instance for relative route registrations"
+*>
+fn Group* Group.group(&self, Allocator allocator, String uri)
+{
+	Group* group = alloc::new(allocator, Group);
+
+	RouteNode* node = internal::_get_or_create_node(uri, &self.node.sub_nodes, self.log)!!;
+	return group.init(node, self.log);
+}
+
+fn void Group.free(&self)
+{
+	// nothing to do here yet
+}
+
+<*
  Formatter implementation for debug output.
 *>
 fn sz? Group.to_format(&self, Formatter* formatter) @dynamic

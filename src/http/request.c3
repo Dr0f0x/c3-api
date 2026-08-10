@@ -7,7 +7,6 @@ import std::io;
 import std::net;
 import std::collections;
 import std::core::string;
-import std::encoding::json;
 
 import c3api::http::headers;
 import c3api::http::params;
@@ -16,6 +15,7 @@ import c3api::http::v1;
 import c3api::encoding;
 import c3api::encoding::form;
 import c3api::encoding::xml;
+import c3api::encoding::json;
 
 <*
  Parsed HTTP request container.

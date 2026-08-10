@@ -1,5 +1,6 @@
 module c3api::encoding::form;
 
+import std::collections::list;
 import std::collections::object;
 import std::core::dstring;
 import std::core::string;
@@ -9,12 +10,19 @@ import c3api::http::params;
 
 faultdef FORM_MALFORMED;
 
+const String HEX_DIGITS = "0123456789ABCDEF";
+
 fn int hex_nibble(char ch) @private
 {
 	if (ch >= '0' && ch <= '9') return (int)(ch - '0');
 	if (ch >= 'a' && ch <= 'f') return 10 + (int)(ch - 'a');
 	if (ch >= 'A' && ch <= 'F') return 10 + (int)(ch - 'A');
 	return -1;
+}
+
+fn char hex_digit(int nibble) @private
+{
+	return HEX_DIGITS[nibble & 0xF];
 }
 
 fn String? decode_component(String value) @private
@@ -25,9 +33,10 @@ fn String? decode_component(String value) @private
 	for (sz i = 0; i < value.len; i++)
 	{
 		char ch = value[i];
+
 		if (ch == '+')
 		{
-			out.append(" ");
+			out.append_char(' ');
 			continue;
 		}
 
@@ -37,16 +46,16 @@ fn String? decode_component(String value) @private
 
 			int hi = hex_nibble(value[i + 1]);
 			int lo = hex_nibble(value[i + 2]);
+
 			if (hi < 0 || lo < 0) return FORM_MALFORMED~;
 
-			char decoded = (char)((hi << 4) | lo);
-			char[2] one = { decoded, 0 };
-			out.append((String)&one);
+			out.append_char((char)((hi << 4) | lo));
+
 			i += 2;
 			continue;
 		}
 
-		out.append(value[i..i]);
+		out.append_char(ch);
 	}
 
 	return out.str_view();
@@ -98,7 +107,7 @@ fn bool is_float_literal(String value) @private
 	return seen_dot && seen_digit;
 }
 
-fn Object* scalar_object_from_text(Allocator allocator, String value) @private
+fn Object*? create_scalar_object_from_text(Allocator allocator, String value) @private
 {
 	String trimmed = value.trim();
 	if (trimmed == "true") return object::new_bool(true);
@@ -106,15 +115,89 @@ fn Object* scalar_object_from_text(Allocator allocator, String value) @private
 
 	if (is_integer_literal(trimmed))
 	{
-		return object::new_int(allocator, trimmed.to_int128())!!;
+		return object::new_int(allocator, trimmed.to_int128())!;
 	}
 
 	if (is_float_literal(trimmed))
 	{
-		return object::new_float(allocator, trimmed.to_double())!!;
+		return object::new_float(allocator, trimmed.to_double())!;
 	}
 
 	return object::new_string(allocator, trimmed);
+}
+
+fn void? set_scalar_object_from_text(Object* parent, String key, String value) @private
+{
+	String trimmed = value.trim();
+	if (trimmed == "true") parent.set(key, true);
+	if (trimmed == "false") parent.set(key, false);
+
+	if (is_integer_literal(trimmed))
+	{
+		parent.set(key, trimmed.to_int128())!;
+	}
+
+	if (is_float_literal(trimmed))
+	{
+		parent.set(key, trimmed.to_double())!;
+	}
+
+	parent.set(key, trimmed);
+}
+
+fn Object* get_or_create_nested_object(Object* obj, String[] path)
+{
+	Object* current = obj;
+
+	for (sz i = 0; i < path.len; i++)
+	{
+		current = obj.get_or_create_obj(path[i]);
+	}
+	return current;
+}
+
+fn void? set_bracket_value(Allocator allocator, Object* root, String[] parts, String value) @private
+{
+	Object* parent = get_or_create_nested_object(root, parts[..parts.len - 2]);
+
+	String key = parts[parts.len - 1];
+
+	// Array in brackets notation
+	if (key == "")
+	{
+		Object* value_obj = create_scalar_object_from_text(allocator, value)!;
+		if (parent.is_array())
+		{
+			parent.push(value_obj);
+		}
+		else if (parent.is_empty())
+		{
+			parent.push_object(value_obj);
+		}
+	}
+	else
+	{
+		set_scalar_object_from_text(parent, key, value)!;
+	}
+}
+
+fn String[] parse_bracket_key(String key) @private
+{
+	String[] raw_parts = key.tsplit("[");
+	String[] parts     = alloc::alloc_array(tmem, String, raw_parts.len);
+
+	for (sz i = 0; i < raw_parts.len; i++)
+	{
+		if (raw_parts[i][raw_parts[i].len - 1] == ']')
+		{
+			parts[i] = raw_parts[i][..raw_parts[i].len - 2];
+		}
+		else
+		{
+			parts[i] = raw_parts[i];
+		}
+	}
+	return parts;
 }
 
 fn Object*? parse(Allocator allocator, String value)
@@ -148,7 +231,9 @@ fn Object*? parse(Allocator allocator, String value)
 			String val = decode_component(raw_val)!;
 
 			if (key == "") continue;
-			out.set(key, scalar_object_from_text(allocator, val));
+			String[] parts = parse_bracket_key(key);
+
+			set_bracket_value(allocator, out, parts, val)!;
 		}
 	};
 
@@ -184,7 +269,9 @@ fn Object*? parse_query_params(Allocator allocator, params::HttpQueryParams* que
 
 				if (decoded_key != "")
 				{
-					out.set(decoded_key, scalar_object_from_text(allocator, decoded_val));
+					String[] parts = parse_bracket_key(decoded_key);
+
+					set_bracket_value(allocator, out, parts, decoded_val)!;
 				}
 			}
 		};
@@ -203,7 +290,7 @@ fn Object*? tparse_query_params(params::HttpQueryParams* query)
 	return parse_query_params(tmem, query);
 }
 
-fn void encode_component(DString* out, String value) @private
+fn void? encode_component(OutStream out, String value) @private
 {
 	for (sz i = 0; i < value.len; i++)
 	{
@@ -212,34 +299,46 @@ fn void encode_component(DString* out, String value) @private
 			|| ch == '.'
 			|| ch == '~')
 		{
-			out.append(value[i..i]);
+			out.write(value[i..i])!;
 			continue;
 		}
 
 		if (ch == ' ')
 		{
-			out.append("+");
+			out.write("+")!;
 			continue;
 		}
 
-		out.appendfn("%%%02X", (uint)(ch & 0xff));
+		out.write_byte('%')!;
+		uint byte = (uint)ch & 0xFF;
+		out.write_byte(hex_digit((int)(byte >> 4)))!;
+		out.write_byte(hex_digit((int)byte))!;
 	}
 }
 
-fn void append_form_pair(DString* out, bool* first, String key, String value) @private
+fn void? append_form_pair(OutStream out, bool* first, String prefix, String key, String value) @private
 {
 	if (!*first)
 	{
-		out.append("&");
+		out.write("&")!;
 	}
 	else
 	{
 		*first = false;
 	}
 
-	encode_component(out, key);
-	out.append("=");
-	encode_component(out, value);
+	String pair_prefix;
+	if (prefix == "")
+	{
+		pair_prefix = key;
+	}
+	else
+	{
+		pair_prefix = string::tformat("%s[%s]", prefix, key);
+	}
+	encode_component(out, pair_prefix)!;
+	out.write("=")!;
+	encode_component(out, value)!;
 }
 
 macro bool may_serialize($Type) @const
@@ -269,48 +368,77 @@ macro bool may_serialize($Type) @const
 	$endswitch
 }
 
-fn void? serialize_form_struct(DString* out, bool* first, String prefix, Type value)<Type>
+fn void? serialize_form_struct(OutStream out, bool* first, String prefix, Type value)<Type>
 {
 	$foreach $member : Type::members:
-
-		{
-			$if $member.name != "":
-				String key = prefix == "" ? $member.name : string::format(tmem, "%s.%s", prefix, $member.name);
-				serialize_form_value{$member.type}(out, first, key, value.$member)!;
+		$if $member.name != "":
+			$if $member.has_tag("form"):
+				// @Form("-") explicitly excludes the member.
+				$if $member.get_tag("form") != "-":
+					serialize_form_value{$member.type}(out, first, prefix, $member.get_tag("form"), value.$member)!;
+				$endif
+			$else
+				serialize_form_value{$member.type}(out, first, prefix, $member.name, value.$member)!;
 			$endif
-		}
+		$endif
+
 	$endforeach
 }
 
-fn void? serialize_form_value(DString* out, bool* first, String key, TypeElement value)<TypeElement>
+fn void? serialize_form_value(OutStream out, bool* first, String prefix, String key, TypeElement value)<TypeElement>
 {
-	$if TypeElement == String:
-		append_form_pair(out, first, key, value);
-		return;
-	$else
-		$switch TypeElement::kind:
-			$case STRUCT:
-				serialize_form_struct{TypeElement}(out, first, key, value)!;
-			$case SIGNED_INT:
-			$case UNSIGNED_INT:
-			$case FLOAT:
-			$case BOOL:
-			$case ENUM:
-				append_form_pair(out, first, key, string::format(tmem, "%s", value));
-			$case TYPEDEF:
-			$case CONSTDEF:
-				serialize_form_value{TypeElement::inner}(out, first, key, value)!;
-			$case ARRAY:
-			$case VECTOR:
-			$case SLICE:
-				foreach (item : value)
-				{
-					serialize_form_value{TypeElement::inner}(out, first, key, item)!;
-				}
-			$default:
-				@compile_error("marshal_form: unsupported type");
-		$endswitch
-	$endif
+	$switch TypeElement::kind:
+		$case STRUCT:
+			String struct_prefix;
+			if (prefix == "")
+			{
+				struct_prefix = key;
+			}
+			else
+			{
+				struct_prefix = string::tformat("%s[%s]", prefix, key);
+			}
+			serialize_form_struct{TypeElement}(out, first, struct_prefix, value)!;
+		$case SIGNED_INT:
+		$case UNSIGNED_INT:
+		$case FLOAT:
+		$case BOOL:
+		$case ENUM:
+			append_form_pair(out, first, prefix, key, string::format(tmem, "%s", value))!;
+		$case TYPEDEF:
+		$case CONSTDEF:
+			$switch TypeElement:
+				// Special handling of String
+				$case String:
+					append_form_pair(out, first, prefix, key, value)!;
+				$default:
+					var $Inner = TypeElement::inner;
+					return serialize_form_value{$Inner}(stream, first, prefix, key, ($Inner)value);
+			$endswitch
+		$case ARRAY:
+		$case VECTOR:
+		$case SLICE:
+			serialize_slice{$Typeof(value[0])}(out, first, value, prefix, key)!;
+		$default:
+			@compile_error("marshal_form: unsupported type");
+	$endswitch
+}
+
+fn void? serialize_slice(OutStream stream, bool* first, SliceType[] slice, String prefix, String key)<SliceType>
+{
+	String slice_prefix;
+	if (prefix != "")
+	{
+		slice_prefix = string::tformat("%s[%s]", prefix, key);
+	}
+	else
+	{
+		slice_prefix = key;
+	}
+	foreach (element : slice)
+	{
+		serialize_form_value{SliceType}(stream, first, slice_prefix, "", element)!;
+	}
 }
 
 <*

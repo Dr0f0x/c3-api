@@ -89,7 +89,7 @@ constdef CookieOption : ushort
 
 struct CookieOptions
 {
-	CookieOption options;
+	CookieOption use;
 
 	// Lifetime
 	DateTime expires; // e.g. "Wed, 09 Jun 2027 10:18:14 GMT"
@@ -123,40 +123,40 @@ fn void HttpResponse.set_cookie(
 	cookie.append("=");
 	cookie.append(value);
 
-	if (options.options & CookieOption.EXPIRES)
+	if (options.use & CookieOption.EXPIRES)
 	{
 		cookie.append("; Expires=");
 		cookie.append(options.expires.format(allocator, DateTimeFormat.RFC1123));
 	}
 
-	if (options.options & CookieOption.MAX_AGE)
+	if (options.use & CookieOption.MAX_AGE)
 	{
 		cookie.appendf("; Max-Age=%d", (long)options.max_age);
 	}
 
-	if (options.options & CookieOption.DOMAIN)
+	if (options.use & CookieOption.DOMAIN)
 	{
 		cookie.append("; Domain=");
 		cookie.append(options.domain);
 	}
 
-	if (options.options & CookieOption.PATH)
+	if (options.use & CookieOption.PATH)
 	{
 		cookie.append("; Path=");
 		cookie.append(options.path);
 	}
 
-	if (options.options & CookieOption.SECURE)
+	if (options.use & CookieOption.SECURE)
 	{
 		cookie.append("; Secure");
 	}
 
-	if ((options.options & CookieOption.HTTP_ONLY )&& options.http_only)
+	if ((options.use & CookieOption.HTTP_ONLY )&& options.http_only)
 	{
 		cookie.append("; HttpOnly");
 	}
 
-	if (options.options & CookieOption.SAME_SITE)
+	if (options.use & CookieOption.SAME_SITE)
 	{
 		switch (options.same_site)
 		{
@@ -174,7 +174,7 @@ fn void HttpResponse.set_cookie(
 		}
 	}
 
-	if ((options.options & CookieOption.PARTITIONED) && options.partitioned)
+	if ((options.use & CookieOption.PARTITIONED) && options.partitioned)
 	{
 		cookie.append("; Partitioned");
 	}

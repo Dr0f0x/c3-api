@@ -15,15 +15,7 @@ fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpReques
 {
     // Set HTTP status code
 	res.status = HttpStatus.OK;
-	@pool()
-	{
-        // Build response message
-		DString greeting = dstring::temp();
-		greeting.appendfn("hello %s, c3-api is running!", req.params["name"]!!);
-
-        // Write response body
-        res.body = string::format(allocator, greeting.tcopy_str(), req.method, req.uri);
-	};
+	res.body = "c3-api is running!";
 }
 
 fn int main(String[] args)
@@ -32,16 +24,16 @@ fn int main(String[] args)
 	c3api::Server server;
 	server.init(tmem);
 
-    // Get the router instance from the server.
+    // Get the router instance from the server
 	router::Router* router = server.get_router();
 
-    // Register the route with a path parameter.
-	router.get("/test/{name}", &handler);
+    // Register the route
+	router.get("/test", &handler);
 
-    // macro to print all registered routes to the console.
+    // macro to print all registered routes to the console
 	routing::print_routes(router);
 
-    // Start the HTTP server.
+    // Start the HTTP server
 	server.run()!!;
 
 	return 0;

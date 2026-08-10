@@ -25,9 +25,9 @@ fn bool is_integer_literal(String value) @private
 fn bool is_float_literal(String value) @private
 {
 	if (value == "") return false;
-	bool seen_dot = false;
+	bool seen_dot   = false;
 	bool seen_digit = false;
-	sz start = 0;
+	sz start        = 0;
 	if (value[0] == '-' || value[0] == '+')
 	{
 		if (value.len == 1) return false;
@@ -153,9 +153,9 @@ macro bool may_serialize($Type) @const
 <*
  Marshal a struct with primitive fields and nested structs to XML.
 
- @param allocator: "The allocator to use for the result"
- @param value: "The struct value to marshal"
- @param root: "Root element name"
+ @param allocator : "The allocator to use for the result"
+ @param value : "The struct value to marshal"
+ @param root : "Root element name"
  @require @kindof(value) == STRUCT
  @require xml::may_serialize($Typeof(value)) : "Expected a serializable type"
  @return "The XML string representation"
@@ -171,9 +171,9 @@ macro String marshal_xml(Allocator allocator, value, String root = "response") =
 <*
  Marshal a struct with primitive fields and nested structs to XML.
 
- @param stream: "The stream to serialize to"
- @param value: "The struct value to marshal"
- @param root: "Root element name"
+ @param stream : "The stream to serialize to"
+ @param value : "The struct value to marshal"
+ @param root : "Root element name"
  @require @kindof(value) == STRUCT
  @require xml::may_serialize($Typeof(value)) : "Expected a serializable type"
 *>
@@ -186,20 +186,26 @@ macro void? marshal_xml_to(OutStream stream, value, String root = "response")
 	serializer.end_doc()!;
 }
 
-fn void? serialize_xml_struct(xml::XmlSerializer* serializer, String name, Type value) <Type>
+fn void? serialize_xml_struct(xml::XmlSerializer* serializer, String name, Type value)<Type>
 {
 	serializer.start_element(name)!;
 
 	$foreach $member : Type::members:
 		$if $member.name != "":
-			serialize_xml_value{$member.type}(serializer, $member.name, value.$member)!;
+			$if $member.has_tag("xml"):
+				$if $member.get_tag("xml") != "-":
+					serialize_xml_value{$member.type}(serializer, $member.get_tag("xml"), value.$member)!;
+				$endif
+			$else
+				serialize_xml_value{$member.type}(serializer, $member.name, value.$member)!;
+			$endif
 		$endif
 	$endforeach
 
 	serializer.end_element(name)!;
 }
 
-fn void? serialize_xml_value(xml::XmlSerializer* serializer, String name, TypeElement value) <TypeElement>
+fn void? serialize_xml_value(xml::XmlSerializer* serializer, String name, TypeElement value)<TypeElement>
 {
 	$if TypeElement == String:
 		serializer.start_element(name)!;

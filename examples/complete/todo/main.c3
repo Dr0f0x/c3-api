@@ -43,7 +43,7 @@ fn void static_no_controller(void* self = null, Allocator allocator, Context* ct
 	io::printfn("%s", req);
 
 	res.status = HttpStatus.OK;
-	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" }, indent: Indent.SPACE_2);
+	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" });
 
 	DateTime expiration = datetime::now().add_hours(1);
 	res.set_cookie(
@@ -51,7 +51,7 @@ fn void static_no_controller(void* self = null, Allocator allocator, Context* ct
 		"test",
 		"value",
 		{
-			.options = CookieOption.EXPIRES | CookieOption.SECURE | CookieOption.MAX_AGE | CookieOption.PATH,
+			.use = CookieOption.EXPIRES | CookieOption.SECURE | CookieOption.MAX_AGE | CookieOption.PATH,
 			.expires = expiration,
 			.max_age = cookies::HOUR,
 			.path = "/",
@@ -65,7 +65,7 @@ fn void static_no_controller(void* self = null, Allocator allocator, Context* ct
 fn void Controller.static_controller(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	res.status = HttpStatus.OK;
-	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" }, indent: Indent.SPACE_2);
+	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" });
 
 	io::printfn("%s", res);
 }
@@ -173,6 +173,25 @@ fn void todo_handler(void* self = null, Allocator allocator, Context* ctx, HttpR
 	response::as_form{TodoRequest}(res, allocator, todo);
 }
 
+struct Address
+{
+	String city;
+	String[] lines;
+}
+struct Product
+{
+	String name;
+	float price;
+	String[] tags;
+	Address supplier_address;
+}
+struct Order
+{
+	String id;
+	Product product;
+	String[] notes;
+}
+
 fn int main(String[] args)
 {
 	config::Config config;
@@ -194,6 +213,16 @@ fn int main(String[] args)
 	}
 	defer file_sink.free();
 	logger.add_sink(&file_sink, log::min_level_enabler(log::LogLevel.TRACE)); */
+
+	Product product = {
+		.name = "Mechanical Keyboard",
+		.price = 89.99,
+		.tags = { "keyboard", "mechanical" },
+		.supplier_address = { .city = "Cologne", .lines = { "Industriestrasse 10", "Building B" } }
+	};
+	Order order     = { .id = "ORD-1001", .product = product, .notes = { "Handle with care", "Leave at reception" } };
+
+	io::printfn("%s", form::marshal_form(tmem, order));
 
 	c3api::Server server;
 	server.init(tmem);

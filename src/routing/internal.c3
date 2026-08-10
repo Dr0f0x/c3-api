@@ -64,9 +64,9 @@ fn HandlerCollection*? _get_handlers(
 	int i = 1;
 	while (cur_node != null && i < uri_segments.len)
 	{
-		if (cur_node.has_middleware()) middleware_collector.push_all(cur_node.middlewares.array_view());
-
 		if (uri_segments[i] == "") break;
+
+		if (cur_node.has_middleware()) middleware_collector.push_all(cur_node.middlewares.array_view());
 
 		cur_node = cur_node.get_next_node(uri_segments[i]) ?? null;
 

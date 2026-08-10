@@ -67,6 +67,20 @@ fn bool HttpHeaders.set_header_values(&self, String header_name, String ...heade
 }
 
 <*
+ Set header values in the headers map.
+
+ If the header key already exists, the value list is replaced with the new values.
+
+ @param [in] header_name : "Header field name"
+ @param header_values : "Array of header field values"
+ @return "True if the header key already existed, false if a new header key was added"
+*>
+fn bool HttpHeaders.set_header_values_list(&self, String header_name, List{String} header_values) @operator([]=)
+{
+	return self.header_map.set(header_name, header_values);
+}
+
+<*
  Set a header value in the headers map.
 
  If the header key already exists, the value list is replaced with the new value.
@@ -197,7 +211,7 @@ fn void? HttpHeaders.set_from_lines(&self, List{String} lines)
 
 			sz colon = line.index_of_char(':')!;
 
-			String header_name  = line[0..colon-1].trim();
+			String header_name  = line[0..colon - 1].trim();
 			String header_value = line[colon + 1..].trim();
 
 			self.set_header_value(header_name, header_value);
@@ -250,8 +264,3 @@ fn sz? HttpHeaders.to_format(&self, Formatter* formatter) @dynamic
 {
 	return self.header_map.to_format(formatter);
 }
-
-
-
-
-

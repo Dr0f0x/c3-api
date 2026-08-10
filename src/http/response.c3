@@ -8,13 +8,12 @@ import std::net;
 import std::collections;
 import std::core::string;
 import std::core::dstring;
-import std::encoding::json;
 
 import c3api::http::headers;
 import c3api::http::v1;
 import c3api::encoding::form;
 import c3api::encoding::xml;
-
+import c3api::encoding::json;
 <*
  HTTP response container.
 *>
@@ -113,7 +112,7 @@ fn void as_text(HttpResponse* res, Allocator allocator, Printable value) <Type>
 fn void as_json(HttpResponse* res, Allocator allocator, Type* value, json::Indent indent = json::Indent.NONE) <Type>
 {
 	res.headers.set_header_value("Content-Type", "application/json; charset=utf-8");
-	res.body = json::marshal(allocator, *value, indent: indent);
+	res.body = json::marshal_json(allocator, *value, indent: indent);
 }
 
 <*

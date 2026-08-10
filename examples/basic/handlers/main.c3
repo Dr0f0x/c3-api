@@ -57,7 +57,7 @@ fn int main(String[] args)
 	// Create an instance of the Counter struct to maintain state across requests
 	Counter counter_instance;
 
-	// Get the router instance from the server.
+	// Get the router instance from the server
 	router::Router* router = server.get_router();
 
 	// Register simple route with the stateless handler
@@ -70,10 +70,10 @@ fn int main(String[] args)
 	// Register the counter route with the stateful handler using the generic macro (no cast required and typesafe)
 	router::get{Counter}(router, "/generic-counter", &Counter.counter_handler, &counter_instance);
 
-	// macro to print all registered routes to the console.
+	// macro to print all registered routes to the console
 	routing::print_routes(router);
 
-	// Start the HTTP server.
+	// Start the HTTP server
 	server.run()!!;
 
 	return 0;

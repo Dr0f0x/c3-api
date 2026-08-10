@@ -31,8 +31,8 @@
   // "target": "windows-x64",
   // Targets.
   "targets": {
+    // library
     "c3api": {
-      // Executable or library.
       "type": "static-lib"
     },
     
@@ -40,61 +40,67 @@
     "minimal-demo": {
       "type": "executable",
       "sources": [
-        "examples/minimal/main.c3"
+        "examples/basic/minimal/main.c3"
       ]
     },
     "handler-demo": {
       "type": "executable",
       "sources": [
-        "examples/handlers/main.c3"
+        "examples/basic/handlers/main.c3"
       ]
     },
     "middleware-demo": {
       "type": "executable",
       "sources": [
-        "examples/middleware/main.c3"
+        "examples/basic/middleware/main.c3"
+      ]
+    },
+    "group-demo": {
+      "type": "executable",
+      "sources": [
+        "examples/basic/group/main.c3"
       ]
     },
     "path-demo": {
       "type": "executable",
       "sources": [
-        "examples/path/main.c3"
+        "examples/basic/path/main.c3"
       ]
     },
     "query-demo": {
       "type": "executable",
       "sources": [
-        "examples/query/main.c3"
+        "examples/basic/query/main.c3"
       ]
     },
     "cookie-demo": {
       "type": "executable",
       "sources": [
-        "examples/cookie/main.c3"
+        "examples/basic/cookies/*"
       ]
     },
     "encoding-demo": {
       "type": "executable",
       "sources": [
-        "examples/encoding/main.c3"
+        "examples/basic/encoding/main.c3"
       ]
     },
     "static-demo": {
       "type": "executable",
       "sources": [
-        "examples/static/main.c3"
+        "examples/basic/static/main.c3"
       ]
     },
     "logger-demo": {
       "type": "executable",
       "sources": [
-        "examples/logger/main.c3"
+        "examples/basic/logger/main.c3"
       ]
     },
     "todo-demo": {
       "type": "executable",
       "sources": [
-        "examples/todo/main.c3"
+        "examples/complete/todo/main.c3"
       ]
     }
   },
@@ -103,5 +109,5 @@
   "cpu": "generic",
   // Optimization: "O0", "O1", "O2", "O3", "O4", "O5", "Os", "Oz".
   "opt": "O0"
-  // See resources/examples/project_all_settings.json and 'c3c --list-project-properties' to see more properties.
+  // See resources/examples/basic/project_all_settings.json and 'c3c --list-project-properties' to see more properties.
 }
