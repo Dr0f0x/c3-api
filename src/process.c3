@@ -389,8 +389,3 @@ fn bool run_middlewares(
 	}
 	return true;
 }
-
-
-
-
-

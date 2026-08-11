@@ -8,11 +8,11 @@ import c3api::routing::router;
 
 fn int main(String[] args)
 {
-    // Create and initialize the server
+	// Create and initialize the server
 	c3api::Server server;
-	server.init(tmem);
+	server.init(tmem)!!;
 
-    // Get the router instance from the server.
+	// Get the router instance from the server.
 	router::Router* router = server.get_router();
 
 	// construct path to this examples`s public directory
@@ -22,10 +22,10 @@ fn int main(String[] args)
 	// serve static files from the public directory
 	router.serve_static("/", dir)!!;
 
-    // macro to print all registered routes to the console.
+	// macro to print all registered routes to the console.
 	routing::print_routes(router);
 
-    // Start the HTTP server.
+	// Start the HTTP server.
 	server.run()!!;
 
 	return 0;

@@ -94,7 +94,7 @@
     "logger-demo": {
       "type": "executable",
       "sources": [
-        "examples/basic/logger/main.c3"
+        "examples/basic/logger/*"
       ]
     },
     "todo-demo": {

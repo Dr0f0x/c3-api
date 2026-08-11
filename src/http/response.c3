@@ -91,10 +91,10 @@ fn sz? HttpResponse.to_format(&self, Formatter* formatter) @dynamic
 <*
  Set a plain text response body and Content-Type.
 
- @param allocator: "Allocator used to copy the text body"
- @param value: "Text response body"
+ @param allocator : "Allocator used to copy the text body"
+ @param value : "Text response body"
 *>
-fn void as_text(HttpResponse* res, Allocator allocator, Printable value) <Type>
+fn void as_text(HttpResponse* res, Allocator allocator, Printable value)<Type>
 {
 	res.headers.set_header_value("Content-Type", "text/plain; charset=utf-8");
 	res.body = string::format(allocator, "%s", value);
@@ -103,13 +103,13 @@ fn void as_text(HttpResponse* res, Allocator allocator, Printable value) <Type>
 <*
  Set a JSON response body and Content-Type.
 
- @param allocator: "Allocator used for the JSON payload"
- @param value: "Value to marshal as JSON"
- @param indent: "Indentation preference"
+ @param allocator : "Allocator used for the JSON payload"
+ @param value : "Value to marshal as JSON"
+ @param indent : "Indentation preference"
  @require Type::kind == STRUCT
  @require json::may_serialize(Type) : "Expected a serializable type"
 *>
-fn void as_json(HttpResponse* res, Allocator allocator, Type* value, json::Indent indent = json::Indent.NONE) <Type>
+fn void as_json(HttpResponse* res, Allocator allocator, Type* value, json::Indent indent = json::Indent.NONE)<Type>
 {
 	res.headers.set_header_value("Content-Type", "application/json; charset=utf-8");
 	res.body = json::marshal_json(allocator, *value, indent: indent);
@@ -118,13 +118,13 @@ fn void as_json(HttpResponse* res, Allocator allocator, Type* value, json::Inden
 <*
  Set an XML response body and Content-Type.
 
- @param allocator: "Allocator used for the XML payload"
- @param value: "Value to marshal as XML"
- @param root: "Root element name"
+ @param allocator : "Allocator used for the XML payload"
+ @param value : "Value to marshal as XML"
+ @param root : "Root element name"
  @require Type::kind == STRUCT
  @require xml::may_serialize(Type) : "Expected a serializable type"
 *>
-fn void as_xml(HttpResponse* res, Allocator allocator, Type* value, String root = "response") <Type>
+fn void as_xml(HttpResponse* res, Allocator allocator, Type* value, String root = "response")<Type>
 {
 	res.headers.set_header_value("Content-Type", "application/xml; charset=utf-8");
 	res.body = xml::marshal_xml(allocator, *value, root);
@@ -133,12 +133,12 @@ fn void as_xml(HttpResponse* res, Allocator allocator, Type* value, String root 
 <*
  Set a form-encoded response body and Content-Type.
 
- @param allocator: "Allocator used for the form payload"
- @param value: "Value to marshal as form data"
+ @param allocator : "Allocator used for the form payload"
+ @param value : "Value to marshal as form data"
  @require Type::kind == STRUCT
  @require form::may_serialize(Type) : "Expected a serializable type"
 *>
-fn void as_form(HttpResponse* res, Allocator allocator, Type* value) <Type>
+fn void as_form(HttpResponse* res, Allocator allocator, Type* value)<Type>
 {
 	res.headers.set_header_value("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
 	res.body = form::marshal_form(allocator, *value);

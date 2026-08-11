@@ -75,7 +75,3 @@ fn void Context.free(&self)
 {
 	self.objects.free();
 }
-
-
-
-

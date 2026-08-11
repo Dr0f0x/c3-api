@@ -211,8 +211,3 @@ fn void FileSink.free(&self)
 	self.file.close()!!;
 	self.mutex.destroy();
 }
-
-
-
-
-

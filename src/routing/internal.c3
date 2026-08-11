@@ -124,7 +124,7 @@ fn RouteNode*? _get_or_create_node(String uri, HashMap{String, RouteNode}* start
 
 		// remove leading slash
 		if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
-		
+
 		String[] uri_segments = uri.tsplit("/");
 
 		RouteNode* cur_node;
@@ -174,7 +174,7 @@ fn RouteNode*? _get_or_create_node(String uri, HashMap{String, RouteNode}* start
 			String key = node_key(segment);
 
 			log.tracef("Creating new route node '%s'", "Created new route node", log::_string("name", &key));
-			
+
 			cur_node.sub_nodes[key] = new_route_node(segment);
 			cur_node = cur_node.sub_nodes.get_ref(key)!!;
 		}
@@ -220,7 +220,7 @@ fn bool _add_handler(
 	log.tracef("Assigning handler to '%s'", "Assigned handler to node", log::_string("node", &node.name));
 	log.tracef("Adding middlewares to '%s'", "Adding middlewares to node", log::_string("node", &node.name));
 	node.middlewares.push_all(middlewares);
-	
+
 	return node.handlers.set_handler(method, handler, controller);
 }
 
@@ -257,8 +257,3 @@ macro RouteNode new_route_node(String name) @private
 	node.init(mem, name);
 	return node;
 }
-
-
-
-
-

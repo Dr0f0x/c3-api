@@ -71,8 +71,3 @@ fn RouteMethod? route_method_from_http_verb(HttpVerb verb)
 			return UNSUPPORTED_HTTP_VERB~;
 	}
 }
-
-
-
-
-

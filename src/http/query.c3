@@ -102,7 +102,7 @@ fn void? HttpQueryParams.set_from_last_uri_segment(&self, String segment)
 
 			sz equals = pair.index_of_char('=')!;
 
-			String param_name  = pair[0..equals-1].trim();
+			String param_name  = pair[0..equals - 1].trim();
 			String param_value = pair[equals + 1..].trim();
 
 			self.set_param_value(param_name, param_value);
@@ -150,8 +150,3 @@ fn sz? HttpQueryParams.to_format(&self, Formatter* formatter) @dynamic
 {
 	return self.param_map.to_format(formatter);
 }
-
-
-
-
-

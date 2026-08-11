@@ -220,12 +220,12 @@ fn int main(String[] args)
 		.tags = { "keyboard", "mechanical" },
 		.supplier_address = { .city = "Cologne", .lines = { "Industriestrasse 10", "Building B" } }
 	};
-	Order order     = { .id = "ORD-1001", .product = product, .notes = { "Handle with care", "Leave at reception" } };
+	Order order = { .id = "ORD-1001", .product = product, .notes = { "Handle with care", "Leave at reception" } };
 
 	io::printfn("%s", form::marshal_form(tmem, order));
 
 	c3api::Server server;
-	server.init(tmem);
+	server.init(tmem)!!;
 	defer server.free();
 	server.get_context().register(Logger, server.get_logger());
 

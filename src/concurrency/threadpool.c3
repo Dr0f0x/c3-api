@@ -366,8 +366,3 @@ struct PoolTask @private
 	ThreadPoolTaskFn task_fn;
 	void* arg;
 }
-
-
-
-
-

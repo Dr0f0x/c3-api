@@ -52,7 +52,7 @@ fn int main(String[] args)
 {
 	// Create and initialize the server
 	c3api::Server server;
-	server.init(tmem);
+	server.init(tmem)!!;
 
 	// Create an instance of the Counter struct to maintain state across requests
 	Counter counter_instance;

@@ -1,4 +1,4 @@
-name: Compile and Test
+name: CI
 
 on:
   push:
@@ -13,15 +13,23 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install C3
-        run: | 
+        run: |
           curl -L https://github.com/c3lang/c3c/releases/latest/download/c3-linux-static.tar.gz -o c3.tar.gz
           mkdir c3
           tar -xzf c3.tar.gz -C c3 --strip-components=1
-          sudo mv c3/c3c /usr/local/bin/
+          sudo mv c3 /opt/c3
+
+          sudo ln -s /opt/c3/c3c /usr/local/bin/c3c
+          sudo ln -sf /opt/c3/c3fmt /usr/local/bin/c3fmt
+
           c3c --version
+          c3fmt --version
+      - name: Ensure formatting
+        run: |
+          c3fmt . --check
       - name: Build project
         run: |
           c3c build c3api
@@ -31,15 +39,31 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install C3
         run: |
-          wget https://github.com/c3lang/c3c/releases/latest/download/c3-ubuntu.tar.gz
-          tar -xzf c3-ubuntu.tar.gz
-          sudo mv c3/c3c /usr/local/bin/
+          curl -L https://github.com/c3lang/c3c/releases/latest/download/c3-linux-static.tar.gz -o c3.tar.gz
+          mkdir c3
+          tar -xzf c3.tar.gz -C c3 --strip-components=1
+          sudo mv c3 /opt/c3
+
+          sudo ln -s /opt/c3/c3c /usr/local/bin/c3c
+
           c3c --version
 
-      - name: Build project
+      - name: Test project
         run: |
           c3c test c3api
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install Python dependencies
+        run: uv sync --locked
+
+      - name: Run Python tests
+        run: uv run python tests/run_examples.py

@@ -28,7 +28,7 @@ macro Field _field(String name, $Type, value)
 macro Field _enum(String name, value)
 {
 	$assert $Typeof(*value)::kind == ENUM;
-    return _field(name, $Typeof(*value), value);
+	return _field(name, $Typeof(*value), value);
 }
 
 fn Field _string(String name, String* val) @inline
@@ -103,7 +103,7 @@ fn Field _error(fault* err) @inline
 
 macro Field _array(String name, $Type, value)
 {
-    return _field(name, $Type[], value);
+	return _field(name, $Type[], value);
 }
 
 fn Field _string_arr(String name, String[]* val) @inline
@@ -201,8 +201,3 @@ fn String[] names(Allocator allocator, Field[] fields)
 	}
 	return name_arr;
 }
-
-
-
-
-

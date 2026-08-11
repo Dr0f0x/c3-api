@@ -9,7 +9,7 @@ import std::io;
 
  The enum stores both integer status code and status message.
 *>
-enum HttpStatus (Printable) : int (int code, String message) 
+enum HttpStatus (Printable) : int (int code, String message)
 {
 	UNKNOWN                         { 0, "Unknown" },
 	CONTINUE                        { 100, "Continue" },
@@ -49,7 +49,7 @@ enum HttpStatus (Printable) : int (int code, String message)
 	LENGTH_REQUIRED                 { 411, "Length Required" },
 	PRECONDITION_FAILED             { 412, "Precondition Failed" },
 	PAYLOAD_TOO_LARGE               { 413, "Payload Too Large" },
-	URI_TOO_LONG                     { 414, "URI Too Long" },
+	URI_TOO_LONG                    { 414, "URI Too Long" },
 	UNSUPPORTED_MEDIA_TYPE          { 415, "Unsupported Media Type" },
 	RANGE_NOT_SATISFIABLE           { 416, "Range Not Satisfiable" },
 	EXPECTATION_FAILED              { 417, "Expectation Failed" },
@@ -85,12 +85,8 @@ enum HttpStatus (Printable) : int (int code, String message)
 *>
 fn sz? HttpStatus.to_format(&self, Formatter* formatter) @dynamic
 {
-    sz len = formatter.printf("%d", self.code)!;
-    len += formatter.print(" - ")!;
-    len += formatter.print(self.message)!;
-    return len;
+	sz len = formatter.printf("%d", self.code)!;
+	len += formatter.print(" - ")!;
+	len += formatter.print(self.message)!;
+	return len;
 }
-
-
-
-

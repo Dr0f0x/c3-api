@@ -311,8 +311,3 @@ fn sz? Router.to_route_format(&self, Formatter* formatter)
 	}
 	return len;
 }
-
-
-
-
-

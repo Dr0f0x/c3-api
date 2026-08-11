@@ -27,7 +27,8 @@ fn sz find_header_terminator(List{char}* bytes, sz start = 0) @private
 
 	for (sz i = start; i + 3 < bytes.size; i++)
 	{
-		if (bytes.entries[i] == '\r' && bytes.entries[i + 1] == '\n' && bytes.entries[i + 2] == '\r' && bytes.entries[i + 3] == '\n')
+		if (bytes.entries[i] == '\r' && bytes.entries[i + 1] == '\n' && bytes.entries[i + 2] == '\r'
+			&& bytes.entries[i + 3] == '\n')
 		{
 			return i;
 		}
@@ -83,7 +84,7 @@ fn bool has_chunked_transfer_encoding(headers::HttpHeaders* headers) @private
 fn ulong? parse_chunk_size(String value) @private
 {
 	String trimmed = value.trim();
-	sz ext_start = trimmed.index_of_char(';') ?? -1;
+	sz ext_start   = trimmed.index_of_char(';') ?? -1;
 	if (ext_start >= 0)
 	{
 		trimmed = trimmed[0..ext_start - 1].trim();
@@ -179,7 +180,13 @@ fn void? parse_request_head(HttpRequest* self, sz header_end) @private
 	};
 }
 
-fn void? read_fixed_length_body(HttpRequest* self, TcpSocket* socket, ulong max_read_size, sz body_start, ulong content_length) @private
+fn void? read_fixed_length_body(
+	HttpRequest* self,
+	TcpSocket* socket,
+	ulong max_read_size,
+	sz body_start,
+	ulong content_length
+) @private
 {
 	ulong expected_total = (ulong)body_start + content_length;
 	while ((ulong)self.bytes.size < expected_total)
@@ -198,7 +205,7 @@ fn void? read_fixed_length_body(HttpRequest* self, TcpSocket* socket, ulong max_
 
 fn void? read_chunked_body(HttpRequest* self, TcpSocket* socket, ulong max_read_size, sz body_start) @private
 {
-	sz cursor = body_start;
+	sz cursor       = body_start;
 	sz write_cursor = body_start;
 
 	while (true)

@@ -134,8 +134,3 @@ fn sz? RouteNode.to_route_format(&self, Formatter* formatter, sz indent = 0)
 
 	return len;
 }
-
-
-
-
-

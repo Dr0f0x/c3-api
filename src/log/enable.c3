@@ -52,13 +52,9 @@ fn EnablerFunc min_level_enabler(LogLevel min_level)
 	{
 		case LogLevel.TRACE: return &min_level_trace_enabler;
 		case LogLevel.DEBUG: return &min_level_debug_enabler;
-		case LogLevel.INFO:  return &min_level_info_enabler;
-		case LogLevel.WARN:  return &min_level_warn_enabler;
+		case LogLevel.INFO: return &min_level_info_enabler;
+		case LogLevel.WARN: return &min_level_warn_enabler;
 		case LogLevel.ERROR: return &min_level_error_enabler;
 		case LogLevel.FATAL: return &min_level_fatal_enabler;
 	}
 }
-
-
-
-

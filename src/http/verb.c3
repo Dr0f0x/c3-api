@@ -72,5 +72,3 @@ fn HttpVerb? parse_verb(String verb)
 			return http::INVALID_VERB~;
 	}
 }
-
-

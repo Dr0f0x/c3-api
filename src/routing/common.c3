@@ -28,7 +28,3 @@ macro void print_routes(router)
 
 	io::print(output.str_view());
 }
-
-
-
-

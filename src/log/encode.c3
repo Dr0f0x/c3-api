@@ -159,8 +159,3 @@ fn String json_encode(Allocator allocator, LogEntry* entry)
 
 	return out.str_view();
 }
-
-
-
-
-

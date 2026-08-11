@@ -61,7 +61,7 @@ fn int main(String[] args)
 {
 	// Create and initialize the server
 	c3api::Server server;
-	server.init(tmem);
+	server.init(tmem)!!;
 
 	// Get the router instance from the server.
 	router::Router* router = server.get_router();

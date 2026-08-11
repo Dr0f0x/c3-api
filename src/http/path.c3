@@ -111,8 +111,3 @@ fn sz? HttpPathParams.to_format(&self, Formatter* formatter) @dynamic
 {
 	return self.param_map.to_format(formatter);
 }
-
-
-
-
-

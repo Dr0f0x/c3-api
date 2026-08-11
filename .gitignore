@@ -3,6 +3,7 @@ build/
 *.conf.json
 .venv/
 
+**/log/
 *.log
 
 docs.html

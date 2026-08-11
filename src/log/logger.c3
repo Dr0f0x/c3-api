@@ -377,8 +377,3 @@ fn void C3ApiLogger.free(&self)
 {
 	self.sinks.free();
 }
-
-
-
-
-

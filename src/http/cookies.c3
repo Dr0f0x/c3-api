@@ -27,7 +27,7 @@ fn String? HttpRequest.get_cookie(&self, String name)
 			sz eq = cookie.index_of_char('=') ?? -1;
 			if (eq < 0) continue;
 
-			String cookie_name = cookie[0..eq-1].trim();
+			String cookie_name = cookie[0..eq - 1].trim();
 
 			if (cookie_name == name)
 			{
@@ -49,7 +49,7 @@ const CookieDuration DAY           = 24 * HOUR;
 const CookieDuration WEEK          = 7 * DAY;
 const CookieDuration MONTH         = 30 * DAY;
 const CookieDuration YEAR          = 365 * DAY;
-const CookieDuration FAR_FUTURE       = (CookieDuration)long::max;
+const CookieDuration FAR_FUTURE    = (CookieDuration)long::max;
 
 fn CookieDuration sec(long s) @inline => (CookieDuration)s;
 fn CookieDuration min(long m) @inline => m * MINUTE;
@@ -109,13 +109,7 @@ struct CookieOptions
 	bool partitioned;
 }
 
-fn void HttpResponse.set_cookie(
-	&self,
-	Allocator allocator,
-	String name,
-	String value,
-	CookieOptions options = { }
-)
+fn void HttpResponse.set_cookie(&self, Allocator allocator, String name, String value, CookieOptions options = { })
 {
 	DString cookie = dstring::temp();
 
@@ -151,7 +145,7 @@ fn void HttpResponse.set_cookie(
 		cookie.append("; Secure");
 	}
 
-	if ((options.use & CookieOption.HTTP_ONLY )&& options.http_only)
+	if ((options.use & CookieOption.HTTP_ONLY) && options.http_only)
 	{
 		cookie.append("; HttpOnly");
 	}
@@ -200,7 +194,3 @@ fn void HttpResponse.set_cookie(
 
 	self.headers.add_header_value("Set-Cookie", cookie_str);
 }
-
-
-
-

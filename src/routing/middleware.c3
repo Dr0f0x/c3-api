@@ -75,8 +75,3 @@ struct RegisteredMiddleware
 	void* self; /* Owning instance for member-function middleware, or null */
 	MiddlewareFunc middleware; /* Middleware callback */
 }
-
-
-
-
-

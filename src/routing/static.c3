@@ -197,7 +197,7 @@ fn void StaticFile.serve_file(&self, Allocator allocator, Context* ctx, HttpRequ
 	}
 
 	res.status = HttpStatus.OK;
-	res.body = body[0..read_total-1];
+	res.body = body[0..read_total - 1];
 	res.headers.set_header_value("Content-Type", mime_type(self.path));
 }
 
@@ -244,8 +244,3 @@ fn String mime_type(Path path)
 			return "application/octet-stream";
 	}
 }
-
-
-
-
-

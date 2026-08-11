@@ -57,7 +57,7 @@ fn RequestFlow BuiltinMiddleware.logging(&self, Allocator allocator, Context* ct
 			content_length.append(value);
 		}
 	}
-	
+
 	String user_agent_str     = user_agent.len() ? user_agent.str_view() : "-";
 	String content_type_str   = content_type.len() ? content_type.str_view() : "-";
 	String content_length_str = content_length.len() ? content_length.str_view() : "-";
@@ -74,8 +74,3 @@ fn RequestFlow BuiltinMiddleware.logging(&self, Allocator allocator, Context* ct
 
 	return RequestFlow.CONTINUE;
 }
-
-
-
-
-

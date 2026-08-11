@@ -78,7 +78,7 @@ fn void Config.from_default(&self, Allocator allocator)
 }
 
 <*
- Load configuration from `config.json` in the current working directory.
+ Load configuration from `c3api.conf.json` in the current working directory.
 
  Falls back to [DEFAULT_CONFIG] if loading or parsing fails.
 
@@ -127,6 +127,11 @@ fn void? write_to_file(Config* config, Path path)
 {
 	@pool()
 	{
+		// Ensure parent directory
+		if (try parent = path.parent())
+		{
+			path::mkdir(parent, true)!;
+		}
 		File file = file::open_path(path, "w")!;
 
 		String json_str = json::marshal(tmem, *config, indent: Indent.SPACE_2);
@@ -241,7 +246,9 @@ macro Type parse_or_default(String key, String str, ParseFunc{Type} parse, Type 
 	{
 		return val;
 	}
-	io::printfn("[%s] [WARN] parsed config contained invalid value %s for %s, falling back to default %s", datetime::now()
+	io::printfn(
+		"[%s] [WARN] parsed config contained invalid value %s for %s, falling back to default %s",
+		datetime::now()
 		.format(tmem, DateTimeFormat.UNIXDATE), str, key, default_val);
 	return default_val;
 }
