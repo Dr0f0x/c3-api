@@ -2,6 +2,13 @@
     <img src="docs/c3api_full.svg" alt="c3api-logo" height="160">
 </p>
 
+#
+
+<p align="center">
+  <img src="https://github.com/Dr0f0x/c3-api/actions/workflows/compile-and-test.yml/badge.svg">
+  <img src="https://img.shields.io/badge/license-MIT-blue">
+</p>
+
 **c3-api** is a lightweight HTTP web framework for C3, inspired by Go's [Gin](https://github.com/gin-gonic/gin) and Node.js [Express](https://github.com/expressjs/express/). With extensive support for routing, middleware and request handling, c3-api focuses on simplicity, performance, and developer productivity while staying lightweight and easy to use. The framework is highly configurable, allowing fine-grained control over server behavior such as concurrency models, keep-alive settings, timeouts, and other networking options.
 
 This project originally started as a fork of the original [c3-api](https://github.com/velikoss/c3-api), which is why it retains the same name. However while adding the new features and changing the API to match Gin and Express, I found myself essentially rewriting everything and thus made it an independent project.
@@ -10,6 +17,8 @@ This project originally started as a fork of the original [c3-api](https://githu
 
 - **Middleware support** - Extensible middleware system for authentication, logging, etc.
 - **Route grouping** - Organize related routes and apply common middleware
+- **Type-methods for middleware and handlers** - Define middleware or handlers as type methods with access to shared state
+- **Request Binding and response Serialization** - Bind and deserialize request bodies directly into C3 types or do the opposite for responses with support for JSON, XML, and form data.
 - **Built-in CORS support** - Simple and flexible Cross-Origin Resource Sharing configuration.
 - **Highly configurable server** - Configure server behavior through code or JSON configuration files, with fine-grained control over concurrency modes, keep-alive settings, timeouts, connection limits, and other networking options
 
@@ -23,6 +32,7 @@ This project originally started as a fork of the original [c3-api](https://githu
   - [Path parameters](#path-parameters)
   - [Query parameters](#query-parameters)
   - [Route groups](#route-groups)
+  - [Request & Response Data](#request--response-data)
 - [Documentation](#documentation)
 - [Configuration](#configuration)
 - [Docker](#docker)
@@ -337,13 +347,45 @@ The example above registers the following middleware and route:
 
 All registration methods available on `Router`, including the generic routing macros for type methods, are also available on `Group`.
 
+### Request & Response Data
+
+**c3-api** provides helpers for decoding request bodies directly into C3 types and serializing C3 types into HTTP responses. The same model can be used with multiple supported formats by annotating its fields with the corresponding encoding attributes.
+
+For example, a request body can be decoded into a `Product` using the format-specific request helpers:
+
+```c3
+Product*? product = request::from_json{Product}(req, allocator);
+Product*? product = request::from_xml{Product}(req, allocator);
+Product*? product = request::from_form{Product}(req, allocator);
+```
+
+The resulting C3 value can be serialized into the response body using the corresponding response helper:
+
+```c3
+response::as_json{ProductResponse}(res, allocator, &response);
+response::as_xml{ProductResponse}(res, allocator, &response);
+response::as_form{ProductResponse}(res, allocator, &response);
+```
+
+Models declare the names and fields used by each format through attributes such as `@Json`, `@Xml`, and `@Form`:
+
+```c3
+struct Product
+{
+    String name @Json("name", true) @Xml("name", true) @Form("name", true);
+    float price @Json("price", true) @Xml("price", true) @Form("price", true);
+}
+```
+
+#
+
 For explanations of additional framework features — such as the built-in logger, serving static files, and more in-depth guides - refer to the full [documentation](TO-DO).
 
 ## Documentation
 
 ### API Reference
 
-- [C3 DocGen API Documentation](TO-DO) — Complete API reference generated with the C3 documentation generator.
+- [C3 DocGen API Documentation](https://dr0f0x.github.io/c3-api/api-reference/) — Complete API reference generated with the C3 documentation generator.
 
 ### Website
 

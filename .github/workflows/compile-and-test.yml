@@ -27,16 +27,22 @@ jobs:
 
           c3c --version
           c3fmt --version
+
+      - name: Check matching version
+        run: |
+          bash ./scripts/check_version.sh
+
       - name: Ensure formatting
         run: |
           c3fmt . --check
+
       - name: Build project
         run: |
           c3c build c3api
 
   test:
     runs-on: ubuntu-latest
-
+    needs: [build]
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -66,4 +72,4 @@ jobs:
         run: uv sync --locked
 
       - name: Run Python tests
-        run: uv run python tests/run_examples.py
+        run: uv run python tests/run_examples.py --quiet
