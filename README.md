@@ -20,7 +20,7 @@ This project originally started as a fork of the original [c3-api](https://githu
 - **Type-methods for middleware and handlers** - Define middleware or handlers as type methods with access to shared state
 - **Request Binding and response Serialization** - Bind and deserialize request bodies directly into C3 types or do the opposite for responses with support for JSON, XML, and form data.
 - **Built-in CORS support** - Simple and flexible Cross-Origin Resource Sharing configuration.
-- **Highly configurable server** - Configure server behavior through code or JSON configuration files, with fine-grained control over concurrency modes, keep-alive settings, timeouts, connection limits, and other networking options
+- **Highly configurable server** - Configure server behavior through code or a JSON configuration file, with fine-grained control over concurrency modes, keep-alive settings, timeouts, connection limits, and other networking options
 
 ## Table of contents
 
@@ -379,7 +379,7 @@ struct Product
 
 #
 
-For explanations of additional framework features — such as the built-in logger, serving static files, and more in-depth guides - refer to the full [documentation](TO-DO).
+For explanations of additional framework features — such as the built-in logger, serving static files, and more in-depth guides - refer to the full [documentation](https://dr0f0x.github.io/c3-api/mkdocs/).
 
 ## Documentation
 
@@ -389,7 +389,7 @@ For explanations of additional framework features — such as the built-in logge
 
 ### Website
 
-- [MkDocs Documentation](TO-DO) — Guides, tutorials, configuration reference, and additional documentation built with MkDocs.
+- [MkDocs Documentation](https://dr0f0x.github.io/c3-api/mkdocs/) — Guides, tutorials, configuration reference, and additional documentation built with MkDocs.
 
 ## Configuration
 
@@ -478,6 +478,7 @@ Here are some planned features and improvements for the `c3-api` project:
 - [ ] **Testing**: Robust test suite in c3 for unit tests and with python for integration tests.
 - [ ] **Documentation**: Improve documentation with detailed examples and usage guides (e.g. the mkdocs site).
 - [ ] **Pipeline**: Pipeline to build and test the library, including performance and memory leak tests
+- [ ] **Async Http Backend**: Needed for adequate performance, probably rely on libuv and its [c3 types](https://github.com/velikoss/libuv.c3l) for this
 - [ ] **Http 2.0**: Full support for the different encoding, as well as features like multiplexing
 - [ ] **Pluggable Template rendering backend**: Similar to the way express does it
 - [ ] **Performance Optimizations**: Especially in the router (target should be 0 allocs)

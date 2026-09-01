@@ -48,7 +48,7 @@ fn middleware::RequestFlow api_middleware(
  User group middleware.
 
  Adds a response header to routes registered under the
-`/api/v1/users` subgroup.
+ `/api/v1/users` subgroup.
 *>
 fn middleware::RequestFlow user_middleware(
 	void* self = null,

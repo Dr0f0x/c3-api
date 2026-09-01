@@ -33,7 +33,10 @@
   "targets": {
     // library
     "c3api": {
-      "type": "static-lib"
+      "type": "static-lib",
+      "test-sources": [
+        "tests/**"
+      ]
     },
     
     // example projects run with c3c run '<target-name>'

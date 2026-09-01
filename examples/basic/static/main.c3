@@ -17,7 +17,7 @@ fn int main(String[] args)
 
 	// construct path to this examples`s public directory
 	Path cwd = path::tcwd()!!;
-	Path dir = cwd.tappend("examples/static/public")!!;
+	Path dir = cwd.tappend("examples/basic/static/public")!!;
 
 	// serve static files from the public directory
 	router.serve_static("/", dir)!!;

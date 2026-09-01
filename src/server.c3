@@ -196,7 +196,10 @@ fn void? Server.run(&self)
 			self.dispatch_fn = (DispatchFunc)&PoolDispatcher.dispatch;
 			self.dispatcher = &self.dispatch_opts.pool;
 		case ConcurrencyMode.THREAD_PER_REQUEST:
-			self.dispatch_opts.per_request.init(self.allocator, self.log,)!;
+			self.dispatch_opts.per_request.init(
+				self.allocator,
+				self.log,
+			)!;
 			self.dispatch_fn = (DispatchFunc)&PerRequestDispatcher.dispatch;
 			self.dispatcher = &self.dispatch_opts.per_request;
 	}

@@ -31,10 +31,10 @@ fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpReques
 
 <*
  Route handler with multiple path parameters.
-Handles requests to: GET /test/{name}/{id}
+ Handles requests to: GET /test/{name}/{id}
 
-The values of `{name}` and `{id}` are extracted from the route
-parameters and returned to the client.
+ The values of `{name}` and `{id}` are extracted from the route
+ parameters and returned to the client.
 *>
 fn void multi_param_handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {

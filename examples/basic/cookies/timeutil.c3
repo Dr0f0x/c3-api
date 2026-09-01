@@ -8,12 +8,12 @@ faultdef INVALID_TIMESTAMP, TIMESTAMP_OVERFLOW;
  Decode a Unix timestamp expressed as seconds.
 
  Examples:
-   "0"          -> 1970-01-01 00:00:00 UTC
-   "1"          -> 1970-01-01 00:00:01 UTC
-   "1775778300" -> corresponding UTC DateTime
+ "0"          -> 1970-01-01 00:00:00 UTC
+ "1"          -> 1970-01-01 00:00:01 UTC
+ "1775778300" -> corresponding UTC DateTime
 
  Unix timestamps are seconds since:
-   1970-01-01 00:00:00 UTC
+ 1970-01-01 00:00:00 UTC
 
  Returns INVALID_TIMESTAMP if the string is empty or contains
  non-numeric characters.

@@ -1,0 +1,75 @@
+site_name: C3 API
+site_description: A lightweight HTTP web framework for the C3 programming language.
+repo_url: https://github.com/Dr0f0x/c3-api
+repo_name: Dr0f0x/c3-api
+edit_uri: https://github.com/Dr0f0x/c3-api/edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/theme
+  logo: c3api_logo.svg
+  favicon: c3api_logo.svg
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - header.autohide
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - navigation.tracking
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - toc.follow
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+
+hooks:
+  - docs/hooks/c3_lexer.py
+  - docs/hooks/clean_html.py
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      pygments_lang_class: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+      title: On this page
+
+nav:
+  - C3 Language: c3.md
+  - C3 API: index.md
+  - Getting Started: getting-started.md
+  - C3-API Reference Docs: https://dr0f0x.github.io/c3-api/api-reference/

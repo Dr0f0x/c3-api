@@ -258,7 +258,7 @@ fn int main(String[] args)
 	};
 
 	Path cwd = path::tcwd()!!;
-	Path dir = cwd.tappend("examples/todo/public")!!;
+	Path dir = cwd.tappend("examples/complete/todo/public")!!;
 
 	router.serve_static("/files", dir)!!;
 

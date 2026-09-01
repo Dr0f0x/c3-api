@@ -187,9 +187,9 @@ fn sz HttpHeaders.len(&self)
  Example:
 
  [
-	"Content-Type: application/json",
-	"Content-Length: 123",
-	""
+ "Content-Type: application/json",
+ "Content-Length: 123",
+ ""
  ]
 
  becomes:
