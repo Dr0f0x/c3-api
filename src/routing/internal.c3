@@ -186,24 +186,22 @@ fn RouteNode*? _get_or_create_node(String uri, HashMap{String, RouteNode}* start
 <*
  Add or replace a route handler and attach route middleware.
 
- When uri refers to root, handler and middleware are attached to the
- provided root collections.
-
  @param [in] uri : "Route pattern"
  @param method : "HTTP method"
  @param handler : "Handler callback"
- @param controller : "Optional controller instance passed as the handler's `self` argument; `null` for free functions"
+ @param instance : "Optional instance passed as the handler's self argument"
+ @param middlewares : "Middleware callbacks to attach to the route"
  @param [&inout] start_handlers : "Root handler collection"
  @param [&inout] start_middlewares : "Root middleware collection"
  @param [&inout] start_nodes : "Root node map"
  @param [&in] log : "Logger"
- @return "True if an existing handler for method was replaced"
+ @return "True if an existing handler was replaced"
 *>
 fn bool _add_handler(
 	String uri,
 	RouteMethod method,
 	HandleFunc handler,
-	void* controller,
+	void* instance,
 	RegisteredMiddleware[] middlewares,
 	HandlerCollection* start_handlers,
 	List{RegisteredMiddleware}* start_middlewares,
@@ -215,18 +213,19 @@ fn bool _add_handler(
 	if (catch err = node)
 	{
 		start_middlewares.push_all(middlewares);
-		return start_handlers.set_handler(method, handler, controller);
+		return start_handlers.set_handler(method, handler, instance);
 	}
 	log.tracef("Assigning handler to '%s'", "Assigned handler to node", log::_string("node", &node.name));
 	log.tracef("Adding middlewares to '%s'", "Adding middlewares to node", log::_string("node", &node.name));
 	node.middlewares.push_all(middlewares);
 
-	return node.handlers.set_handler(method, handler, controller);
+	return node.handlers.set_handler(method, handler, instance);
 }
 
 <*
  Check whether a segment is a dynamic braced segment.
 
+ @param [in] self : "Route segment to inspect"
  @return "True for segments such as {name}"
 *>
 fn bool String.is_braced(self)
@@ -250,6 +249,9 @@ fn String node_key(String segment) @private
 
 <*
  Construct and initialize a RouteNode by segment name.
+
+ @param name : "Path segment represented by the node"
+ @return "Initialized route node"
 *>
 macro RouteNode new_route_node(String name) @private
 {

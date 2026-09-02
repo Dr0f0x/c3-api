@@ -25,6 +25,7 @@ struct Group (Printable)
 <*
  Initialize a group wrapper around an existing route node.
 
+ @param [&inout] self : "Group wrapper to initialize"
  @param [&in] node : "Backing node for relative route registrations"
  @param [&in] log : "Logger used by routing internals"
  @return "Initialized group instance"
@@ -42,9 +43,11 @@ fn Group* Group.init(&self, RouteNode* node, log::Logger log)
  If a handler is already registered for the specified method and URI,
  it is replaced with the new handler.
 
+ @param [&inout] self : "Group receiving the route"
  @param method : "HTTP method"
  @param [in] uri : "Route URI"
  @param handler : "Handler function"
+ @param instance : "Optional instance passed to the handler as self"
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
@@ -63,6 +66,14 @@ fn bool Group.add_route(&self, RouteMethod method, String uri, HandleFunc handle
 	);
 }
 
+<*
+ Register a GET handler relative to this group.
+ @param [&inout] self : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Group.get(
 	&self,
 	String uri,
@@ -70,6 +81,14 @@ macro bool Group.get(
 	void* instance = null
 ) => self.add_route(RouteMethod.GET, uri, handler, instance);
 
+<*
+ Register a POST handler relative to this group.
+ @param [&inout] self : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Group.post(
 	&self,
 	String uri,
@@ -77,6 +96,14 @@ macro bool Group.post(
 	void* instance = null
 ) => self.add_route(RouteMethod.POST, uri, handler, instance);
 
+<*
+ Register a PUT handler relative to this group.
+ @param [&inout] self : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Group.put(
 	&self,
 	String uri,
@@ -84,6 +111,14 @@ macro bool Group.put(
 	void* instance = null
 ) => self.add_route(RouteMethod.PUT, uri, handler, instance);
 
+<*
+ Register a PATCH handler relative to this group.
+ @param [&inout] self : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Group.patch(
 	&self,
 	String uri,
@@ -91,6 +126,14 @@ macro bool Group.patch(
 	void* instance = null
 ) => self.add_route(RouteMethod.PATCH, uri, handler, instance);
 
+<*
+ Register a DELETE handler relative to this group.
+ @param [&inout] self : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Group.delete(
 	&self,
 	String uri,
@@ -98,6 +141,14 @@ macro bool Group.delete(
 	void* instance = null
 ) => self.add_route(RouteMethod.DELETE, uri, handler, instance);
 
+<*
+ Register a HEAD handler relative to this group.
+ @param [&inout] self : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Group.head(
 	&self,
 	String uri,
@@ -105,6 +156,15 @@ macro bool Group.head(
 	void* instance = null
 ) => self.add_route(RouteMethod.HEAD, uri, handler, instance);
 
+<*
+ Register a typed route handler relative to this group.
+ @param group : "Group receiving the route"
+ @param method : "HTTP method"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool route(
 	Group* group,
 	RouteMethod method,
@@ -116,6 +176,14 @@ macro bool route(
 	return group.add_route(method, uri, (HandleFunc)handler, instance);
 }
 
+<*
+ Register a typed GET handler relative to a group.
+ @param group : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool get(
 	Group* group,
 	String uri,
@@ -123,6 +191,14 @@ macro bool get(
 	Type* instance = null
 ) <Type> => group.add_route(RouteMethod.GET, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed POST handler relative to a group.
+ @param group : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool post(
 	Group* group,
 	String uri,
@@ -130,6 +206,14 @@ macro bool post(
 	Type* instance = null
 ) <Type> => group.add_route(RouteMethod.POST, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed PUT handler relative to a group.
+ @param group : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool put(
 	Group* group,
 	String uri,
@@ -137,6 +221,14 @@ macro bool put(
 	Type* instance = null
 ) <Type> => group.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed PATCH handler relative to a group.
+ @param group : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool patch(
 	Group* group,
 	String uri,
@@ -144,6 +236,14 @@ macro bool patch(
 	Type* instance = null
 ) <Type> => group.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed DELETE handler relative to a group.
+ @param group : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool delete(
 	Group* group,
 	String uri,
@@ -151,6 +251,14 @@ macro bool delete(
 	Type* instance = null
 ) <Type> => group.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed HEAD handler relative to a group.
+ @param group : "Group receiving the route"
+ @param uri : "Route URI relative to the group"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool head(
 	Group* group,
 	String uri,
@@ -161,8 +269,10 @@ macro bool head(
 <*
  Add middleware to a router route.
 
+ @param [&inout] self : "Group receiving the middleware"
  @param [in] uri : "Route pattern"
  @param middleware : "Middleware callback to append"
+ @param instance : "Optional instance passed to the middleware as self"
 *>
 fn void Group.use_middleware(&self, String uri, MiddlewareFunc middleware, void* instance = null)
 {
@@ -176,6 +286,13 @@ fn void Group.use_middleware(&self, String uri, MiddlewareFunc middleware, void*
 	}
 }
 
+<*
+ Add middleware relative to this group.
+ @param [&inout] self : "Group receiving the middleware"
+ @param uri : "Route pattern"
+ @param middleware : "Middleware callback to append"
+ @param instance : "Optional middleware instance passed as self"
+*>
 macro void Group.use(
 	&self,
 	String uri,
@@ -183,6 +300,13 @@ macro void Group.use(
 	void* instance = null
 ) => self.use_middleware(uri, middleware, instance);
 
+<*
+ Add typed middleware relative to a group.
+ @param group : "Group receiving the middleware"
+ @param uri : "Route pattern"
+ @param middleware : "Type-safe middleware callback"
+ @param instance : "Optional instance passed to the middleware as self"
+*>
 macro void use(
 	Group* group,
 	String uri,
@@ -196,6 +320,7 @@ macro void use(
  @require uri != "" : "Nested group must specify a route path"
  @require uri != "/" : "Nested group must specify a route path"
 
+ @param [&inout] self : "Group providing the parent route scope"
  @param [&inout] allocator : "Allocator used by the group"
  @param [in] uri : "Route pattern relative to the current group"
 
@@ -209,6 +334,11 @@ fn Group* Group.group(&self, Allocator allocator, String uri)
 	return group.init(node, self.log);
 }
 
+<*
+ Free the group wrapper.
+
+ @param [&inout] self : "Group to free"
+*>
 fn void Group.free(&self)
 {
 	// nothing to do here yet
@@ -216,6 +346,10 @@ fn void Group.free(&self)
 
 <*
  Formatter implementation for debug output.
+
+ @param [&in] self : "Group to format"
+ @param [&inout] formatter : "Formatter receiving the group representation"
+ @return "Number of characters written"
 *>
 fn sz? Group.to_format(&self, Formatter* formatter) @dynamic
 {
@@ -233,6 +367,13 @@ fn sz? Group.to_format(&self, Formatter* formatter) @dynamic
 	return len += formatter.print(" }")!;
 }
 
+<*
+ Format all routes below this group.
+
+ @param [&in] self : "Group whose routes are formatted"
+ @param [&inout] formatter : "Formatter receiving the route tree"
+ @return "Number of characters written"
+*>
 fn sz? Group.to_route_format(&self, Formatter* formatter)
 {
 	sz len = self.node.to_route_format(formatter, 0)!;

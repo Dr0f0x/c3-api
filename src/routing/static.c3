@@ -13,6 +13,16 @@ import c3api::log;
 import c3api::context;
 import c3api::routing::internal;
 
+<*
+ Register static files below a router path.
+
+ @param [&inout] self : "Router receiving static file routes"
+ @param uri : "URI prefix for the files"
+ @param path : "Directory or file to serve"
+ @param indexing : "Whether to register directory index files"
+ @param clean_urls : "Whether to register extensionless HTML routes"
+ @return "Success or a file error"
+*>
 fn void? Router.serve_static(&self, String uri, Path path, bool indexing = true, bool clean_urls = true)
 {
 	return routing::serve_static(
@@ -27,6 +37,17 @@ fn void? Router.serve_static(&self, String uri, Path path, bool indexing = true,
 	);
 }
 
+<*
+ Register static files below a group path.
+
+ @param [&inout] self : "Group receiving static file routes"
+ @param uri : "URI prefix for the files"
+ @param router : "Router owning the route storage"
+ @param path : "Directory or file to serve"
+ @param indexing : "Whether to register directory index files"
+ @param clean_urls : "Whether to register extensionless HTML routes"
+ @return "Success or a file error"
+*>
 fn void? Group.serve_static(&self, String uri, Router* router, Path path, bool indexing = true, bool clean_urls = true)
 {
 	return routing::serve_static(
@@ -41,6 +62,19 @@ fn void? Group.serve_static(&self, String uri, Router* router, Path path, bool i
 	);
 }
 
+<*
+ Register static files in route storage.
+
+ @param uri : "URI prefix for the files"
+ @param path : "Directory or file to serve"
+ @param indexing : "Whether to register directory index files"
+ @param clean_urls : "Whether to register extensionless HTML routes"
+ @param handlers : "Handler collection receiving file handlers"
+ @param middlewares : "Middleware collection for the routes"
+ @param nodes : "Route node map"
+ @param log : "Logger"
+ @return "Success or a file error"
+*>
 fn void? serve_static(
 	String uri,
 	Path path,
@@ -87,6 +121,7 @@ fn void? serve_static(
 	}
 }
 
+<* State shared while walking a static file directory. *>
 struct StaticWalkData
 {
 	Path base;
@@ -100,6 +135,14 @@ struct StaticWalkData
 	log::Logger log;
 }
 
+<*
+ Register one static file encountered during a directory walk.
+
+ @param file : "File path encountered"
+ @param is_dir : "Whether the path is a directory"
+ @param data_ptr : "Static walk state"
+ @return "Whether directory walking should stop"
+*>
 fn bool? register_static_entry(Path file, bool is_dir, void* data_ptr)
 {
 	if (is_dir) return false;
@@ -129,6 +172,16 @@ fn bool? register_static_entry(Path file, bool is_dir, void* data_ptr)
 	return false;
 }
 
+<*
+ Register one file-backed GET route.
+
+ @param uri : "Route URI"
+ @param path : "File path"
+ @param handlers : "Handler collection receiving the file handler"
+ @param middlewares : "Middleware collection for the route"
+ @param nodes : "Route node map"
+ @param log : "Logger"
+*>
 fn void register_static_file(
 	String uri,
 	Path path,
@@ -161,11 +214,21 @@ fn void register_static_file(
 	);
 }
 
+<* File-backed handler state for a registered static route. *>
 struct StaticFile
 {
 	Path path;
 }
 
+<*
+ Serve the file represented by this handler.
+
+ @param [&in] self : "Static file handler state"
+ @param [&inout] allocator : "Allocator for the response body"
+ @param [&inout] ctx : "Request context"
+ @param [&inout] req : "Incoming request"
+ @param [&inout] res : "Response to populate"
+*>
 fn void StaticFile.serve_file(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
 {
 	if (!path::exists(self.path) || !path::is_file(self.path))
@@ -201,6 +264,12 @@ fn void StaticFile.serve_file(&self, Allocator allocator, Context* ctx, HttpRequ
 	res.headers.set_header_value("Content-Type", mime_type(self.path));
 }
 
+<*
+ Return the MIME type for a file path.
+
+ @param [in] path : "File path whose extension is inspected"
+ @return "MIME type string"
+*>
 fn String mime_type(Path path)
 {
 	String ext = path.extension() ?? "";

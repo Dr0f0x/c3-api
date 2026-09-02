@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Dr0f0x
+
 // copy of the std/lib threadpool as that needs to be enabled with a compile flag
 
 module c3api::concurrency::pool @private;

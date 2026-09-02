@@ -22,6 +22,7 @@ enum RouteMethod (Printable)
 <*
  Convert a route method enum value to its uppercase HTTP token.
 
+ @param [&in] self : "Route method to convert"
  @return "Uppercase method token such as GET or POST"
 *>
 fn String RouteMethod.to_constant_string(&self) @dynamic

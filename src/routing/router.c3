@@ -32,6 +32,7 @@ struct Router (Printable)
 <*
  Initialize router storage and root handler collections.
 
+ @param [&inout] self : "Router to initialize"
  @param [&inout] allocator : "Allocator used by route trie and middleware lists"
  @param [&in] logger : "Logger used by routing internals"
  @return "Initialized router instance"
@@ -51,6 +52,7 @@ fn Router* Router.init(&self, Allocator allocator, log::Logger logger)
 
  Collects middleware along the matched path.
 
+ @param [&in] self : "Router to search"
  @param [in] uri : "Request URI"
  @param [&inout] request : "Request object receiving path arguments"
  @param [&inout] middleware_collector : "Middleware output buffer"
@@ -70,6 +72,7 @@ fn HandlerCollection*? Router.get_handlers(
 <*
  Retrieve the handler associated with the specified HTTP method and URI.
 
+ @param [&in] self : "Router to search"
  @param method : "HTTP method to match"
  @param [in] uri : "Route URI to look up"
  @param [&inout] request : "Request object receiving path arguments"
@@ -106,9 +109,11 @@ fn RegisteredHandler*? Router.get_route(
  If a handler is already registered for the specified method and URI,
  it is replaced with the new handler.
 
+ @param [&inout] self : "Router receiving the route"
  @param method : "HTTP method"
  @param [in] uri : "Route URI"
  @param handler : "Handler function"
+ @param instance : "Optional instance passed to the handler as self"
 
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
@@ -127,6 +132,14 @@ fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handl
 	);
 }
 
+<*
+ Register a GET handler on this router.
+ @param [&inout] self : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Router.get(
 	&self,
 	String uri,
@@ -134,6 +147,14 @@ macro bool Router.get(
 	void* instance = null
 ) => self.add_route(RouteMethod.GET, uri, handler, instance);
 
+<*
+ Register a POST handler on this router.
+ @param [&inout] self : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Router.post(
 	&self,
 	String uri,
@@ -141,6 +162,14 @@ macro bool Router.post(
 	void* instance = null
 ) => self.add_route(RouteMethod.POST, uri, handler, instance);
 
+<*
+ Register a PUT handler on this router.
+ @param [&inout] self : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Router.put(
 	&self,
 	String uri,
@@ -148,6 +177,14 @@ macro bool Router.put(
 	void* instance = null
 ) => self.add_route(RouteMethod.PUT, uri, handler, instance);
 
+<*
+ Register a PATCH handler on this router.
+ @param [&inout] self : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Router.patch(
 	&self,
 	String uri,
@@ -155,6 +192,14 @@ macro bool Router.patch(
 	void* instance = null
 ) => self.add_route(RouteMethod.PATCH, uri, handler, instance);
 
+<*
+ Register a DELETE handler on this router.
+ @param [&inout] self : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Router.delete(
 	&self,
 	String uri,
@@ -162,6 +207,14 @@ macro bool Router.delete(
 	void* instance = null
 ) => self.add_route(RouteMethod.DELETE, uri, handler, instance);
 
+<*
+ Register a HEAD handler on this router.
+ @param [&inout] self : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Handler function"
+ @param instance : "Optional handler instance passed as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool Router.head(
 	&self,
 	String uri,
@@ -169,6 +222,15 @@ macro bool Router.head(
 	void* instance = null
 ) => self.add_route(RouteMethod.HEAD, uri, handler, instance);
 
+<*
+ Register a typed route handler on this router.
+ @param router : "Router receiving the route"
+ @param method : "HTTP method"
+ @param uri : "Route URI"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool route(
 	Router* router,
 	RouteMethod method,
@@ -180,6 +242,14 @@ macro bool route(
 	return router.add_route(method, uri, (HandleFunc)handler, instance);
 }
 
+<*
+ Register a typed GET handler on a router.
+ @param router : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool get(
 	Router* router,
 	String uri,
@@ -187,6 +257,14 @@ macro bool get(
 	Type* instance = null
 ) <Type> => router.add_route(RouteMethod.GET, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed POST handler on a router.
+ @param router : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool post(
 	Router* router,
 	String uri,
@@ -194,6 +272,14 @@ macro bool post(
 	Type* instance = null
 ) <Type> => router.add_route(RouteMethod.POST, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed PUT handler on a router.
+ @param router : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool put(
 	Router* router,
 	String uri,
@@ -201,6 +287,14 @@ macro bool put(
 	Type* instance = null
 ) <Type> => router.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed PATCH handler on a router.
+ @param router : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool patch(
 	Router* router,
 	String uri,
@@ -208,6 +302,14 @@ macro bool patch(
 	Type* instance = null
 ) <Type> => router.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed DELETE handler on a router.
+ @param router : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool delete(
 	Router* router,
 	String uri,
@@ -215,6 +317,14 @@ macro bool delete(
 	Type* instance = null
 ) <Type> => router.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, instance);
 
+<*
+ Register a typed HEAD handler on a router.
+ @param router : "Router receiving the route"
+ @param uri : "Route URI"
+ @param handler : "Type-safe handler function"
+ @param instance : "Optional instance passed to the handler as self"
+ @return "True if an existing handler was replaced"
+*>
 macro bool head(
 	Router* router,
 	String uri,
@@ -225,8 +335,10 @@ macro bool head(
 <*
  Add middleware to a router route.
 
+ @param [&inout] self : "Router receiving the middleware"
  @param [in] uri : "Route pattern"
  @param middleware : "Middleware callback to append"
+ @param instance : "Optional instance passed to the middleware as self"
 *>
 fn void Router.use_middleware(&self, String uri, MiddlewareFunc middleware, void* instance = null)
 {
@@ -240,6 +352,13 @@ fn void Router.use_middleware(&self, String uri, MiddlewareFunc middleware, void
 	}
 }
 
+<*
+ Add middleware to this router.
+ @param [&inout] self : "Router receiving the middleware"
+ @param uri : "Route pattern"
+ @param middleware : "Middleware callback to append"
+ @param instance : "Optional middleware instance passed as self"
+*>
 macro void Router.use(
 	&self,
 	String uri,
@@ -247,6 +366,13 @@ macro void Router.use(
 	void* instance = null
 ) => self.use_middleware(uri, middleware, instance);
 
+<*
+ Add typed middleware to a router.
+ @param router : "Router receiving the middleware"
+ @param uri : "Route pattern"
+ @param middleware : "Type-safe middleware callback"
+ @param instance : "Optional instance passed to the middleware as self"
+*>
 macro void use(
 	Router* router,
 	String uri,
@@ -260,6 +386,7 @@ macro void use(
  @require uri != "" : "Group cant refer to the root"
  @require uri != "/" : "Group cant refer to the root"
 
+ @param [&inout] self : "Router providing the parent route scope"
  @param [&inout] allocator : "Allocator used by the group"
  @param [in] uri : "Route pattern for the group"
 
@@ -275,6 +402,8 @@ fn Group* Router.group(&self, Allocator allocator, String uri)
 
 <*
  Free router-owned resources.
+
+ @param [&inout] self : "Router whose resources are freed"
 *>
 fn void Router.free(&self)
 {
@@ -285,6 +414,10 @@ fn void Router.free(&self)
 
 <*
  Formatter implementation for debug output.
+
+ @param [&in] self : "Router to format"
+ @param [&inout] formatter : "Formatter receiving the router representation"
+ @return "Number of characters written"
 *>
 fn sz? Router.to_format(&self, Formatter* formatter) @dynamic
 {
@@ -302,6 +435,13 @@ fn sz? Router.to_format(&self, Formatter* formatter) @dynamic
 	return len += formatter.print(" }")!;
 }
 
+<*
+ Format all routes registered on this router.
+
+ @param [&in] self : "Router whose routes are formatted"
+ @param [&inout] formatter : "Formatter receiving the route tree"
+ @return "Number of characters written"
+*>
 fn sz? Router.to_route_format(&self, Formatter* formatter)
 {
 	sz len = 0;

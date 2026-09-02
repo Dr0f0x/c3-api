@@ -27,6 +27,7 @@ struct RouteNode (Printable)
 <*
  Initialize a route node.
 
+ @param [&inout] self : "Route node to initialize"
  @param [&inout] allocator : "Allocator used by child map and middleware list"
  @param [in] name : "Path segment represented by this node"
  @return "Initialized route node"
@@ -43,6 +44,7 @@ fn RouteNode* RouteNode.init(&self, Allocator allocator, String name)
 <*
  Check whether this node has middleware attached.
 
+ @param [&in] self : "Route node to query"
  @return "True when middleware list is non-empty"
 *>
 fn bool RouteNode.has_middleware(&self)
@@ -55,6 +57,7 @@ fn bool RouteNode.has_middleware(&self)
 
  Tries an exact child first, then the dynamic placeholder key.
 
+ @param [&in] self : "Route node to search"
  @param [in] to : "Next URI segment"
  @return "Matching child node or null"
 *>
@@ -65,6 +68,8 @@ fn RouteNode*? RouteNode.get_next_node(&self, String to)
 
 <*
  Free node-owned resources.
+
+ @param [&inout] self : "Route node to free"
 *>
 fn void RouteNode.free(&self)
 {
@@ -76,6 +81,10 @@ fn void RouteNode.free(&self)
 
 <*
  Formatter implementation for debug output.
+
+ @param [&in] self : "Route node to format"
+ @param [&inout] formatter : "Formatter receiving the node representation"
+ @return "Number of characters written"
 *>
 fn sz? RouteNode.to_format(&self, Formatter* formatter) @dynamic
 {
@@ -96,6 +105,14 @@ fn sz? RouteNode.to_format(&self, Formatter* formatter) @dynamic
 	return len += formatter.print(" }")!;
 }
 
+<*
+ Format this node and its descendants as routes.
+
+ @param [&in] self : "Route node to format"
+ @param [&inout] formatter : "Formatter receiving the route tree"
+ @param indent : "Initial indentation width"
+ @return "Number of characters written"
+*>
 fn sz? RouteNode.to_route_format(&self, Formatter* formatter, sz indent = 0)
 {
 	sz len = 0;
