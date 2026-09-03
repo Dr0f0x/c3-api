@@ -80,6 +80,7 @@ enum HttpStatus (Printable) : int (int code, String message)
 <*
  Format the HTTP status as `<code> - <reason phrase>`.
 
+ @param self : "HTTP status to format"
  @param [inout] formatter : "Formatter to write output to"
  @return "The number of characters written, or an error"
 *>

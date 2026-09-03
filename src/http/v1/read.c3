@@ -9,6 +9,12 @@ import std::collections::list;
 import c3api::http::request;
 import c3api::http::headers;
 
+<*
+ Find the next CRLF sequence in a byte buffer.
+ @param bytes : "Byte buffer to search"
+ @param start : "Starting offset"
+ @return "Offset of CRLF or -1 when absent"
+*>
 fn sz find_crlf(List{char}* bytes, sz start) @private
 {
 	if (start < 0 || start + 1 >= bytes.size) return -1;
@@ -24,6 +30,12 @@ fn sz find_crlf(List{char}* bytes, sz start) @private
 	return -1;
 }
 
+<*
+ Find the CRLFCRLF sequence that terminates HTTP headers.
+ @param bytes : "Byte buffer to search"
+ @param start : "Starting offset"
+ @return "Offset of the header terminator or -1 when absent"
+*>
 fn sz find_header_terminator(List{char}* bytes, sz start = 0) @private
 {
 	if (bytes.size < 4 || start < 0) return -1;
@@ -40,6 +52,11 @@ fn sz find_header_terminator(List{char}* bytes, sz start = 0) @private
 	return -1;
 }
 
+<*
+ Parse a Content-Length header value.
+ @param value : "Content-Length field value"
+ @return "Parsed length or INVALID_CONTENT_LENGTH~"
+*>
 fn ulong? parse_content_length(String value) @private
 {
 	ulong parsed = 0;
@@ -51,6 +68,11 @@ fn ulong? parse_content_length(String value) @private
 	return parsed;
 }
 
+<*
+ Get the declared content length from HTTP headers.
+ @param headers : "Headers to inspect"
+ @return "Declared length, zero when absent, or INVALID_CONTENT_LENGTH~"
+*>
 fn ulong? get_content_length(headers::HttpHeaders* headers) @private
 {
 	if (try values = headers.get_header_values("Content-Length"))
@@ -64,6 +86,11 @@ fn ulong? get_content_length(headers::HttpHeaders* headers) @private
 	return 0;
 }
 
+<*
+ Check whether headers request chunked transfer encoding.
+ @param headers : "Headers to inspect"
+ @return "True when Transfer-Encoding includes chunked"
+*>
 fn bool has_chunked_transfer_encoding(headers::HttpHeaders* headers) @private
 {
 	if (try values = headers.get_header_values("Transfer-Encoding"))
@@ -84,6 +111,11 @@ fn bool has_chunked_transfer_encoding(headers::HttpHeaders* headers) @private
 	return false;
 }
 
+<*
+ Parse a hexadecimal HTTP chunk size.
+ @param value : "Chunk size line, optionally with extensions"
+ @return "Parsed size or MALFORMED_REQUEST~"
+*>
 fn ulong? parse_chunk_size(String value) @private
 {
 	String trimmed = value.trim();
@@ -115,6 +147,13 @@ fn ulong? parse_chunk_size(String value) @private
 	return parsed;
 }
 
+<*
+ Read another socket buffer into a request.
+ @param self : "Request receiving bytes"
+ @param socket : "Socket to read"
+ @param max_read_size : "Maximum permitted request size"
+ @return "Success or a read/size error"
+*>
 fn void? read_more(HttpRequest* self, TcpSocket* socket, ulong max_read_size) @private
 {
 	char[256] buffer;
@@ -136,6 +175,13 @@ fn void? read_more(HttpRequest* self, TcpSocket* socket, ulong max_read_size) @p
 	}
 }
 
+<*
+ Read request bytes until the header terminator is present.
+ @param self : "Request receiving bytes"
+ @param socket : "Socket to read"
+ @param max_read_size : "Maximum permitted request size"
+ @return "Header terminator offset or a parsing error"
+*>
 fn sz? read_headers(HttpRequest* self, TcpSocket* socket, ulong max_read_size) @private
 {
 	while (true)
@@ -153,6 +199,12 @@ fn sz? read_headers(HttpRequest* self, TcpSocket* socket, ulong max_read_size) @
 	}
 }
 
+<*
+ Parse a request line and header section.
+ @param self : "Request to populate"
+ @param header_end : "Offset of the header terminator"
+ @return "Success or a malformed/unsupported request error"
+*>
 fn void? parse_request_head(HttpRequest* self, sz header_end) @private
 {
 	@pool()
@@ -183,6 +235,15 @@ fn void? parse_request_head(HttpRequest* self, sz header_end) @private
 	};
 }
 
+<*
+ Read a body with a declared content length.
+ @param self : "Request receiving the body"
+ @param socket : "Socket to read"
+ @param max_read_size : "Maximum permitted request size"
+ @param body_start : "Offset where the body begins"
+ @param content_length : "Declared body length"
+ @return "Success or a read/size error"
+*>
 fn void? read_fixed_length_body(
 	HttpRequest* self,
 	TcpSocket* socket,
@@ -206,6 +267,14 @@ fn void? read_fixed_length_body(
 	self.body = self.bytes.entries[body_start..(sz)(expected_total - 1)];
 }
 
+<*
+ Read and decode a chunked HTTP body.
+ @param self : "Request receiving the decoded body"
+ @param socket : "Socket to read"
+ @param max_read_size : "Maximum permitted request size"
+ @param body_start : "Offset where chunk data begins"
+ @return "Success or a malformed/read/size error"
+*>
 fn void? read_chunked_body(HttpRequest* self, TcpSocket* socket, ulong max_read_size, sz body_start) @private
 {
 	sz cursor       = body_start;
@@ -279,6 +348,13 @@ fn void? read_chunked_body(HttpRequest* self, TcpSocket* socket, ulong max_read_
 	}
 }
 
+<*
+ Read and parse a complete HTTP/1.1 request.
+ @param req : "Request to populate"
+ @param socket : "Socket to read"
+ @param max_read_size : "Maximum permitted request size"
+ @return "Success or an HTTP parsing error"
+*>
 fn void? read_request(HttpRequest* req, TcpSocket* socket, ulong max_read_size)
 {
 	@pool()

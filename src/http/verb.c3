@@ -22,6 +22,11 @@ enum HttpVerb (Printable)
 	CONNECT
 }
 
+<*
+ Convert an HTTP verb to its uppercase token.
+ @param self : "HTTP verb to convert"
+ @return "Uppercase HTTP method token"
+*>
 fn String HttpVerb.to_constant_string(&self) @dynamic
 {
 	switch (*self)

@@ -24,6 +24,12 @@ struct HttpResponse (Printable)
 	char[] body;
 }
 
+<*
+ Initialize an HTTP response container.
+ @param self : "Response container to initialize"
+ @param allocator : "Allocator for response headers"
+ @return "Initialized response container"
+*>
 fn HttpResponse* HttpResponse.init(&self, Allocator allocator)
 {
 	self.status = HttpStatus.UNKNOWN;
@@ -32,6 +38,10 @@ fn HttpResponse* HttpResponse.init(&self, Allocator allocator)
 	return self;
 }
 
+<*
+ Reset a response for reuse.
+ @param self : "Response container to reset"
+*>
 fn void HttpResponse.reset(HttpResponse* self)
 {
 	self.status = HttpStatus.UNKNOWN;
@@ -46,7 +56,9 @@ fn void HttpResponse.reset(HttpResponse* self)
 
  @param [&inout] self : "The response to write"
  @param [in] socket : "Destination socket"
+ @param version : "HTTP protocol version"
  @require socket != null : "Socket must be valid"
+ @return "Success or a socket/protocol error"
 *>
 fn void? HttpResponse.write(&self, TcpSocket* socket, sz version)
 {
@@ -72,6 +84,12 @@ fn void HttpResponse.free(&self)
 	self.body = { };
 }
 
+<*
+ Format a response for diagnostic output.
+ @param self : "Response to format"
+ @param formatter : "Formatter receiving the response representation"
+ @return "Number of characters written or a formatter error"
+*>
 fn sz? HttpResponse.to_format(&self, Formatter* formatter) @dynamic
 {
 	sz len = formatter.print("HttpResponse { ")!;
@@ -91,6 +109,7 @@ fn sz? HttpResponse.to_format(&self, Formatter* formatter) @dynamic
 <*
  Set a plain text response body and Content-Type.
 
+ @param res : "Response to populate"
  @param allocator : "Allocator used to copy the text body"
  @param value : "Text response body"
 *>
@@ -103,6 +122,7 @@ fn void as_text(HttpResponse* res, Allocator allocator, Printable value)<Type>
 <*
  Set a JSON response body and Content-Type.
 
+ @param res : "Response to populate"
  @param allocator : "Allocator used for the JSON payload"
  @param value : "Value to marshal as JSON"
  @param indent : "Indentation preference"
@@ -118,6 +138,7 @@ fn void as_json(HttpResponse* res, Allocator allocator, Type* value, json::Inden
 <*
  Set an XML response body and Content-Type.
 
+ @param res : "Response to populate"
  @param allocator : "Allocator used for the XML payload"
  @param value : "Value to marshal as XML"
  @param root : "Root element name"
@@ -133,6 +154,7 @@ fn void as_xml(HttpResponse* res, Allocator allocator, Type* value, String root 
 <*
  Set a form-encoded response body and Content-Type.
 
+ @param res : "Response to populate"
  @param allocator : "Allocator used for the form payload"
  @param value : "Value to marshal as form data"
  @require Type::kind == STRUCT

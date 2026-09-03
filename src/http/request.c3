@@ -37,6 +37,7 @@ struct HttpRequest
 <*
  Initialize an HTTP request container with an allocator.
 
+ @param self : "Request container to initialize"
  @param [&inout] allocator : "Allocator to use for internal allocations"
  @return "The initialized request container"
 *>
@@ -53,6 +54,10 @@ fn HttpRequest* HttpRequest.init(&self, Allocator allocator)
 	return self;
 }
 
+<*
+ Reset a request for reuse.
+ @param self : "Request container to reset"
+*>
 fn void HttpRequest.reset(HttpRequest* self)
 {
 	self.method = HttpVerb.UNKNOWN;
@@ -68,10 +73,14 @@ fn void HttpRequest.reset(HttpRequest* self)
 }
 
 <*
- Read and parse an HTTP/1.1 request from a socket.
+ Read and parse an HTTP request from a socket.
 
+ @param self : "Request container to populate"
  @param [in] socket : "The socket to read request bytes from"
+ @param max_read_size : "Maximum number of bytes to accept"
+ @param version : "HTTP protocol version"
  @require socket != null : "Socket must be valid"
+ @return "Success or an HTTP parsing error"
 *>
 fn void? HttpRequest.read(HttpRequest* self, TcpSocket* socket, ulong max_read_size, sz version)
 {
@@ -101,6 +110,12 @@ fn void HttpRequest.free(HttpRequest* self)
 	self.method = HttpVerb.UNKNOWN;
 }
 
+<*
+ Format a request for diagnostic output.
+ @param self : "Request to format"
+ @param formatter : "Formatter receiving the request representation"
+ @return "Number of characters written or a formatter error"
+*>
 fn sz? HttpRequest.to_format(&self, Formatter* formatter) @dynamic
 {
 	sz len = formatter.print("HttpRequest { ")!;
@@ -127,8 +142,12 @@ fn sz? HttpRequest.to_format(&self, Formatter* formatter) @dynamic
 }
 
 <*
+ Deserialize the request body from JSON.
+ @param req : "Request containing the JSON body"
+ @param allocator : "Allocator for the decoded value"
  @require Type::kind == STRUCT : "Expected a struct type"
  @require json::may_serialize(Type) : "Expected a serializable type"
+ @return "Decoded value or a JSON binding error"
 *>
 fn Type*? from_json(HttpRequest* req, Allocator allocator)<Type>
 {
@@ -138,8 +157,12 @@ fn Type*? from_json(HttpRequest* req, Allocator allocator)<Type>
 }
 
 <*
+ Deserialize the request body from XML.
+ @param req : "Request containing the XML body"
+ @param allocator : "Allocator for the decoded value"
  @require Type::kind == STRUCT : "Expected a struct type"
  @require xml::may_serialize(Type) : "Expected a serializable type"
+ @return "Decoded value or an XML binding error"
 *>
 fn Type*? from_xml(HttpRequest* req, Allocator allocator)<Type>
 {
@@ -149,8 +172,12 @@ fn Type*? from_xml(HttpRequest* req, Allocator allocator)<Type>
 }
 
 <*
+ Deserialize the request body or query parameters from form data.
+ @param req : "Request containing form data"
+ @param allocator : "Allocator for the decoded value"
  @require Type::kind == STRUCT : "Expected a struct type"
  @require form::may_serialize(Type) : "Expected a serializable type"
+ @return "Decoded value or a form binding error"
 *>
 fn Type*? from_form(HttpRequest* req, Allocator allocator)<Type>
 {

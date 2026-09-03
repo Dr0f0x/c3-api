@@ -9,6 +9,12 @@ import std::io;
 
 import c3api::http::response;
 
+<*
+ Serialize and write an HTTP/1.1 response.
+ @param res : "Response to serialize"
+ @param socket : "Destination socket"
+ @return "Success or a socket write error"
+*>
 fn void? write_response(HttpResponse* res, TcpSocket* socket)
 {
 	@pool()
@@ -66,6 +72,7 @@ fn void? write_response(HttpResponse* res, TcpSocket* socket)
 
  @param [&in] socket : " The Socket to write to"
  @param [in] bytes : "array of bytes to write"
+ @return "Success or a socket write error"
 *>
 fn void? write_all(Socket* socket, char[] bytes) @private
 {

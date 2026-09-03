@@ -6,6 +6,7 @@ module c3api::http::params;
 import std::collections;
 import std::io;
 
+<* Query parameters parsed from a request URI. *>
 struct HttpQueryParams (Printable)
 {
 	HashMap{String, String} param_map;
@@ -16,6 +17,7 @@ struct HttpQueryParams (Printable)
 <*
  Initialize the params collection with an allocator.
 
+ @param self : "Query parameters collection to initialize"
  @param [&inout] allocator : "Allocator to use for internal allocations"
  @return "The initialized params collection"
 *>
@@ -29,6 +31,7 @@ fn HttpQueryParams* HttpQueryParams.init(&self, Allocator allocator)
 <*
  Check if the parameters collection has been initialized.
 
+ @param self : "Query parameters collection to inspect"
  @return "true if initialized, false otherwise"
 *>
 fn bool HttpQueryParams.is_initialized(&self)
@@ -41,6 +44,7 @@ fn bool HttpQueryParams.is_initialized(&self)
 
  If the parameter key already exists, the value is replaced with the new value.
 
+ @param self : "Query parameters collection to update"
  @param [in] param_name : "Parameter name"
  @param [in] param_value : "Parameter value"
  @return "True if the parameter key already existed, false if a new parameter key was added"
@@ -53,6 +57,7 @@ fn bool HttpQueryParams.set_param_value(&self, String param_name, String param_v
 <*
  Get the value for a given parameter key.
 
+ @param self : "Query parameters collection to query"
  @param [in] param_name : "Parameter name"
  @return "The parameter value, or NOT_FOUND~ if the key does not exist"
 *>
@@ -64,6 +69,7 @@ fn String? HttpQueryParams.get_param_value(&self, String param_name) @operator([
 <*
  Get the number of parameters stored in the parameter map.
 
+ @param self : "Query parameters collection to query"
  @return "The count of unique parameter keys"
 *>
 fn sz HttpQueryParams.len(&self)
@@ -90,6 +96,7 @@ fn sz HttpQueryParams.len(&self)
 
  @param [&inout] self : "The parameters collection to populate"
  @param [in] segment : "Last URI segment containing parameter assignments"
+ @return "Success or a query parsing error"
 *>
 fn void? HttpQueryParams.set_from_last_uri_segment(&self, String segment)
 {
@@ -110,6 +117,10 @@ fn void? HttpQueryParams.set_from_last_uri_segment(&self, String segment)
 	};
 }
 
+<*
+ Iterate over query parameter names and values.
+ @param params : "Query parameters collection"
+*>
 macro HttpQueryParams.@each(params; @body(key, value))
 {
 	params.param_map.@each_entry(; map::Entry{String, String}* entry)
@@ -118,6 +129,10 @@ macro HttpQueryParams.@each(params; @body(key, value))
 	};
 }
 
+<*
+ Iterate over internal query parameter entries.
+ @param params : "Query parameters collection"
+*>
 macro HttpQueryParams.@each_entry(params; @body(entry))
 {
 	if (!params.param_map.count) return;
@@ -133,6 +148,8 @@ macro HttpQueryParams.@each_entry(params; @body(entry))
 
 <*
  Free the params collection and its internal resources.
+
+ @param self : "Query parameters collection to free"
 *>
 fn void HttpQueryParams.free(&self)
 {
@@ -143,6 +160,7 @@ fn void HttpQueryParams.free(&self)
 <*
  Format the params collection using the underlying params map formatter.
 
+ @param self : "Query parameters collection to format"
  @param [inout] formatter : "Formatter to write output to"
  @return "The number of characters written, or an error"
 *>

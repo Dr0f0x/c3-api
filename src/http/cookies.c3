@@ -8,8 +8,15 @@ import std::collections::list;
 
 import c3api::http;
 
+<* Fault raised when a requested cookie is not present. *>
 faultdef COOKIE_NOT_SET;
 
+<*
+ Retrieve a cookie value from a request.
+ @param self : "Request containing Cookie headers"
+ @param name : "Cookie name to retrieve"
+ @return "Cookie value or COOKIE_NOT_SET~"
+*>
 fn String? HttpRequest.get_cookie(&self, String name)
 {
 	List{String}? values = self.headers.get_header_values("Cookie");
@@ -39,6 +46,7 @@ fn String? HttpRequest.get_cookie(&self, String name)
 	return COOKIE_NOT_SET~;
 }
 
+<* Duration in seconds used for cookie expiration attributes. *>
 typedef CookieDuration = long;
 
 const CookieDuration DURATION_ZERO = (CookieDuration)0;
@@ -51,22 +59,34 @@ const CookieDuration MONTH         = 30 * DAY;
 const CookieDuration YEAR          = 365 * DAY;
 const CookieDuration FAR_FUTURE    = (CookieDuration)long::max;
 
+<* Create a duration in seconds. @param s : "Number of seconds" @return "Cookie duration" *>
 fn CookieDuration sec(long s) @inline => (CookieDuration)s;
+<* Create a duration in minutes. @param m : "Number of minutes" @return "Cookie duration" *>
 fn CookieDuration min(long m) @inline => m * MINUTE;
+<* Create a duration in hours. @param h : "Number of hours" @return "Cookie duration" *>
 fn CookieDuration hour(long h) @inline => h * HOUR;
+<* Create a duration in days. @param d : "Number of days" @return "Cookie duration" *>
 fn CookieDuration day(long d) @inline => d * DAY;
+<* Create a duration in weeks. @param w : "Number of weeks" @return "Cookie duration" *>
 fn CookieDuration week(long w) @inline => w * WEEK;
+<* Create a duration in months. @param m : "Number of months" @return "Cookie duration" *>
 fn CookieDuration month(long m) @inline => m * MONTH;
+<* Create a duration in years. @param y : "Number of years" @return "Cookie duration" *>
 fn CookieDuration year(long y) @inline => y * YEAR;
 
+<* Convert a duration to seconds. @param self : "Cookie duration" @return "Duration in seconds" *>
 fn long CookieDuration.to_seconds(self) @inline => (long)self;
+<* Convert a duration to minutes. @param self : "Cookie duration" @return "Duration in minutes" *>
 fn long CookieDuration.to_minutes(self) @inline => (long)self / 60;
+<* Convert a duration to hours. @param self : "Cookie duration" @return "Duration in hours" *>
 fn long CookieDuration.to_hours(self) @inline => (long)self / 3600;
+<* Convert a duration to days. @param self : "Cookie duration" @return "Duration in days" *>
 fn long CookieDuration.to_days(self) @inline => (long)self / 86400;
 
+<* Multiply a cookie duration. @param d : "Cookie duration" @param n : "Multiplier" @return "Scaled cookie duration" *>
 macro CookieDuration CookieDuration.mult(#d, long #n) @operator_s(*) @safemacro => (CookieDuration)((long)#d * #n);
 
-// SameSite
+<* SameSite cookie attribute values. *>
 enum SameSite
 {
 	DEFAULT,
@@ -75,6 +95,7 @@ enum SameSite
 	NONE
 }
 
+<* Flags that select CookieOptions fields to emit. *>
 constdef CookieOption : ushort
 {
 	EXPIRES     = 1 << 0,
@@ -87,6 +108,7 @@ constdef CookieOption : ushort
 	PARTITIONED = 1 << 7,
 }
 
+<* Cookie attributes used when creating a Set-Cookie header. *>
 struct CookieOptions
 {
 	CookieOption use;
@@ -109,6 +131,14 @@ struct CookieOptions
 	bool partitioned;
 }
 
+<*
+ Set or replace a response cookie.
+ @param self : "Response receiving the Set-Cookie header"
+ @param allocator : "Allocator used to format date values"
+ @param name : "Cookie name"
+ @param value : "Cookie value"
+ @param options : "Cookie attributes to emit"
+*>
 fn void HttpResponse.set_cookie(&self, Allocator allocator, String name, String value, CookieOptions options = { })
 {
 	DString cookie = dstring::temp();
