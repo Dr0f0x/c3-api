@@ -7,7 +7,8 @@ module c3api::http;
  HTTP parsing and protocol faults.
 *>
 faultdef
-	NO_DATA, REQUEST_TOO_LARGE, MALFORMED_REQUEST, UNSUPPORTED_VERSION, UNIMPLEMENTED, TLS_ON_HTTP_PORT;
+	NO_DATA, REQUEST_TOO_LARGE, MALFORMED_REQUEST, UNSUPPORTED_VERSION, UNIMPLEMENTED, TLS_ON_HTTP_PORT
+;
 
 <*
  Fault raised when an HTTP method token cannot be parsed.

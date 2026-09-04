@@ -7,8 +7,14 @@ import std::io;
 import std::math;
 import std::encoding::json;
 
+<*
+ Check whether a type can be serialized as JSON.
+
+ @return "True when the type is supported"
+*>
 macro may_serialize($Type) => std::encoding::json::may_serialize($Type);
 
+<* JSON indentation options used by the encoder. *>
 alias Indent = std::encoding::json::Indent;
 
 <*
@@ -16,6 +22,7 @@ alias Indent = std::encoding::json::Indent;
 
  @param allocator : "The allocator to use for the result"
  @param value : "The struct value to marshal"
+ @param indent : "Indentation preference"
  @require @kindof(value) == STRUCT
  @require may_serialize($Typeof(value)) : "Expected a serializable type"
  @return "The JSON string representation"
@@ -31,19 +38,27 @@ macro String marshal_json(Allocator allocator, value, json::Indent indent = NONE
 <*
  Marshal a struct with primitive fields and nested structs to JSON.
 
- @param stream : "The steam to serialize to"
+ @param stream : "The stream to serialize to"
  @param value : "The struct value to marshal"
  @param indent : "Indentation preference"
  @require @kindof(value) == STRUCT
  @require may_serialize($Typeof(value)) : "Expected a serializable type"
- @return ? io::fprintf!, json::INVALID_NUMBER
+ @return? io::fprintf!, json::INVALID_NUMBER
 *>
 macro void? marshal_json_to(OutStream stream, value, Indent indent = NONE)
 {
 	return serialize_json_struct{$Typeof(value)}(stream, value, indent, 0);
 }
 
-fn void? write_indent(OutStream stream, Indent indent, int indent_depth)
+<*
+ Write one indentation level.
+
+ @param stream : "Output stream"
+ @param indent : "Indentation style"
+ @param indent_depth : "Indentation depth"
+ @return "Success or an output error"
+*>
+fn void? write_indent(OutStream stream, Indent indent, int indent_depth) @private
 {
 	if (indent == NONE) return;
 	for (int i = 0; i < indent_depth; i++)
@@ -52,7 +67,16 @@ fn void? write_indent(OutStream stream, Indent indent, int indent_depth)
 	}
 }
 
-fn void? serialize_json_struct(OutStream stream, Type value, Indent indent = NONE, int indent_depth = 0)<Type>
+<*
+ Serialize a struct to JSON.
+
+ @param stream : "Output stream"
+ @param value : "Struct value"
+ @param indent : "Indentation style"
+ @param indent_depth : "Indentation depth"
+ @return "Success or an output error"
+*>
+fn void? serialize_json_struct(OutStream stream, Type value, Indent indent = NONE, int indent_depth = 0)<Type> @private
 {
 	bool pretty_print = indent != NONE;
 	stream.write_byte('{')!;
@@ -116,16 +140,19 @@ fn void? serialize_json_struct(OutStream stream, Type value, Indent indent = NON
 <*
  Marshal a value to JSON.
 
+ @param stream : "Output stream"
  @param value : "The value to marshal"
- @return ? json::INVALID_NUMBER : "If the float value is NaN or inf"
- @return ? io::fprintf! : "If there is an IO error"
+ @param indent : "Indentation style"
+ @param indent_depth : "Indentation depth"
+ @return? json::INVALID_NUMBER : "If the float value is NaN or inf"
+ @return? io::fprintf! : "If there is an IO error"
 *>
 fn void? serialize_json_value(
 	OutStream stream,
 	TypeElement value,
 	Indent indent = NONE,
 	int indent_depth = 0
-)<TypeElement>
+)<TypeElement> @private
 {
 	$switch TypeElement::kind:
 		$case STRUCT:
@@ -161,9 +188,19 @@ fn void? serialize_json_value(
 }
 
 <*
- Marshal a slice of primitive values to JSON.
+ Serialize a slice of primitive values to JSON.
+ @param stream : "Output stream"
+ @param slice : "Values to serialize"
+ @param indent : "Indentation style"
+ @param indent_depth : "Indentation depth"
+ @return "Success or an output error"
 *>
-fn void? serialize_slice(OutStream stream, SliceType[] slice, Indent indent = NONE, int indent_depth = 0)<SliceType>
+fn void? serialize_slice(
+	OutStream stream,
+	SliceType[] slice,
+	Indent indent = NONE,
+	int indent_depth = 0
+)<SliceType> @private
 {
 	bool pretty_print = indent != NONE;
 	stream.write_byte('[')!;
@@ -188,6 +225,13 @@ fn void? serialize_slice(OutStream stream, SliceType[] slice, Indent indent = NO
 	stream.write_byte(']')!;
 }
 
+<*
+ Serialize a string with JSON escaping.
+
+ @param stream : "Output stream"
+ @param string : "String to serialize"
+ @return "Success or an output error"
+*>
 macro void? serialize_string(OutStream stream, String string) @private
 {
 	WriteFn write          = &stream.write;

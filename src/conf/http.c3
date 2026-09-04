@@ -85,7 +85,8 @@ fn void HttpConfig.parse_from_object(&self, Allocator allocator, Object* http_ob
 			keep_alive_obj,
 			"idle_timeout_ms",
 			(long)(DEFAULT_HTTP_CONFIG.keep_alive.idle_timeout_ms / time::MS)
-		) * time::MS;
+		)
+			* time::MS;
 	};
 }
 

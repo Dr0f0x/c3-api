@@ -25,12 +25,7 @@ fn void? PoolDispatcher.init(
 	log::Logger logger
 )
 {
-	self.threads.init(
-		allocator,
-		max_threads,
-		queue_capacity,
-		keep_alive,
-	)!;
+	self.threads.init(allocator, max_threads, queue_capacity, keep_alive,)!;
 	self.log = logger;
 }
 

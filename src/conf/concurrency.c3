@@ -89,7 +89,8 @@ fn void ConcurrencyConfig.parse_from_object(&self, Allocator allocator, Object* 
 					thread_pool_obj,
 					"keep_alive_ms",
 					(long)(DEFAULT_CONCURRENCY_CONFIG.thread_pool.keep_alive_ms / time::MS)
-				) * time::MS;
+				)
+					* time::MS;
 
 			case ConcurrencyMode.THREAD_PER_REQUEST:
 			// nothing to handle

@@ -7,6 +7,12 @@ import std::encoding::xml;
 import std::io;
 import std::collections::object;
 
+<*
+ Check whether text is an integer literal.
+
+ @param value : "Text to inspect"
+ @return "True when text is an integer"
+*>
 fn bool is_integer_literal(String value) @private
 {
 	if (value == "") return false;
@@ -25,6 +31,12 @@ fn bool is_integer_literal(String value) @private
 	return true;
 }
 
+<*
+ Check whether text is a decimal floating-point literal.
+
+ @param value : "Text to inspect"
+ @return "True when text is a float"
+*>
 fn bool is_float_literal(String value) @private
 {
 	if (value == "") return false;
@@ -53,6 +65,13 @@ fn bool is_float_literal(String value) @private
 	return seen_dot && seen_digit;
 }
 
+<*
+ Convert XML text into a scalar object.
+
+ @param allocator : "Allocator for the object"
+ @param value : "Text to convert"
+ @return "Created scalar object"
+*>
 fn Object* scalar_object_from_text(Allocator allocator, String value) @private
 {
 	String trimmed = value.trim();
@@ -72,6 +91,13 @@ fn Object* scalar_object_from_text(Allocator allocator, String value) @private
 	return object::new_string(allocator, trimmed);
 }
 
+<*
+ Convert an XML node tree into an object tree.
+
+ @param allocator : "Allocator for objects"
+ @param node : "XML node to convert"
+ @return "Converted object"
+*>
 fn Object* xml_node_to_object(Allocator allocator, XmlNode* node) @private
 {
 	Object* out = object::new_obj(allocator);
@@ -107,6 +133,13 @@ fn Object* xml_node_to_object(Allocator allocator, XmlNode* node) @private
 	return out;
 }
 
+<*
+ Parse XML text into an object tree.
+
+ @param allocator : "Allocator for the object tree"
+ @param value : "XML document"
+ @return "Parsed object or an XML error"
+*>
 fn Object*? parse(Allocator allocator, String value)
 {
 	XmlDocument* doc = std::encoding::xml::parse(allocator, value)!;
@@ -120,11 +153,22 @@ fn Object*? parse(Allocator allocator, String value)
 	return xml_node_to_object(allocator, doc.root);
 }
 
+<*
+ Parse XML text using temporary memory.
+
+ @param value : "XML document"
+ @return "Parsed object or an XML error"
+*>
 fn Object*? tparse(String value)
 {
 	return parse(tmem, value);
 }
 
+<*
+ Check whether a type can be serialized as XML.
+
+ @return "True when the type is supported"
+*>
 macro bool may_serialize($Type) @const
 {
 	$switch $Type::kind:
@@ -179,6 +223,7 @@ macro String marshal_xml(Allocator allocator, value, String root = "response") =
  @param root : "Root element name"
  @require @kindof(value) == STRUCT
  @require xml::may_serialize($Typeof(value)) : "Expected a serializable type"
+ @return "Success or an output error"
 *>
 macro void? marshal_xml_to(OutStream stream, value, String root = "response")
 {
@@ -189,7 +234,15 @@ macro void? marshal_xml_to(OutStream stream, value, String root = "response")
 	serializer.end_doc()!;
 }
 
-fn void? serialize_xml_struct(xml::XmlSerializer* serializer, String name, Type value)<Type>
+<*
+ Serialize a struct to XML.
+
+ @param serializer : "XML serializer"
+ @param name : "Element name"
+ @param value : "Struct value"
+ @return "Success or an output error"
+*>
+fn void? serialize_xml_struct(xml::XmlSerializer* serializer, String name, Type value)<Type> @private
 {
 	serializer.start_element(name)!;
 
@@ -208,7 +261,15 @@ fn void? serialize_xml_struct(xml::XmlSerializer* serializer, String name, Type 
 	serializer.end_element(name)!;
 }
 
-fn void? serialize_xml_value(xml::XmlSerializer* serializer, String name, TypeElement value)<TypeElement>
+<*
+ Serialize one value to XML.
+
+ @param serializer : "XML serializer"
+ @param name : "Element name"
+ @param value : "Value to serialize"
+ @return "Success or an output error"
+*>
+fn void? serialize_xml_value(xml::XmlSerializer* serializer, String name, TypeElement value)<TypeElement> @private
 {
 	$if TypeElement == String:
 		serializer.start_element(name)!;

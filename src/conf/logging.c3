@@ -25,14 +25,8 @@ struct LoggingConfig
 }
 
 const LoggingConfig DEFAULT_LOGGING_CONFIG = {
-	.console = {
-		.enabled = true,
-		.min_level = log::LogLevel.INFO,
-	},
-	.file = {
-		.enabled = false,
-		.min_level = log::LogLevel.INFO,
-	}
+	.console = { .enabled = true, .min_level = log::LogLevel.INFO, },
+	.file = { .enabled = false, .min_level = log::LogLevel.INFO, }
 };
 
 <*

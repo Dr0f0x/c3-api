@@ -11,10 +11,16 @@ import std::io;
 
 import c3api::http::params;
 
+<* Fault raised when form data is malformed. *>
 faultdef FORM_MALFORMED;
 
+<* Uppercase hexadecimal digits used when URL-encoding form data. *>
 const String HEX_DIGITS = "0123456789ABCDEF";
 
+<*
+ Convert one hexadecimal character to its numeric value. @param ch : "Hexadecimal character" @return "Nibble value or
+ -1"
+*>
 fn int hex_nibble(char ch) @private
 {
 	if (ch >= '0' && ch <= '9') return (int)(ch - '0');
@@ -23,11 +29,20 @@ fn int hex_nibble(char ch) @private
 	return -1;
 }
 
+<*
+ Convert a nibble to an uppercase hexadecimal character. @param nibble : "Nibble value" @return "Hexadecimal character"
+*>
 fn char hex_digit(int nibble) @private
 {
 	return HEX_DIGITS[nibble & 0xF];
 }
 
+<*
+ Decode one form URL component.
+
+ @param value : "Encoded component"
+ @return "Decoded component or FORM_MALFORMED~"
+*>
 fn String? decode_component(String value) @private
 {
 	DString out;
@@ -64,6 +79,12 @@ fn String? decode_component(String value) @private
 	return out.str_view();
 }
 
+<*
+ Check whether text is an integer literal.
+
+ @param value : "Text to inspect"
+ @return "True when text is an integer"
+*>
 fn bool is_integer_literal(String value) @private
 {
 	if (value == "") return false;
@@ -82,6 +103,10 @@ fn bool is_integer_literal(String value) @private
 	return true;
 }
 
+<*
+ Check whether text is a decimal floating-point literal. @param value : "Text to inspect" @return "True when text is a
+ float"
+*>
 fn bool is_float_literal(String value) @private
 {
 	if (value == "") return false;
@@ -110,6 +135,10 @@ fn bool is_float_literal(String value) @private
 	return seen_dot && seen_digit;
 }
 
+<*
+ Convert scalar form text into an object value. @param allocator : "Allocator for the object" @param value : "Scalar
+ text" @return "Created object or an allocation error"
+*>
 fn Object*? create_scalar_object_from_text(Allocator allocator, String value) @private
 {
 	String trimmed = value.trim();
@@ -129,6 +158,10 @@ fn Object*? create_scalar_object_from_text(Allocator allocator, String value) @p
 	return object::new_string(allocator, trimmed);
 }
 
+<*
+ Set a converted scalar value on an object. @param parent : "Object to update" @param key : "Object key" @param value :
+ "Scalar text" @return "Success or an object error"
+*>
 fn void? set_scalar_object_from_text(Object* parent, String key, String value) @private
 {
 	String trimmed = value.trim();
@@ -148,7 +181,11 @@ fn void? set_scalar_object_from_text(Object* parent, String key, String value) @
 	parent.set(key, trimmed);
 }
 
-fn Object* get_or_create_nested_object(Object* obj, String[] path)
+<*
+ Resolve or create nested objects for a key path. @param obj : "Root object" @param path : "Nested key path" @return
+ "Innermost object"
+*>
+fn Object* get_or_create_nested_object(Object* obj, String[] path) @private
 {
 	Object* current = obj;
 
@@ -159,6 +196,12 @@ fn Object* get_or_create_nested_object(Object* obj, String[] path)
 	return current;
 }
 
+<*
+ Set a form value using bracket notation. @param allocator : "Allocator for array values" @param root : "Root object"
+ @param parts : "Parsed key parts"
+ @param value : "Value text"
+ @return "Success or a form/object error"
+*>
 fn void? set_bracket_value(Allocator allocator, Object* root, String[] parts, String value) @private
 {
 	Object* parent = get_or_create_nested_object(root, parts[..parts.len - 2]);
@@ -184,6 +227,12 @@ fn void? set_bracket_value(Allocator allocator, Object* root, String[] parts, St
 	}
 }
 
+<*
+ Split a bracket-notation key into path parts.
+
+ @param key : "Form key"
+ @return "Key path parts"
+*>
 fn String[] parse_bracket_key(String key) @private
 {
 	String[] raw_parts = key.tsplit("[");
@@ -203,6 +252,10 @@ fn String[] parse_bracket_key(String key) @private
 	return parts;
 }
 
+<*
+ Parse form-encoded text into an object tree. @param allocator : "Allocator for the object tree" @param value :
+ "Form-encoded text" @return "Parsed object or a form error"
+*>
 fn Object*? parse(Allocator allocator, String value)
 {
 	Object* out = object::new_obj(allocator);
@@ -243,6 +296,10 @@ fn Object*? parse(Allocator allocator, String value)
 	return out;
 }
 
+<*
+ Parse form-encoded text using temporary memory. @param value : "Form-encoded text" @return "Parsed object or a form
+ error"
+*>
 fn Object*? tparse(String value)
 {
 	return parse(tmem, value);
@@ -256,6 +313,7 @@ fn Object*? tparse(String value)
 
  @param allocator : "Allocator used for the produced object tree"
  @param query : "Query parameter container"
+ @return "Parsed object or a form error"
 *>
 fn Object*? parse_query_params(Allocator allocator, params::HttpQueryParams* query)
 {
@@ -287,12 +345,17 @@ fn Object*? parse_query_params(Allocator allocator, params::HttpQueryParams* que
  Decode query parameters into an Object map using temporary memory.
 
  @param query : "Query parameter container"
+ @return "Parsed object or a form error"
 *>
 fn Object*? tparse_query_params(params::HttpQueryParams* query)
 {
 	return parse_query_params(tmem, query);
 }
 
+<*
+ Encode one form URL component. @param out : "Output stream" @param value : "Text to encode" @return "Success or an
+ output error"
+*>
 fn void? encode_component(OutStream out, String value) @private
 {
 	for (sz i = 0; i < value.len; i++)
@@ -319,6 +382,15 @@ fn void? encode_component(OutStream out, String value) @private
 	}
 }
 
+<*
+ Append one encoded form key-value pair.
+ @param out : "Output stream"
+ @param first : "Whether this is the first pair"
+ @param prefix : "Nested key prefix"
+ @param key : "Key name"
+ @param value : "Value text"
+ @return "Success or an output error"
+*>
 fn void? append_form_pair(OutStream out, bool* first, String prefix, String key, String value) @private
 {
 	if (!*first)
@@ -344,6 +416,11 @@ fn void? append_form_pair(OutStream out, bool* first, String prefix, String key,
 	encode_component(out, value)!;
 }
 
+<*
+ Check whether a type can be serialized as form data.
+
+ @return "True when the type is supported"
+*>
 macro bool may_serialize($Type) @const
 {
 	$switch $Type::kind:
@@ -371,7 +448,11 @@ macro bool may_serialize($Type) @const
 	$endswitch
 }
 
-fn void? serialize_form_struct(OutStream out, bool* first, String prefix, Type value)<Type>
+<*
+ Serialize a struct into form pairs. @param out : "Output stream" @param first : "Pair separator state" @param prefix :
+ "Nested key prefix" @param value : "Struct value" @return "Success or an output error"
+*>
+fn void? serialize_form_struct(OutStream out, bool* first, String prefix, Type value)<Type> @private
 {
 	$foreach $member : Type::members:
 		$if $member.name != "":
@@ -388,6 +469,10 @@ fn void? serialize_form_struct(OutStream out, bool* first, String prefix, Type v
 	$endforeach
 }
 
+<*
+ Serialize one form value. @param out : "Output stream" @param first : "Pair separator state" @param prefix : "Nested
+ key prefix" @param key : "Field name" @param value : "Value to serialize" @return "Success or an output error"
+*>
 fn void? serialize_form_value(OutStream out, bool* first, String prefix, String key, TypeElement value)<TypeElement>
 {
 	$switch TypeElement::kind:
@@ -427,7 +512,18 @@ fn void? serialize_form_value(OutStream out, bool* first, String prefix, String 
 	$endswitch
 }
 
-fn void? serialize_slice(OutStream stream, bool* first, SliceType[] slice, String prefix, String key)<SliceType>
+<*
+ Serialize a slice as repeated form values. @param stream : "Output stream" @param first : "Pair separator state" @param
+ slice : "Values to serialize" @param prefix : "Nested key prefix" @param key : "Field name" @return "Success or an
+ output error"
+*>
+fn void? serialize_slice(
+	OutStream stream,
+	bool* first,
+	SliceType[] slice,
+	String prefix,
+	String key
+)<SliceType> @private
 {
 	String slice_prefix;
 	if (prefix != "")
@@ -466,6 +562,7 @@ macro String marshal_form(Allocator allocator, value) => @pool()
 
  @param stream : "The stream to serialize to"
  @param value : "The struct value to marshal"
+ @return "Success or an output error"
  @require @kindof(value) == STRUCT
  @require may_serialize($Typeof(value)) : "Expected a serializable type"
 *>
