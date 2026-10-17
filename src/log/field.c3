@@ -171,7 +171,7 @@ fn Field _double_arr(String name, double[]* val) @inline
 
  This is primarily used for format-string interpolation.
 
- @param [in] allocator : "Allocator used for the returned array"
+ @param [inout] allocator : "Allocator used for the returned array"
  @param [in] fields : "Source fields"
  @return "Array containing each field value"
 *>
@@ -188,7 +188,7 @@ fn any[] values(Allocator allocator, Field[] fields)
 <*
  Extract all field names as an array.
 
- @param [in] allocator : "Allocator used for the returned array"
+ @param [inout] allocator : "Allocator used for the returned array"
  @param [in] fields : "Source fields"
  @return "Array containing each field name"
 *>

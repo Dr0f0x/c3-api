@@ -69,7 +69,30 @@ markdown_extensions:
       title: On this page
 
 nav:
-  - C3 Language: c3.md
-  - C3 API: index.md
-  - Getting Started: getting-started.md
-  - C3-API Reference Docs: https://dr0f0x.github.io/c3-api/api-reference/
+  - Introduction: index.md                      # replace boilerplate
+  - Quickstart: quickstart.md                   # replace boilerplate
+  - Configuration:
+      - Overview: configuration/overview.md     # conf file, defaults, load/write API
+      - Server & HTTP: configuration/server_http.md   # address/port/backlog, keep-alive, trace, max_read_size
+      - CORS: configuration/cors.md             
+      - Concurrency Mode: configuration/concurrency_mode.md   # exists, empty
+      - Logging: configuration/logging.md       # console/file keys
+  - Routing:
+      - HTTP Methods: routing/http_methods.md
+      - Path & Query Parameters: routing/parameters.md
+      - Middleware: routing/middleware.md
+      - Groups: routing/groups.md
+      - Static Files: routing/static_files.md   
+  - Requests & Responses:
+      - Request: http/request.md                # headers, body, cookie read link
+      - Response: http/response.md              # status, body helpers, cookie write link
+      - Encoding:
+          - Struct Binding: http/encoding/binding.md     # @Json/@Xml/@Form
+          - JSON: http/encoding/json.md                  
+          - XML: http/encoding/xml.md                    
+          - Forms: http/encoding/forms.md 
+      - Cookies: http/cookies.md                               
+  - Logging:
+      - Sinks & Encoders: logging/sinks.md      # custom sink/encoder, rotating-file example
+  - Examples: examples/index.md                 # table mirroring examples/basic/* + todo
+  - API Reference: https://dr0f0x.github.io/c3-api/api-reference/
