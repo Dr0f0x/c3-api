@@ -15,6 +15,13 @@ import c3api::concurrency::spawn;
 alias RequestProcessFunc @private = fn void(ProcessContext* context);
 alias DispatchFunc @private = fn void?(void* dispatcher, RequestProcessFunc process_fn, ProcessContext* context);
 
+<*
+ HTTP server instance.
+
+ Owns the router, the initial context used to seed per-request contexts, the
+ listener socket, the concurrency dispatcher, the logger, and the built-in
+ middleware configuration.
+*>
 struct Server
 {
 	config::Config* config;
@@ -134,16 +141,31 @@ fn Server*? Server.init(&self, Allocator allocator, Config* config = null, log::
 	};
 }
 
+<*
+ Enable or disable the built-in request logging middleware.
+
+ @param enabled : "True to register the logging middleware when the server runs"
+*>
 fn void Server.use_builtin_logging_middleware(&self, bool enabled)
 {
 	self.builtin.logging_middleware = enabled;
 }
 
+<*
+ Get the logger this server uses.
+
+ @return "The server logger"
+*>
 fn Logger* Server.get_logger(&self)
 {
 	return &self.log;
 }
 
+<*
+ Get the configuration this server was initialized with.
+
+ @return "The server configuration"
+*>
 fn Config* Server.get_config(&self)
 {
 	return self.config;
@@ -286,6 +308,12 @@ fn void? Server.run(&self)
 	}
 }
 
+<*
+ Shut down and close a client socket, logging any shutdown errors.
+
+ @param [&inout] socket : "Socket to close"
+ @param [&in] log : "Logger used to report shutdown errors"
+*>
 fn void close_socket(TcpSocket* socket, log::Logger log) @private
 {
 	if (catch err = socket.shutdown(SocketShutdownHow.SEND))
@@ -301,7 +329,11 @@ fn void close_socket(TcpSocket* socket, log::Logger log) @private
 <*
  Free any resources owned by the Server.
 
- This cleans up the allocated logger and any configured if no custom one was provided in init
+ Cleans up the default logger and its sinks when no custom logger was
+ supplied in `init`, frees an owned configuration, and releases the initial
+ context.
+
+ @param [&inout] self : "Server to free"
 *>
 fn void Server.free(&self)
 {

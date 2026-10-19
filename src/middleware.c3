@@ -10,12 +10,31 @@ import std::time::clock;
 import c3api::config;
 import c3api::context;
 
+<*
+ Built-in middleware implementations provided by the framework.
+
+ The CORS middleware adds the configured cross-origin headers to OPTIONS
+ requests, while the logging middleware reports each request once the
+ pipeline has completed.
+*>
 struct BuiltinMiddleware
 {
 	config::Config* conf;
 	log::Logger log;
 }
 
+<*
+ Built-in CORS middleware.
+
+ Populates the configured `Access-Control-Allow-*` headers for OPTIONS
+ requests and continues the pipeline.
+
+ @param [&inout] self : "Builtin middleware state holding the server config"
+ @param [&inout] allocator : "Allocator available during the request processing"
+ @param [&inout] ctx : "Middleware-facing request context"
+ @param [&inout] req : "Incoming HTTP request"
+ @param [&inout] res : "HTTP response being built"
+*>
 fn void BuiltinMiddleware.cors(&self, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	if (req.method == HttpVerb.OPTIONS)
@@ -27,6 +46,19 @@ fn void BuiltinMiddleware.cors(&self, Allocator allocator, MiddlewareContext* ct
 	ctx.next(allocator, req, res);
 }
 
+<*
+ Built-in request logging middleware.
+
+ Collects request metadata, continues the pipeline, and logs the method, URI,
+ user agent, content type, content length, and elapsed time after the rest of
+ the pipeline has finished.
+
+ @param [&inout] self : "Builtin middleware state holding the server logger"
+ @param [&inout] allocator : "Allocator available during the request processing"
+ @param [&inout] ctx : "Middleware-facing request context"
+ @param [&inout] req : "Incoming HTTP request"
+ @param [&inout] res : "HTTP response being built"
+*>
 fn void BuiltinMiddleware.logging(&self, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	DString user_agent     = dstring::temp();

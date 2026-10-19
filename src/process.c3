@@ -18,8 +18,9 @@ import c3api::http::response;
 <*
  Context passed to each worker thread.
 
- Contains the accepted TCP socket, a pointer to the shared router, and the
- logger instance used to report request and socket lifecycle events.
+ Contains the accepted TCP socket, pointers to the shared router, initial
+ request context and server configuration, and the logger instance used to
+ report request and socket lifecycle events.
 *>
 struct ProcessContext
 {
@@ -103,6 +104,12 @@ fn void process(ProcessContext* context_arg) @private
 	};
 }
 
+<*
+ Outcome of processing a single request.
+
+ `CONTINUE` keeps the connection open for another request, `CLOSE` closes it
+ after the response has been written, and `ERROR` aborts the connection.
+*>
 enum ProcessResult
 {
 	CONTINUE,
@@ -110,6 +117,23 @@ enum ProcessResult
 	ERROR
 }
 
+<*
+ Poll, read, and process a single request on a connection.
+
+ Applies the keep-alive idle timeout and read-error handling, answers TRACE
+ requests directly, and otherwise runs the routing pipeline through `handle`.
+ Writes the response and reports how the connection should proceed.
+
+ @param [&inout] allocator : "Allocator used during the request processing"
+ @param [&in] conf : "Server configuration"
+ @param [&inout] ctx : "Request pipeline context"
+ @param [&inout] req : "Request buffer to read into"
+ @param [&inout] res : "Response buffer to populate"
+ @param [&inout] socket : "Client socket"
+ @param [&in] router : "Router used to resolve routes and middleware"
+ @param [&in] log : "Logger used for request and error logging"
+ @return "Outcome for the connection after the request"
+*>
 fn ProcessResult process_single(
 	Allocator allocator,
 	Config* conf,
@@ -246,6 +270,21 @@ fn ProcessResult process_single(
 	return close_connection ? ProcessResult.CLOSE : ProcessResult.CONTINUE;
 }
 
+<*
+ Process requests on a keep-alive connection.
+
+ Reuses the same request, response, and context buffers until the configured
+ request limit is reached or a request asks to close the connection.
+
+ @param [&inout] allocator : "Allocator used during the request processing"
+ @param [&in] conf : "Server configuration"
+ @param [&inout] ctx : "Request pipeline context"
+ @param [&inout] req : "Request buffer to reuse"
+ @param [&inout] res : "Response buffer to reuse"
+ @param [&inout] socket : "Client socket"
+ @param [&in] router : "Router used to resolve routes and middleware"
+ @param [&in] log : "Logger used for request and error logging"
+*>
 fn void process_keep_alive(
 	Allocator allocator,
 	Config* conf,
@@ -279,11 +318,13 @@ fn void process_keep_alive(
 <*
  Handle an HTTP request after it has been parsed from the socket.
 
- This method collects middleware, dispatches OPTIONS requests to route discovery,
- dispatches normal requests to the matched handler, and honors HEAD semantics by
- suppressing response bodies after routing completes.
+ Collects the middleware chain for the matched route and runs it through the
+ context pipeline (`setup_handling` / `next`). OPTIONS requests are answered
+ from route discovery, unmatched routes fall back to the built-in 404 handler,
+ and HEAD requests have their response body suppressed after routing.
 
  @param [&inout] allocator : "Allocator used during the request processing"
+ @param [&inout] ctx : "Request pipeline context"
  @param [&inout] req : "Parsed HTTP request"
  @param [&inout] res : "HTTP response to populate"
  @param [&in] socket : "Client socket associated with the request"

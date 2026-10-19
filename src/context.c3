@@ -10,6 +10,13 @@ import c3api::http::response;
 import c3api::routing::middleware;
 import c3api::routing::handler;
 
+<*
+ Shared state for a single request.
+
+ Holds type-keyed objects registered on the server, request-scoped string
+ values, the middleware chain and terminal handler collected for the current
+ request, and the index of the next pipeline stage to run.
+*>
 struct Context (Printable)
 {
 	HashMap{typeid, void*} objects;
@@ -53,6 +60,13 @@ struct MiddlewareContext (Printable)
 	Context* context;
 }
 
+<*
+ Initialize an empty context and its backing maps.
+
+ @param [&inout] self : "Context to initialize"
+ @param allocator : "Allocator used for the context maps"
+ @return "Initialized context"
+*>
 fn Context* Context.init(&self, Allocator allocator)
 {
 	self.objects.init(allocator);
@@ -61,11 +75,12 @@ fn Context* Context.init(&self, Allocator allocator)
 }
 
 <*
- Copy all registered objects from another context.
+ Copy all registered objects and request-scoped values from another context.
 
- Existing entries with the same type id will be overwritten.
+ Existing entries with the same type id or key are overwritten.
 
- @param [&in] other : "Source context to copy registrations from"
+ @param [&inout] self : "Context receiving the copied state"
+ @param [&in] other : "Source context to copy from"
 *>
 fn void Context.add_from(&self, Context* other)
 {
@@ -79,13 +94,28 @@ fn void Context.add_from(&self, Context* other)
 	};
 }
 
+<*
+ Register a value in the context under its type.
+
+ The stored pointer must stay valid for as long as the context is used.
+
+ @param [&inout] self : "Context receiving the value"
+ @param $Type : "Type used as the registration key"
+ @param value : "Pointer to the value to register"
+*>
 macro void Context.register(&self, $Type, value)
 {
 	$assert $Typeof(value) == $Type*;
 	self.objects.set($Type, value);
 }
 
+<*
+ Resolve a value registered in the context by type.
 
+ @param [&in] self : "Context to query"
+ @param $Type : "Type used as the registration key"
+ @return "Registered pointer or NOT_FOUND~ when the type is not registered"
+*>
 macro Context.resolve(&self, $Type)
 {
 	void*? value = self.objects.get($Type);
@@ -146,11 +176,26 @@ fn void Context.next(&self, Allocator allocator, HttpRequest* req, HttpResponse*
 	}
 }
 
+<*
+ Store a request-scoped value under a string key.
+
+ @param [&inout] self : "Context receiving the value"
+ @param key : "Lookup key"
+ @param val : "Value to store"
+ @return "True if an existing key was replaced"
+*>
 fn bool Context.set(&self, String key, void* val)
 {
 	return self.map.set(key, val);
 }
 
+<*
+ Read a request-scoped value by string key.
+
+ @param [&in] self : "Context to query"
+ @param key : "Lookup key"
+ @return "Stored value or NOT_FOUND~"
+*>
 fn void*? Context.get(&self, String key)
 {
 	void**? value = self.map.get_ref(key);
@@ -366,6 +411,13 @@ fn sz? Context.to_format(&self, Formatter* formatter) @dynamic
 	return len;
 }
 
+<*
+ Free the backing maps of the context.
+
+ Values referenced by the context are not freed.
+
+ @param [&inout] self : "Context to free"
+*>
 fn void Context.free(&self)
 {
 	self.objects.free();
