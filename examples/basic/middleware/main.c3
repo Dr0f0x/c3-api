@@ -5,21 +5,20 @@ import std::io;
 import c3api;
 import c3api::routing;
 import c3api::routing::router;
-import c3api::routing::middleware;
 
 <*
  Simple middleware function.
  Adds a custom `X-Middleware` response header to each request
- and allows request processing to continue.
+ and continues the pipeline.
 *>
-fn RequestFlow middleware(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void middleware(void* self = null, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Add a custom response header
 	io::printn("Sending custom middleware header");
 	res.headers.set_header_value("X-Middleware", "active");
 
-	// Continue processing the request
-	return RequestFlow.CONTINUE;
+	// Continue with the next middleware or the final route handler
+	ctx.next(allocator, req, res);
 }
 
 <*
@@ -39,10 +38,10 @@ struct Counter
  Increments the counter for each request and stores the
  current counter value in the request context.
 *>
-fn middleware::RequestFlow Counter.counter_middleware(
+fn void Counter.counter_middleware(
 	&self,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* req,
 	HttpResponse* res
 )
@@ -54,8 +53,8 @@ fn middleware::RequestFlow Counter.counter_middleware(
 	int* val = alloc::new(tmem, int, self.counter);
 	ctx.set("count", val);
 
-	// Continue processing the request
-	return RequestFlow.CONTINUE;
+	// Continue with the next middleware or the final route handler
+	ctx.next(allocator, req, res);
 }
 
 <*
@@ -64,7 +63,7 @@ fn middleware::RequestFlow Counter.counter_middleware(
  Handles requests to: GET /test and GET /generic.
  Returns the current request counter value stored by the middleware.
 *>
-fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Set HTTP status code
 	res.status = HttpStatus.OK;

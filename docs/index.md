@@ -10,7 +10,7 @@ module app;
 import c3api;
 
 // Respond to GET /health requests.
-fn void health(void* self, Allocator allocator, Context* ctx,
+fn void health(void* self, Allocator allocator, HandlerContext* ctx,
                HttpRequest* req, HttpResponse* res)
 {
     res.status = HttpStatus.OK;

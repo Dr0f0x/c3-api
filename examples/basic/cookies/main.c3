@@ -18,7 +18,7 @@ import c3api::http::cookies;
  If no valid cookie is present, reports that this is the first visit.
  The handler then updates the cookie with the current Unix timestamp.
 *>
-fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Retrieve cookie from request
 	String? last_visit = req.get_cookie("lastVisit");

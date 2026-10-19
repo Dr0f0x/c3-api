@@ -11,7 +11,7 @@ import c3api::routing::router;
  The value of `{name}` is extracted from the route parameters and
  returned to the client as part of the response body.
 *>
-fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Set HTTP status code
 	res.status = HttpStatus.OK;

@@ -13,7 +13,7 @@ import c3api::routing::group;
  Handles requests registered inside a route group and returns
  the request URI.
 *>
-fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Set HTTP status code
 	res.status = HttpStatus.OK;
@@ -28,10 +28,10 @@ fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpReques
  Adds a response header to routes registered under the
  `/api/v1` subgroup.
 *>
-fn middleware::RequestFlow api_middleware(
+fn void api_middleware(
 	void* self = null,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* req,
 	HttpResponse* res
 )
@@ -40,8 +40,8 @@ fn middleware::RequestFlow api_middleware(
 	io::printn("Adding header for api v1 group in middleware");
 	res.headers.set_header_value("X-V1-Middleware", "active");
 
-	// Continue processing the request.
-	return RequestFlow.CONTINUE;
+	// Continue with the rest of the pipeline.
+	ctx.next(allocator, req, res);
 }
 
 <*
@@ -50,10 +50,10 @@ fn middleware::RequestFlow api_middleware(
  Adds a response header to routes registered under the
  `/api/v1/users` subgroup.
 *>
-fn middleware::RequestFlow user_middleware(
+fn void user_middleware(
 	void* self = null,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* req,
 	HttpResponse* res
 )
@@ -62,8 +62,8 @@ fn middleware::RequestFlow user_middleware(
 	io::printn("Adding header for user group in middleware");
 	res.headers.set_header_value("X-User-Middleware", "active");
 
-	// Continue processing the request
-	return RequestFlow.CONTINUE;
+	// Continue with the rest of the pipeline.
+	ctx.next(allocator, req, res);
 }
 
 fn int main(String[] args)

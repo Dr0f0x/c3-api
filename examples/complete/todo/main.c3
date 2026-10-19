@@ -13,7 +13,7 @@ import c3api::routing::router;
 import c3api::routing::group;
 import c3api::encoding;
 
-fn void no_controller(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void no_controller(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("cookie %s", req.get_cookie("test") ?? "-");
 	@pool()
@@ -38,7 +38,7 @@ struct Controller
 	int test;
 }
 
-fn void static_no_controller(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void static_no_controller(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("%s", req);
 
@@ -62,7 +62,7 @@ fn void static_no_controller(void* self = null, Allocator allocator, Context* ct
 	io::printfn("%s", res);
 }
 
-fn void Controller.static_controller(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void Controller.static_controller(&self, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	res.status = HttpStatus.OK;
 	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" });
@@ -70,10 +70,10 @@ fn void Controller.static_controller(&self, Allocator allocator, Context* ctx, H
 	io::printfn("%s", res);
 }
 
-fn RequestFlow router_log_middleware(
+fn void router_log_middleware(
 	void* self = null,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* req,
 	HttpResponse* res
 )
@@ -85,13 +85,13 @@ fn RequestFlow router_log_middleware(
 		log::_enum("method", &req.method),
 		log::_string("uri", &req.uri)
 	);
-	return RequestFlow.CONTINUE;
+	ctx.next(allocator, req, res);
 }
 
-fn RequestFlow group_log_middleware(
+fn void group_log_middleware(
 	void* self = null,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* req,
 	HttpResponse* res
 )
@@ -103,13 +103,13 @@ fn RequestFlow group_log_middleware(
 		log::_enum("method", &req.method),
 		log::_string("uri", &req.uri)
 	);
-	return RequestFlow.CONTINUE;
+	ctx.next(allocator, req, res);
 }
 
-fn RequestFlow endpoint_log_middleware(
+fn void endpoint_log_middleware(
 	void* self = null,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* req,
 	HttpResponse* res
 )
@@ -121,7 +121,7 @@ fn RequestFlow endpoint_log_middleware(
 		log::_enum("method", &req.method),
 		log::_string("uri", &req.uri)
 	);
-	return RequestFlow.CONTINUE;
+	ctx.next(allocator, req, res);
 }
 
 struct Test
@@ -156,7 +156,7 @@ fn sz? TodoRequest.to_format(&self, Formatter* formatter) @dynamic
 	return len += formatter.print(" }")!;
 }
 
-fn void todo_handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void todo_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	io::printfn("req %s", req);
 	io::printfn("req body %s", (String)req.body);

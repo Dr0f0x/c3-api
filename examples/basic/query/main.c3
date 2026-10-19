@@ -10,7 +10,7 @@ import c3api::routing::router;
 
  Reads the `name` query parameter and returns it in the response.
 *>
-fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Set HTTP status code
 	res.status = HttpStatus.OK;
@@ -36,7 +36,7 @@ fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpReques
 
  Reads both `query` and `page` from the query string.
 *>
-fn void search_handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void search_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Set HTTP status code
 	res.status = HttpStatus.OK;

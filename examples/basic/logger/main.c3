@@ -13,7 +13,7 @@ import c3api::routing::router;
 
  Returns a static success message to confirm the server is running.
 *>
-fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Set HTTP status code
 	res.status = HttpStatus.OK;

@@ -57,7 +57,7 @@ struct ErrorResponse
  Decodes the request body into a Product from JSON and returns
  the created product as a JSON response.
 *>
-fn void json_handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void json_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Decode the JSON request body into a Product
 	Product*? product = request::from_json{Product}(req, allocator);
@@ -86,7 +86,7 @@ fn void json_handler(void* self = null, Allocator allocator, Context* ctx, HttpR
  Decodes the request body into a Product from XML and returns the
  created product as an XML response.
 *>
-fn void xml_handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void xml_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Decode the XML request body into a Product
 	Product*? product = request::from_xml{Product}(req, allocator);
@@ -115,7 +115,7 @@ fn void xml_handler(void* self = null, Allocator allocator, Context* ctx, HttpRe
  Decodes application/x-www-form-urlencoded request data
  into a Product and returns the product as form data.
 *>
-fn void form_handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void form_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	// Decode the form request body into a Product
 	Product*? product = request::from_form{Product}(req, allocator);

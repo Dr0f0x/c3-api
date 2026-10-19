@@ -96,7 +96,7 @@ fn void? bind_json_object(Allocator allocator, Type* value, Object* json)<Type> 
 <*
  Bind one JSON field into a struct member.
 
- @param member : "Compile-time member metadata"
+ @param $member : "Compile-time member metadata"
  @param json : "Parsed JSON object"
  @param allocator : "Allocator used for temporary objects"
  @param value : "Struct value to populate"
@@ -191,7 +191,7 @@ fn void? bind_xml_object(Allocator allocator, Type* value, Object* xml_obj)<Type
 <*
  Bind one XML field into a struct member.
 
- @param member : "Compile-time member metadata"
+ @param $member : "Compile-time member metadata"
  @param xml_obj : "Parsed XML object"
  @param allocator : "Allocator used for temporary objects"
  @param value : "Struct value to populate"
@@ -308,7 +308,7 @@ fn void? bind_form_object(Allocator allocator, Type* value, Object* form_obj)<Ty
 <*
  Bind one form field into a struct member.
 
- @param member : "Compile-time member metadata"
+ @param $member : "Compile-time member metadata"
  @param form_obj : "Parsed form object"
  @param allocator : "Allocator used for temporary objects"
  @param value : "Struct value to populate"
