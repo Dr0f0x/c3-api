@@ -7,37 +7,24 @@ import c3api::http;
 import c3api::context;
 
 <*
- Control signal returned by middleware execution.
-
- CONTINUE allows request processing to proceed to the next middleware or
- route handler. INTERRUPT stops further processing.
-*>
-enum RequestFlow
-{
-	CONTINUE,
-	INTERRUPT,
-}
-
-<*
  Middleware callback signature used by router and group pipelines.
 
- Invoked as part of the request processing pipeline. Returning CONTINUE
- allows processing to continue, while INTERRUPT stops further middleware
- and handler execution.
+ Invoked as part of the request processing pipeline. The middleware decides
+ whether to continue by calling `ctx.next(...)`; omitting the call stops the
+ pipeline before the remaining middleware and the final handler.
 
  @param [&inout] self : "Owning instance if the middleware was registered as a member function, otherwise null"
  @param [&inout] allocator : "Allocator available for request-scoped allocations"
  @param [&inout] ctx : "Request context"
  @param [&inout] request : "Incoming HTTP request"
  @param [&inout] response : "HTTP response being built"
- @return "CONTINUE to continue processing, INTERRUPT to stop processing"
 *>
-alias MiddlewareFunc = fn RequestFlow(
+alias MiddlewareFunc = fn void(
 	void* self = null,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* request,
-	HttpResponse* response
+	HttpResponse* response,
 );
 
 
@@ -52,14 +39,13 @@ alias MiddlewareFunc = fn RequestFlow(
  @param [&inout] ctx : "Request context"
  @param [&inout] request : "Incoming HTTP request"
  @param [&inout] response : "HTTP response being built"
- @return "CONTINUE to continue processing, INTERRUPT to stop processing"
 *>
-alias MiddlewareFuncGen <Type> = fn RequestFlow(
+alias MiddlewareFuncGen <Type> = fn void(
 	Type* self = null,
 	Allocator allocator,
-	Context* ctx,
+	MiddlewareContext* ctx,
 	HttpRequest* request,
-	HttpResponse* response
+	HttpResponse* response,
 );
 
 

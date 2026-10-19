@@ -22,6 +22,7 @@ struct Server
 
 	Router router;
 	Context initial_ctx;
+	ServerContext context_view;
 	TcpServerSocket server_socket;
 	bool should_close;
 
@@ -120,6 +121,7 @@ fn Server*? Server.init(&self, Allocator allocator, Config* config = null, log::
 
 		self.router.init(allocator, self.log);
 		self.initial_ctx.init(allocator);
+		self.context_view = { .context = &self.initial_ctx };
 
 		self.builtin_middleware.conf = self.config;
 		self.builtin.logging_middleware = true;
@@ -147,9 +149,17 @@ fn Config* Server.get_config(&self)
 	return self.config;
 }
 
-fn Context* Server.get_context(&self)
+<*
+ Get the server-facing context used as the template for request contexts.
+
+ Registered objects are copied into the per-request context, and the
+ returned view cannot advance the middleware chain.
+
+ @return "Server-facing view of the initial context"
+*>
+fn ServerContext* Server.get_context(&self)
 {
-	return &self.initial_ctx;
+	return &self.context_view;
 }
 
 <*

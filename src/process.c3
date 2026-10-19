@@ -304,19 +304,19 @@ fn void? handle(
 	List{RegisteredMiddleware} middleware_collector;
 	middleware_collector.tinit();
 
+	HandlerContext handler_ctx = { .context = ctx };
+
 	if (req.method == HttpVerb.OPTIONS)
 	{
 		logger.trace("Received OPTIONS Request");
 		HandlerCollection*? handlers = router.get_handlers(req.uri, req, &middleware_collector);
-		if (!run_middlewares(allocator, ctx, req, res, &middleware_collector))
-		{
-			// Middleware interrupted the request, do not continue processing
-			return;
-		}
+
+		ctx.setup_handling(middleware_collector.array_view(), null);
+		ctx.next(allocator, req, res);
 
 		if (catch err = handlers)
 		{
-			routing::handler::e404(null, allocator, ctx, req, res);
+			routing::handler::e404(null, allocator, &handler_ctx, req, res);
 		}
 		else
 		{
@@ -340,12 +340,12 @@ fn void? handle(
 		registered_handler = router.get_route(method, req.uri, req, &middleware_collector) ?? null;
 		if (registered_handler == null)
 		{
-			routing::handler::e404(null, allocator, ctx, req, res);
+			routing::handler::e404(null, allocator, &handler_ctx, req, res);
 		}
-		else if (run_middlewares(allocator, ctx, req, res, &middleware_collector))
+		else
 		{
-			// Call the handler if middlewares did not interrupt the request
-			registered_handler.handler(registered_handler.self, allocator, ctx, req, res);
+			ctx.setup_handling(middleware_collector.array_view(), registered_handler);
+			ctx.next(allocator, req, res);
 		}
 	}
 
@@ -354,38 +354,4 @@ fn void? handle(
 		logger.trace("Received HEAD Request, removing response body");
 		res.body = "";
 	}
-}
-
-<*
- Execute middleware in registration order.
-
- Middleware can inspect or mutate the request/response and can interrupt
- normal request processing by returning RequestFlow.INTERRUPT.
-
- @param [&inout] allocator : "Allocator used for temporary middleware allocations"
- @param [&inout] req : "HTTP request passed to each middleware"
- @param [&inout] res : "HTTP response passed to each middleware"
- @param [&in] middlewares : "Middlewares to execute"
-
- @return "false if the middleware chain produced an INTERRUPT, e.g. proessing should not continue, true otherwise"
-*>
-fn bool run_middlewares(
-	Allocator allocator,
-	Context* ctx,
-	HttpRequest* req,
-	HttpResponse* res,
-	List{RegisteredMiddleware}* middlewares
-) @private
-{
-	RequestFlow flow;
-	foreach (registered : middlewares)
-	{
-		flow = registered.middleware(registered.self, allocator, ctx, req, res);
-
-		if (flow == RequestFlow.INTERRUPT)
-		{
-			return false;
-		}
-	}
-	return true;
 }

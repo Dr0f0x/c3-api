@@ -4,6 +4,8 @@
 module c3api @private;
 
 import std::io;
+import std::time;
+import std::time::clock;
 
 import c3api::config;
 import c3api::context;
@@ -14,7 +16,7 @@ struct BuiltinMiddleware
 	log::Logger log;
 }
 
-fn RequestFlow BuiltinMiddleware.cors(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void BuiltinMiddleware.cors(&self, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	if (req.method == HttpVerb.OPTIONS)
 	{
@@ -22,10 +24,10 @@ fn RequestFlow BuiltinMiddleware.cors(&self, Allocator allocator, Context* ctx, 
 		res.headers.set_header_value("Access-Control-Allow-Methods", self.conf.cors.allow_methods);
 		res.headers.set_header_value("Access-Control-Allow-Headers", self.conf.cors.allow_headers);
 	}
-	return RequestFlow.CONTINUE;
+	ctx.next(allocator, req, res);
 }
 
-fn RequestFlow BuiltinMiddleware.logging(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void BuiltinMiddleware.logging(&self, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	DString user_agent     = dstring::temp();
 	DString content_type   = dstring::temp();
@@ -62,15 +64,18 @@ fn RequestFlow BuiltinMiddleware.logging(&self, Allocator allocator, Context* ct
 	String content_type_str   = content_type.len() ? content_type.str_view() : "-";
 	String content_length_str = content_length.len() ? content_length.str_view() : "-";
 
+	Clock start = clock::now();
+	ctx.next(allocator, req, res);
+	long elapsed_ms = start.to_now().to_ms();
+
 	self.log.infof(
-		"%s | %s | %s | %s | %s",
+		"%s | %s | %s | %s | %s | %d ms",
 		"request",
 		log::_enum("method", &req.method),
 		log::_string("uri", &req.uri),
 		log::_string("user_agent", &user_agent_str),
 		log::_string("content_type", &content_type_str),
-		log::_string("content_length", &content_length_str)
+		log::_string("content_length", &content_length_str),
+		log::_long("elapsed_ms", &elapsed_ms)
 	);
-
-	return RequestFlow.CONTINUE;
 }

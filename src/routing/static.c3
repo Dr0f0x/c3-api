@@ -229,7 +229,7 @@ struct StaticFile
  @param [&inout] req : "Incoming request"
  @param [&inout] res : "Response to populate"
 *>
-fn void StaticFile.serve_file(&self, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void StaticFile.serve_file(&self, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	if (!path::exists(self.path) || !path::is_file(self.path))
 	{

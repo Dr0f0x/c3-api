@@ -21,7 +21,7 @@ import c3api::context;
 alias HandleFunc = fn void(
 	void* self = null,
 	Allocator allocator,
-	Context* ctx,
+	HandlerContext* ctx,
 	HttpRequest* request,
 	HttpResponse* response
 );
@@ -38,7 +38,7 @@ alias HandleFunc = fn void(
 alias HandleFuncGen <Type> = fn void(
 	Type* self = null,
 	Allocator allocator,
-	Context* ctx,
+	HandlerContext* ctx,
 	HttpRequest* request,
 	HttpResponse* response
 );
@@ -52,7 +52,7 @@ alias HandleFuncGen <Type> = fn void(
  @param [&inout] req : "Incoming request"
  @param [&inout] res : "Outgoing response"
 *>
-fn void e404(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void e404(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 	res.status = HttpStatus.NOT_FOUND;
 	res.body = string::format(mem, `{"type":"error","status":404}`);

@@ -72,7 +72,7 @@ import c3api::routing::router;
  The value of `{name}` is extracted from the route parameters and
  returned to the client as part of the response body.
 *>
-fn void handler(void* self = null, Allocator allocator, Context* ctx, HttpRequest* req, HttpResponse* res)
+fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
     // Set HTTP status code.
     res.status = HttpStatus.OK;
@@ -159,7 +159,7 @@ Every route in **c3-api** is handled by a function with the following signature:
 ```c3
 fn void handler(void* self = null,
     Allocator allocator,
-    Context* ctx,
+    HandlerContext* ctx,
     HttpRequest* req,
     HttpResponse* res
 )
@@ -211,15 +211,20 @@ router::get{Controller}(router, "/controller", &Controller.handle, &controller);
 Every middleware function has the following signature:
 
 ```c3
-fn RequestFlow middleware(
+fn void middleware(
     void* self = null,
     Allocator allocator,
-    Context* ctx,
+    MiddlewareContext* ctx,
     HttpRequest* request,
     HttpResponse* response
 )
 {
-    // ...
+    // Run code before the rest of the pipeline...
+
+    // Continue with the next middleware or the final route handler.
+    ctx.next(allocator, request, response);
+
+    // ...and code after the rest of the pipeline has completed.
 }
 ```
 
@@ -231,17 +236,12 @@ The parameters are identical to those of route handlers:
 - `request` – The incoming HTTP request.
 - `response` – The HTTP response that middleware may modify before it is sent to the client.
 
-Unlike route handlers, middleware returns a `RequestFlow` value:
+Unlike route handlers, middleware receives a `MiddlewareContext` view whose only extra feature is `ctx.next(allocator, request, response)`. Handlers receive a `HandlerContext` view instead, so they cannot accidentally advance the pipeline. Both views expose the same request-scoped state through `set`/`get` and the type-keyed `register`/`resolve` helpers, while pipeline setup (`setup_handling`) remains internal.
 
-```c3
-enum RequestFlow
-{
-  CONTINUE,
-  INTERRUPT,
-}
-```
+Flow control is entirely up to the middleware:
 
-Returning `RequestFlow.CONTINUE` allows request processing to continue with the next middleware or the final route handler, while `RequestFlow.INTERRUPT` immediately stops further processing.
+- Calling `ctx.next(...)` continues with the next middleware or, once the chain is exhausted, the final route handler. Any code placed after the call runs when the rest of the pipeline has finished, giving the familiar "onion" model.
+- Skipping `ctx.next(...)` stops the pipeline immediately, so the remaining middleware and the handler never run. This is useful for short-circuiting, for example when authentication fails and the response is already complete.
 
 Middleware is registered on a router using `Router.use()`:
 
@@ -282,7 +282,7 @@ Path parameters are accessed through the request's params map:
 fn void no_controller(
   void* self = null,
   Allocator allocator,
-  Context* ctx,
+  HandlerContext* ctx,
   HttpRequest* req,
   HttpResponse* res
 )
@@ -307,7 +307,7 @@ inside a handler the value of the `test` query parameter can be retrieved as fol
 fn void no_controller(
   void* self = null,
   Allocator allocator,
-  Context* ctx,
+  HandlerContext* ctx,
   HttpRequest* req,
   HttpResponse* res
 )
