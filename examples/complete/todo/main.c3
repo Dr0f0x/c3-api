@@ -38,7 +38,13 @@ struct Controller
 	int test;
 }
 
-fn void static_no_controller(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void static_no_controller(
+	void* self = null,
+	Allocator allocator,
+	HandlerContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	io::printfn("%s", req);
 
@@ -62,7 +68,13 @@ fn void static_no_controller(void* self = null, Allocator allocator, HandlerCont
 	io::printfn("%s", res);
 }
 
-fn void Controller.static_controller(&self, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void Controller.static_controller(
+	&self,
+	Allocator allocator,
+	HandlerContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	res.status = HttpStatus.OK;
 	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" });

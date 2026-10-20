@@ -122,8 +122,8 @@ fn void? ThreadPool.prewarm(&self, int count)
  @param task_fn : "Function to run on a worker thread"
  @param [inout] arg : "Pointer passed to func"
 
- @return ? POOL_SHUTDOWN : "If the pool is shutting down"
- @return ? POOL_SPAWN_FAILED : "If a new worker was needed and could not be created"
+ @return? POOL_SHUTDOWN : "If the pool is shutting down"
+ @return? POOL_SPAWN_FAILED : "If a new worker was needed and could not be created"
 
  @require self.state != NO_INIT : "ThreadPool is not initialized"
 *>
@@ -149,9 +149,9 @@ fn void? ThreadPool.add_task(&self, ThreadPoolTaskFn task_fn, void* arg)
  @param task_fn : "Function to run on a worker thread"
  @param [inout] arg : "Pointer passed to func"
 
- @return ? thread::THREAD_QUEUE_FULL : "If the queue is at capacity"
- @return ? POOL_SHUTDOWN : "If the pool is shutting down"
- @return ? POOL_SPAWN_FAILED : "If a new worker was needed and could not be created"
+ @return? thread::THREAD_QUEUE_FULL : "If the queue is at capacity"
+ @return? POOL_SHUTDOWN : "If the pool is shutting down"
+ @return? POOL_SPAWN_FAILED : "If a new worker was needed and could not be created"
 
  @require self.state != NO_INIT : "ThreadPool is not initialized"
 *>

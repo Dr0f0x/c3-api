@@ -146,7 +146,12 @@ fn ProcessResult process_single(
 ) @private
 {
 	// check idle timeout
-	Poll[] p = { { .socket = socket.sock, .events = PollSubscribe.ANY_READ, } };
+	Poll[] p = {
+		{
+			.socket = socket.sock,
+			.events = PollSubscribe.ANY_READ,
+		}
+	};
 
 	ulong? ready = net::poll_ms(p, (long)conf.http.keep_alive.idle_timeout_ms);
 	if (catch err = ready)
@@ -293,7 +298,7 @@ fn void process_keep_alive(
 	HttpResponse* res,
 	TcpSocket* socket,
 	Router* router,
-	log::Logger log
+	log::Logger log,
 ) @private
 {
 	sz done_requests = 0;

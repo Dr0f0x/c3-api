@@ -36,7 +36,13 @@ fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, Htt
  The values of `{name}` and `{id}` are extracted from the route
  parameters and returned to the client.
 *>
-fn void multi_param_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void multi_param_handler(
+	void* self = null,
+	Allocator allocator,
+	HandlerContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	// Set HTTP status code
 	res.status = HttpStatus.OK;

@@ -27,26 +27,50 @@ fn void reset_log()
 	call_count = 0;
 }
 
-fn void first_middleware(void* self = null, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void first_middleware(
+	void* self = null,
+	Allocator allocator,
+	MiddlewareContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	record(1);
 	ctx.next(allocator, req, res);
 	record(2);
 }
 
-fn void second_middleware(void* self = null, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void second_middleware(
+	void* self = null,
+	Allocator allocator,
+	MiddlewareContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	record(3);
 	ctx.next(allocator, req, res);
 	record(4);
 }
 
-fn void stop_middleware(void* self = null, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void stop_middleware(
+	void* self = null,
+	Allocator allocator,
+	MiddlewareContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	record(1);
 }
 
-fn void double_next_middleware(void* self = null, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void double_next_middleware(
+	void* self = null,
+	Allocator allocator,
+	MiddlewareContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	record(1);
 	ctx.next(allocator, req, res);
@@ -54,7 +78,13 @@ fn void double_next_middleware(void* self = null, Allocator allocator, Middlewar
 	record(2);
 }
 
-fn void terminal_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void terminal_handler(
+	void* self = null,
+	Allocator allocator,
+	HandlerContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	record(5);
 }
@@ -202,9 +232,9 @@ fn void test_context_views_share_request_state() @test
 	ctx.init(mem);
 	defer ctx.free();
 
-	HandlerContext handler_ctx = { .context = &ctx };
+	HandlerContext handler_ctx       = { .context = &ctx };
 	MiddlewareContext middleware_ctx = { .context = &ctx };
-	ServerContext server_ctx = { .context = &ctx };
+	ServerContext server_ctx         = { .context = &ctx };
 
 	handler_ctx.register(int, &typed_value);
 	int*? resolved = handler_ctx.resolve(int);

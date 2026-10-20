@@ -59,7 +59,13 @@ fn void BuiltinMiddleware.cors(&self, Allocator allocator, MiddlewareContext* ct
  @param [&inout] req : "Incoming HTTP request"
  @param [&inout] res : "HTTP response being built"
 *>
-fn void BuiltinMiddleware.logging(&self, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
+fn void BuiltinMiddleware.logging(
+	&self,
+	Allocator allocator,
+	MiddlewareContext* ctx,
+	HttpRequest* req,
+	HttpResponse* res
+)
 {
 	DString user_agent     = dstring::temp();
 	DString content_type   = dstring::temp();
