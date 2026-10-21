@@ -9,7 +9,6 @@ import std::time;
 import c3api::log;
 import c3api::concurrency;
 
-
 struct ConcurrencyConfig
 {
 	ConcurrencyMode mode;

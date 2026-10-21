@@ -37,13 +37,7 @@ fn void TestRouter.free(&self)
 	self.logger.free();
 }
 
-fn void noop_handler(
-	void* self = null,
-	Allocator allocator,
-	HandlerContext* ctx,
-	HttpRequest* req,
-	HttpResponse* res
-)
+fn void noop_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
 }
 

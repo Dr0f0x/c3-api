@@ -29,14 +29,7 @@ import c3api::routing::internal;
 *>
 fn void? Router.serve_static(&self, String uri, StaticFiles* files)
 {
-	return routing::serve_static(
-		files,
-		uri,
-		&self.root_handlers,
-		&self.root_middlewares,
-		&self.root_nodes,
-		self.log
-	);
+	return routing::serve_static(files, uri, &self.root_handlers, &self.root_middlewares, &self.root_nodes, self.log);
 }
 
 <*
@@ -265,30 +258,14 @@ fn bool? register_static_entry(Path file, bool is_dir, void* data_ptr) @private
 
 	String file_uri = route.str_view();
 
-	register_static_file(
-		data.files,
-		file_uri,
-		file,
-		data.handlers,
-		data.middlewares,
-		data.nodes,
-		data.log
-	);
+	register_static_file(data.files, file_uri, file, data.handlers, data.middlewares, data.nodes, data.log);
 
 	if (data.clean_urls && file.has_extension("html") && file.basename() != "index.html")
 	{
 		// /files/main.html -> /files/main
 		String clean = file_uri[0..file_uri.len - 6];
 
-		register_static_file(
-			data.files,
-			clean,
-			file,
-			data.handlers,
-			data.middlewares,
-			data.nodes,
-			data.log
-		);
+		register_static_file(data.files, clean, file, data.handlers, data.middlewares, data.nodes, data.log);
 	}
 
 	return false;
@@ -422,13 +399,7 @@ struct StaticFiles
  @param clean_urls : "Whether to register extensionless HTML routes"
  @return "Initialized static file store"
 *>
-fn StaticFiles* StaticFiles.init(
-	&self,
-	Allocator allocator,
-	Path path,
-	bool indexing = true,
-	bool clean_urls = true
-)
+fn StaticFiles* StaticFiles.init(&self, Allocator allocator, Path path, bool indexing = true, bool clean_urls = true)
 {
 	self.allocator = allocator;
 	self.path = path.copy(allocator);

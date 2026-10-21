@@ -11,8 +11,8 @@ import std::core::mem::allocators;
 
 const CSV_TIMING_DEFAULT_PATH = "out/routing_benchmarks_timing.csv";
 const CSV_MEMORY_DEFAULT_PATH = "out/routing_benchmarks_memory.csv";
-const CSV_TIMING_HEADER = "benchmark,elapsed_ns";
-const CSV_MEMORY_HEADER = "benchmark,label,allocs,bytes,allocs_per_op,bytes_per_op,peak_bytes,checksum,leaked_allocs,leaked_bytes";
+const CSV_TIMING_HEADER       = "benchmark,elapsed_ns";
+const CSV_MEMORY_HEADER       = "benchmark,label,allocs,bytes,allocs_per_op,bytes_per_op,peak_bytes,checksum,leaked_allocs,leaked_bytes";
 
 File timing_file;
 File memory_file;
@@ -33,10 +33,7 @@ fn bool csv_open(String output_path, String header, File* file)
 	return true;
 }
 
-fn void csv_init(
-	String timing_path = CSV_TIMING_DEFAULT_PATH,
-	String memory_path = CSV_MEMORY_DEFAULT_PATH
-)
+fn void csv_init(String timing_path = CSV_TIMING_DEFAULT_PATH, String memory_path = CSV_MEMORY_DEFAULT_PATH)
 {
 	timing_ready = csv_open(timing_path, CSV_TIMING_HEADER, &timing_file);
 	memory_ready = csv_open(memory_path, CSV_MEMORY_HEADER, &memory_file);
@@ -88,8 +85,7 @@ fn AllocSnapshot alloc_snapshot(TrackingAllocator* tracker)
 
 fn AllocSnapshot alloc_used(TrackingAllocator* tracker, AllocSnapshot before)
 {
-	return
-	{
+	return {
 		.allocs = tracker.total_allocation_count() - before.allocs,
 		.bytes = tracker.total_allocated() - before.bytes
 	};

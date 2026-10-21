@@ -50,11 +50,18 @@ fn int main(String[] args)
 	// base path. A maximum of three files are retained and each
 	// file can grow to a maximum of 500 bytes before rotation.
 	RotatingFileSink file_sink;
-	if (catch error = file_sink.init(tmem, path::tnew("log/c3api.log")!!, 3, 500))
+	// c3fmt off
+	if (catch error = file_sink.init(
+		tmem,
+		path::tnew("log/c3api.log")!!,
+		3,
+		500
+	))
 	{
 		io::eprintfn("RotatingFileSink for logger could not be created: %s", error);
 		return 1;
 	}
+	// c3fmt on
 	defer file_sink.free();
 	logger.add_sink(&file_sink, log::min_level_enabler(config.logging.file.min_level));
 

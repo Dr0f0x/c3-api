@@ -16,12 +16,7 @@ fn void test_cookie_options_builder_sets_flags_and_values() @test
 	DateTime expires = datetime::now();
 
 	CookieOptions options = { };
-	options
-		.with_expires(expires)
-		.with_max_age(cookies::HOUR)
-		.with_domain("example.com")
-		.with_path("/app")
-		.with_secure()
+	options.with_expires(expires).with_max_age(cookies::HOUR).with_domain("example.com").with_path("/app").with_secure()
 		.with_http_only()
 		.with_same_site(SameSite.LAX)
 		.with_partitioned();
@@ -56,12 +51,7 @@ fn void test_cookie_options_builder_produces_set_cookie_header() @test
 	defer res.free();
 
 	CookieOptions options = { };
-	options
-		.with_max_age(cookies::HOUR)
-		.with_domain("example.com")
-		.with_path("/app")
-		.with_secure()
-		.with_http_only()
+	options.with_max_age(cookies::HOUR).with_domain("example.com").with_path("/app").with_secure().with_http_only()
 		.with_same_site(SameSite.LAX)
 		.with_partitioned();
 
@@ -70,7 +60,8 @@ fn void test_cookie_options_builder_produces_set_cookie_header() @test
 	if (try values = res.headers.get_header_values("Set-Cookie"))
 	{
 		assert(values.len() == 1);
-		assert(values[0] == "session=abc; Max-Age=3600; Domain=example.com; Path=/app; Secure; HttpOnly; SameSite=Lax; Partitioned");
+		assert(values[0]
+			== "session=abc; Max-Age=3600; Domain=example.com; Path=/app; Secure; HttpOnly; SameSite=Lax; Partitioned");
 	}
 	else
 	{

@@ -53,6 +53,7 @@ fn void static_no_controller(
 	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" });
 
 	DateTime expiration = datetime::now().add_hours(1);
+	// c3fmt off
 	CookieOptions options;
 	options
 		.with_expires(expiration)
@@ -60,7 +61,13 @@ fn void static_no_controller(
 		.with_path("/")
 		.with_secure();
 
-	res.set_cookie(allocator, "test", "value", options);
+	res.set_cookie(
+		allocator,
+		"test",
+		"value",
+		options
+	);
+	// c3fmt on
 
 	io::printfn("%s", res);
 }
@@ -250,7 +257,13 @@ fn int main(String[] args)
 		example.use("/{name}", &endpoint_log_middleware);
 
 		example.get("/{name}", &no_controller);
-		group::get{void}(example, "/static/yay", &static_no_controller);
+		// c3fmt off
+		group::get{void}(
+			example,
+			"/static/yay",
+			&static_no_controller
+		);
+		// c3fmt on
 		// TODO find nicer way then casting to (HandleFunc)
 		/* example.route(
 			RouteMethod.GET,
@@ -259,8 +272,19 @@ fn int main(String[] args)
 			&endpoint_log_middleware
 		); */
 
-		group::get{Controller}(example, "/staticc/ctrl", &Controller.static_controller, &controller);
-		router.get("/staticc/ctrl", (HandleFunc)&Controller.static_controller, &controller);
+		// c3fmt off
+		group::get{Controller}(
+			example,
+			"/staticc/ctrl",
+			&Controller.static_controller,
+			&controller
+		);
+		router.get(
+			"/staticc/ctrl",
+			(HandleFunc)&Controller.static_controller,
+			&controller
+		);
+		// c3fmt on
 
 		io::print("\nGroup routes\n");
 		routing::print_routes(example);

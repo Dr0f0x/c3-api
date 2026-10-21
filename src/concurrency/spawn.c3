@@ -12,12 +12,10 @@ struct PerRequestDispatcher
 	log::Logger log;
 }
 
-
 fn void? PerRequestDispatcher.init(&self, Allocator allocator, log::Logger log)
 {
 	self.log = log;
 }
-
 
 fn void? PerRequestDispatcher.dispatch(&self, ThreadFn process_fn, void* context)
 {

@@ -481,7 +481,7 @@ Here are some planned features and improvements for the `c3-api` project:
 - [ ] **Async Http Backend**: Needed for adequate performance, probably rely on libuv and its [c3 types](https://github.com/velikoss/libuv.c3l) for this
 - [ ] **Http 2.0**: Full support for the different encoding, as well as features like multiplexing
 - [ ] **Pluggable Template rendering backend**: Similar to the way express does it
-- [ ] **Performance Optimizations**: Especially in the router (target should be 0 allocs)
+- [ ] **Performance Optimizations**: Router lookup is already 0 allocs but more should be possible
 - [ ] **Benchmarks**
 
 ## Contributing

@@ -27,7 +27,6 @@ alias MiddlewareFunc = fn void(
 	HttpResponse* response,
 );
 
-
 <*
  Type-safe middleware callback signature.
 
@@ -47,7 +46,6 @@ alias MiddlewareFuncGen <Type> = fn void(
 	HttpRequest* request,
 	HttpResponse* response,
 );
-
 
 <*
  Registered middleware entry.

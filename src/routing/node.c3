@@ -95,7 +95,6 @@ fn void RouteNode.free_recursive(&self, Allocator allocator)
 	self.free(allocator);
 }
 
-
 <*
  Formatter implementation for debug output.
 

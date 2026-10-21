@@ -52,6 +52,7 @@ fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, Htt
 
 	// Update Cookie value
 	DateTime expiration = datetime::now().add_months(1);
+	// c3fmt off
 	CookieOptions options;
 	options
 		.with_expires(expiration)
@@ -65,6 +66,7 @@ fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, Htt
 		string::format(tmem, "%s", time::now() / (Time)time::SEC),
 		options
 	);
+	// c3fmt on
 }
 
 fn int main(String[] args)

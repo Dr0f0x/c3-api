@@ -11,14 +11,14 @@ import c3api::routing::group;
 
 fn void group_register_nested() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count       = ROUTE_COUNT;
 	String[] paths = make_group_paths(count);
 
 	router::Router timed;
 	timed.init(mem, &bench_logger);
 	start_timed();
-	Group* api = timed.group(mem, "/api");
-	Group* v1 = api.group(mem, "/v1");
+	Group* api   = timed.group(mem, "/api");
+	Group* v1    = api.group(mem, "/v1");
 	Group* users = v1.group(mem, "/users");
 	foreach (p : paths) users.get(p, &noop_handler);
 	end_timed();
@@ -32,10 +32,10 @@ fn void group_register_nested() @benchmark => @pool()
 	TrackingAllocator tracker;
 	tracker.init(&arena);
 	router::Router tracked;
-	AllocSnapshot before = {};
-	Group* tapi = null;
-	Group* tv1 = null;
-	Group* tusers = null;
+	AllocSnapshot before = { };
+	Group* tapi          = null;
+	Group* tv1           = null;
+	Group* tusers        = null;
 	mem::@scoped(&tracker)
 	{
 		tracked.init(mem, &bench_logger);

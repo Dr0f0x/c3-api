@@ -6,7 +6,6 @@ module c3api::log;
 import std::io;
 import std::thread;
 
-
 <*
  Destination for encoded log entries.
 *>

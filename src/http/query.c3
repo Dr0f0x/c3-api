@@ -77,7 +77,6 @@ fn sz HttpQueryParams.len(&self)
 	return self.param_map.len();
 }
 
-
 <*
  Parse route parameters from the last URI segment.
 
@@ -155,7 +154,6 @@ fn void HttpQueryParams.free(&self)
 {
 	self.param_map.free();
 }
-
 
 <*
  Format the params collection using the underlying params map formatter.

@@ -15,8 +15,8 @@ import c3api::routing::middleware;
 
 fn void router_resolve_static_route_handler() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
-	String[] paths = make_static_paths(count);
+	sz count        = ROUTE_COUNT;
+	String[] paths  = make_static_paths(count);
 	usz[] instances = alloc::new_array(mem, usz, count);
 
 	router::Router timed;
@@ -57,7 +57,7 @@ fn void router_resolve_static_route_handler() @benchmark => @pool()
 		treq.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -80,9 +80,9 @@ fn void router_resolve_static_route_handler() @benchmark => @pool()
 
 fn void router_resolve_dynamic_route_handler() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count        = ROUTE_COUNT;
 	String[] routes = make_dynamic_routes(count);
-	String[] uris = make_dynamic_uris(count);
+	String[] uris   = make_dynamic_uris(count);
 	usz[] instances = alloc::new_array(mem, usz, count);
 
 	router::Router timed;
@@ -124,7 +124,7 @@ fn void router_resolve_dynamic_route_handler() @benchmark => @pool()
 		(void)tracked.get_route(RouteMethod.GET, uris[0], &treq, &tcollector);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -148,9 +148,9 @@ fn void router_resolve_dynamic_route_handler() @benchmark => @pool()
 
 fn void router_resolve_deep_route_handler() @benchmark => @pool()
 {
-	sz count = DEEP_ROUTE_COUNT;
+	sz count        = DEEP_ROUTE_COUNT;
 	String[] routes = make_deep_routes(count);
-	String[] uris = make_deep_uris(count);
+	String[] uris   = make_deep_uris(count);
 	usz[] instances = alloc::new_array(mem, usz, count);
 
 	router::Router timed;
@@ -192,7 +192,7 @@ fn void router_resolve_deep_route_handler() @benchmark => @pool()
 		(void)tracked.get_route(RouteMethod.GET, uris[0], &treq, &tcollector);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -216,8 +216,8 @@ fn void router_resolve_deep_route_handler() @benchmark => @pool()
 
 fn void router_resolve_head_fallback() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
-	String[] paths = make_static_paths(count);
+	sz count        = ROUTE_COUNT;
+	String[] paths  = make_static_paths(count);
 	usz[] instances = alloc::new_array(mem, usz, count);
 
 	router::Router timed;
@@ -258,7 +258,7 @@ fn void router_resolve_head_fallback() @benchmark => @pool()
 		treq.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)

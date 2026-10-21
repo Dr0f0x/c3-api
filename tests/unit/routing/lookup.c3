@@ -36,11 +36,7 @@ fn void test_router_lookup_allocates_nothing() @test
 		tr.init_with(mem);
 		tr.router.get("/api/static", &noop_handler, (void*)&static_marker);
 		tr.router.get("/api/users/{id}", &noop_handler, (void*)&dynamic_marker);
-		tr.router.get(
-			"/api/v1/resource-7/child/grandchild/{id}",
-			&noop_handler,
-			(void*)&deep_marker
-		);
+		tr.router.get("/api/v1/resource-7/child/grandchild/{id}", &noop_handler, (void*)&deep_marker);
 		collector.init(mem);
 		req.init(mem);
 		(void)tr.router.get_route(RouteMethod.GET, "/api/users/42", &req, &collector);

@@ -111,10 +111,7 @@ fn bool HandlerCollection.set_handler(
 )
 {
 	bool already_present = self.has_handler(method);
-	self.handler_map.set(
-		method,
-		{ .self = instance, .handler = handler }
-	);
+	self.handler_map.set(method, { .self = instance, .handler = handler });
 	return already_present;
 }
 
@@ -269,7 +266,6 @@ fn bool HandlerCollection.has_post(&self) => self.has_handler(RouteMethod.POST);
  @return "True when a handler is registered"
 *>
 fn bool HandlerCollection.has_delete(&self) => self.has_handler(RouteMethod.DELETE);
-
 
 <*
  Free internal resources used by the handler collection.

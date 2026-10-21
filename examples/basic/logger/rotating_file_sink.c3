@@ -201,7 +201,12 @@ fn void? RotatingFileSink.rotate(&self)
 	@pool()
 	{
 		// Generate a timestamped filename.
-		String timestamp = datetime::now().format(tmem, DateTimeFormat.DATETIME).treplace(" ", "_").treplace(":", "-");
+		// c3fmt off
+		String timestamp = datetime::now()
+			.format(tmem, DateTimeFormat.DATETIME)
+			.treplace(" ", "_")
+			.treplace(":", "-");
+		// c3fmt on
 
 		// Split file base into name and extension to insert timestamp
 		String name;
@@ -218,8 +223,15 @@ fn void? RotatingFileSink.rotate(&self)
 		}
 
 		// Insert timestamp
-		String filename = string::tformat("%s-%s%s", name, timestamp, extension);
-		Path new_path   = self.file_base_parent.append(self.allocator, filename)!;
+		// c3fmt off
+		String filename = string::tformat(
+			"%s-%s%s",
+			name,
+			timestamp,
+			extension
+		);
+		// c3fmt on
+		Path new_path = self.file_base_parent.append(self.allocator, filename)!;
 
 		// Create and open new file
 		self.file = file::open_path(new_path, "w")!;

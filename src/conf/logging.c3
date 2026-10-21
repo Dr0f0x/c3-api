@@ -91,7 +91,6 @@ fn void LoggingConfig.parse_from_object(&self, Allocator allocator, Object* logg
 	};
 }
 
-
 <*
  Free resources owned by this logging config.
 

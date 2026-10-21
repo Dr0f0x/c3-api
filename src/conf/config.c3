@@ -202,7 +202,6 @@ fn void Config.free(&self, Allocator allocator)
 	self.concurrency.free(allocator);
 }
 
-
 macro Type get_or_default(Object* obj, String key, Type default_val) <Type> @private
 {
 	$switch Type:

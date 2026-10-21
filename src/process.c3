@@ -240,7 +240,6 @@ fn ProcessResult process_single(
 		result = ProcessResult.ERROR;
 	}
 
-
 	// check if clients wants to close
 	bool close_connection = result == ProcessResult.CLOSE;
 

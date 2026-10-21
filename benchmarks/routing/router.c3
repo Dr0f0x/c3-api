@@ -48,7 +48,7 @@ fn void router_init_free() @benchmark => @pool()
 
 fn void router_register_static() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count       = ROUTE_COUNT;
 	String[] paths = make_static_paths(count);
 
 	router::Router timed;
@@ -63,7 +63,7 @@ fn void router_register_static() @benchmark => @pool()
 	TrackingAllocator tracker;
 	tracker.init(&arena);
 	router::Router tracked;
-	AllocSnapshot before = {};
+	AllocSnapshot before = { };
 	mem::@scoped(&tracker)
 	{
 		tracked.init(mem, &bench_logger);
@@ -79,7 +79,7 @@ fn void router_register_static() @benchmark => @pool()
 
 fn void router_register_dynamic() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count       = ROUTE_COUNT;
 	String[] paths = make_dynamic_routes(count);
 
 	router::Router timed;
@@ -94,7 +94,7 @@ fn void router_register_dynamic() @benchmark => @pool()
 	TrackingAllocator tracker;
 	tracker.init(&arena);
 	router::Router tracked;
-	AllocSnapshot before = {};
+	AllocSnapshot before = { };
 	mem::@scoped(&tracker)
 	{
 		tracked.init(mem, &bench_logger);
@@ -110,7 +110,7 @@ fn void router_register_dynamic() @benchmark => @pool()
 
 fn void router_register_deep() @benchmark => @pool()
 {
-	sz count = DEEP_ROUTE_COUNT;
+	sz count       = DEEP_ROUTE_COUNT;
 	String[] paths = make_deep_routes(count);
 
 	router::Router timed;
@@ -125,7 +125,7 @@ fn void router_register_deep() @benchmark => @pool()
 	TrackingAllocator tracker;
 	tracker.init(&arena);
 	router::Router tracked;
-	AllocSnapshot before = {};
+	AllocSnapshot before = { };
 	mem::@scoped(&tracker)
 	{
 		tracked.init(mem, &bench_logger);
@@ -141,7 +141,7 @@ fn void router_register_deep() @benchmark => @pool()
 
 fn void router_lookup_static() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count       = ROUTE_COUNT;
 	String[] paths = make_static_paths(count);
 
 	router::Router timed;
@@ -184,7 +184,7 @@ fn void router_lookup_static() @benchmark => @pool()
 		tcollector.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -208,9 +208,9 @@ fn void router_lookup_static() @benchmark => @pool()
 
 fn void router_lookup_dynamic() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count        = ROUTE_COUNT;
 	String[] routes = make_dynamic_routes(count);
-	String[] uris = make_dynamic_uris(count);
+	String[] uris   = make_dynamic_uris(count);
 
 	router::Router timed;
 	timed.init(mem, &bench_logger);
@@ -253,7 +253,7 @@ fn void router_lookup_dynamic() @benchmark => @pool()
 		tcollector.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -279,9 +279,9 @@ fn void router_lookup_dynamic() @benchmark => @pool()
 
 fn void router_lookup_deep() @benchmark => @pool()
 {
-	sz count = DEEP_ROUTE_COUNT;
+	sz count        = DEEP_ROUTE_COUNT;
 	String[] routes = make_deep_routes(count);
-	String[] uris = make_deep_uris(count);
+	String[] uris   = make_deep_uris(count);
 
 	router::Router timed;
 	timed.init(mem, &bench_logger);
@@ -324,7 +324,7 @@ fn void router_lookup_deep() @benchmark => @pool()
 		tcollector.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -350,9 +350,9 @@ fn void router_lookup_deep() @benchmark => @pool()
 
 fn void router_lookup_miss() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count        = ROUTE_COUNT;
 	String[] routes = make_static_paths(count);
-	String[] uris = make_miss_uris(count);
+	String[] uris   = make_miss_uris(count);
 
 	router::Router timed;
 	timed.init(mem, &bench_logger);
@@ -398,7 +398,7 @@ fn void router_lookup_miss() @benchmark => @pool()
 		tcollector.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -427,7 +427,7 @@ fn void router_lookup_miss() @benchmark => @pool()
 
 fn void router_lookup_middleware() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count       = ROUTE_COUNT;
 	String[] paths = make_static_paths(count);
 
 	router::Router timed;
@@ -477,7 +477,7 @@ fn void router_lookup_middleware() @benchmark => @pool()
 		tcollector.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)
@@ -502,7 +502,7 @@ fn void router_lookup_middleware() @benchmark => @pool()
 
 fn void router_get_route_head() @benchmark => @pool()
 {
-	sz count = ROUTE_COUNT;
+	sz count       = ROUTE_COUNT;
 	String[] paths = make_static_paths(count);
 
 	router::Router timed;
@@ -545,7 +545,7 @@ fn void router_get_route_head() @benchmark => @pool()
 		tcollector.init(mem);
 	};
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_LOOKUP_COUNT; ++i)

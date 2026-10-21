@@ -45,9 +45,9 @@ fn HandlerCollection*? _get_handlers(
 
 	if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
 
-	sz position = 0;
-	String segment = next_uri_segment(uri, &position);
-	String root_key = node_key(segment);
+	sz position          = 0;
+	String segment       = next_uri_segment(uri, &position);
+	String root_key      = node_key(segment);
 	RouteNode*? cur_node = start_nodes.get_ref(root_key);
 	if (catch err = cur_node)
 	{

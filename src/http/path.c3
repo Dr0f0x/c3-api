@@ -116,7 +116,6 @@ fn void HttpPathParams.free(&self)
 	self.param_map.free();
 }
 
-
 <*
  Format the arguments collection using the underlying arguments map formatter.
 

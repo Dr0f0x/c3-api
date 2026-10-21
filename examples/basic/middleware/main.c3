@@ -93,14 +93,27 @@ fn int main(String[] args)
 	// Register the stateless middleware for /test
 	router.use("/test", &middleware);
 	// Register the stateful middleware for /test (requires cast!)
-	router.use("/test", (MiddlewareFunc)&Counter.counter_middleware, &counter_instance);
+	// c3fmt off
+	router.use(
+		"/test",
+		(MiddlewareFunc)&Counter.counter_middleware,
+		&counter_instance
+	);
+	// c3fmt on
 
 	router::get{void}(router, "/generic", &handler);
 
 	// Register the stateless middleware using the generic macro
 	router::use{void}(router, "/generic", &middleware);
 	// Register the stateful middleware using the generic macro
-	router::use{Counter}(router, "/generic", &Counter.counter_middleware, &counter_instance);
+	// c3fmt off
+	router::use{Counter}(
+		router,
+		"/generic",
+		&Counter.counter_middleware,
+		&counter_instance
+	);
+	// c3fmt on
 
 	// macro to print all registered routes to the console
 	routing::print_routes(router);

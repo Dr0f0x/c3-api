@@ -21,16 +21,16 @@ import c3api::routing::middleware;
 import c3api::routing::node;
 
 const DEFAULT_ITERATIONS = 5;
-const ROUTE_COUNT = 1000;
-const DEEP_ROUTE_COUNT = 500;
-const LOOKUP_COUNT = 50_000;
+const ROUTE_COUNT        = 1000;
+const DEEP_ROUTE_COUNT   = 500;
+const LOOKUP_COUNT       = 50_000;
 const ALLOC_LOOKUP_COUNT = 5_000;
-const MICRO_OPS = 1_000_000;
-const ALLOC_MICRO_OPS = 10_000;
-const INIT_OPS = 100_000;
-const ALLOC_INIT_OPS = 10_000;
-const MIDDLEWARE_COUNT = 1000;
-const CHILD_COUNT = 100;
+const MICRO_OPS          = 1_000_000;
+const ALLOC_MICRO_OPS    = 10_000;
+const INIT_OPS           = 100_000;
+const ALLOC_INIT_OPS     = 10_000;
+const MIDDLEWARE_COUNT   = 1000;
+const CHILD_COUNT        = 100;
 
 log::C3ApiLogger bench_logger;
 
@@ -206,7 +206,7 @@ fn void handler_collection_set_get() @benchmark => @pool()
 	HandlerCollection thc;
 	thc.init();
 	AllocSnapshot before = alloc_snapshot(&tracker);
-	usz tpseudo = 0;
+	usz tpseudo          = 0;
 	mem::@scoped(&tracker)
 	{
 		for (sz i = 0; i < ALLOC_MICRO_OPS; ++i)
@@ -239,7 +239,7 @@ fn void middleware_register() @benchmark => @pool()
 	TrackingAllocator tracker;
 	tracker.init(&arena);
 	router::Router tracked;
-	AllocSnapshot before = {};
+	AllocSnapshot before = { };
 	mem::@scoped(&tracker)
 	{
 		tracked.init(mem, &bench_logger);
@@ -284,7 +284,7 @@ fn void node_init_free() @benchmark => @pool()
 
 fn void node_child_lookup() @benchmark => @pool()
 {
-	sz count = CHILD_COUNT;
+	sz count       = CHILD_COUNT;
 	String[] names = make_node_names(count);
 
 	RouteNode parent;
@@ -314,7 +314,7 @@ fn void node_child_lookup() @benchmark => @pool()
 	TrackingAllocator tracker;
 	tracker.init(&arena);
 	RouteNode tparent;
-	AllocSnapshot before = {};
+	AllocSnapshot before = { };
 	mem::@scoped(&tracker)
 	{
 		tparent.init(mem, "root");
@@ -371,7 +371,7 @@ fn void static_register_routes() @benchmark => @pool()
 	tracker.init(&arena);
 	router::Router tracked;
 	routing::StaticFiles tracked_files;
-	AllocSnapshot before = {};
+	AllocSnapshot before = { };
 	mem::@scoped(&tracker)
 	{
 		tracked.init(mem, &bench_logger);

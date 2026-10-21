@@ -53,7 +53,13 @@ fn void multi_param_handler(
 		DString response = dstring::temp();
 
 		// Access both path parameters
-		response.appendfn("hello %s, your id is %s", req.params["name"]!!, req.params["id"]!!);
+		// c3fmt off
+		response.appendfn(
+			"hello %s, your id is %s",
+			req.params["name"]!!,
+			req.params["id"]!!
+		);
+		// c3fmt on
 
 		// Write the response body
 		res.body = response.copy_str(allocator);

@@ -196,7 +196,6 @@ macro bool may_serialize($Type) @const
 	$endswitch
 }
 
-
 <*
  Marshal a struct with primitive fields and nested structs to XML.
 

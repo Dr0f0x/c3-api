@@ -34,7 +34,6 @@ fn void? PoolDispatcher.init(
 	self.log = logger;
 }
 
-
 fn void? PoolDispatcher.dispatch(&self, ThreadPoolTaskFn process_fn, void* context)
 {
 	return self.threads.add_task(process_fn, context);

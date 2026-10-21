@@ -48,7 +48,14 @@ fn void search_handler(void* self = null, Allocator allocator, HandlerContext* c
 	if (try query && try page)
 	{
 		// Return both query parameters in the response body
-		res.body = string::format(allocator, "Searching for '%s' on page %s", query, page);
+		// c3fmt off
+		res.body = string::format(
+			allocator,
+			"Searching for '%s' on page %s",
+			query,
+			page
+		);
+		// c3fmt on
 	}
 	else
 	{

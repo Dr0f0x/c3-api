@@ -89,7 +89,6 @@ fn void HttpConfig.parse_from_object(&self, Allocator allocator, Object* http_ob
 	};
 }
 
-
 <*
  Free resources owned by this HTTP configuration.
 

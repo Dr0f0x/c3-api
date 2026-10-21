@@ -4,7 +4,6 @@ import c3api;
 import c3api::routing;
 import c3api::routing::router;
 
-
 <*
  Simple route handler.
  Handles requests to: GET /test
@@ -63,12 +62,25 @@ fn int main(String[] args)
 	// Register simple route with the stateless handler
 	router.get("/test", &handler);
 	// Register the counter route with the stateful handler (requires cast!)
-	router.get("/counter", (HandleFunc)&Counter.counter_handler, &counter_instance);
+	// c3fmt off
+	router.get(
+		"/counter",
+		(HandleFunc)&Counter.counter_handler,
+		&counter_instance
+	);
+	// c3fmt on
 
 	// Register simple route with the stateless handler using the generic macro
 	router::get{void}(router, "/generic", &handler);
 	// Register the counter route with the stateful handler using the generic macro (no cast required and typesafe)
-	router::get{Counter}(router, "/generic-counter", &Counter.counter_handler, &counter_instance);
+	// c3fmt off
+	router::get{Counter}(
+		router,
+		"/generic-counter",
+		&Counter.counter_handler,
+		&counter_instance
+	);
+	// c3fmt on
 
 	// macro to print all registered routes to the console
 	routing::print_routes(router);

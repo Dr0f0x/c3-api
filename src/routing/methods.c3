@@ -44,7 +44,6 @@ fn String RouteMethod.to_constant_string(&self) @dynamic
 	}
 }
 
-
 <*
  Returned when an HTTP verb has no routing equivalent.
 *>

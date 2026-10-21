@@ -273,7 +273,6 @@ fn void HttpHeaders.free(&self)
 	self.header_map.free();
 }
 
-
 <*
  Format the header collection using the underlying headers map formatter.
 

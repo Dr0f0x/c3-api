@@ -95,7 +95,6 @@ fn int main(String[] args)
 			// Register middleware for the /api/v1/users subgroup.
 			users.use("/", &user_middleware);
 
-
 			// Register a route relative to the /api/v1/users group
 			// The resulting route is: /api/v1/users/test
 			users.get("/test", &handler);
