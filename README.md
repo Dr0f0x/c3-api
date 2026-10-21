@@ -389,7 +389,7 @@ For explanations of additional framework features — such as the built-in logge
 
 ### Website
 
-- [MkDocs Documentation](https://dr0f0x.github.io/c3-api/mkdocs/) — Guides, tutorials, configuration reference, and additional documentation built with MkDocs.
+- [Documentation](https://dr0f0x.github.io/c3-api/mkdocs/) — Guides, tutorials, configuration reference, and additional documentation built with Zensical.
 
 ## Configuration
 
@@ -476,7 +476,7 @@ Simple examples for both `docker` and `docker-compose` are available in the root
 Here are some planned features and improvements for the `c3-api` project:
 
 - [ ] **Testing**: Robust test suite in c3 for unit tests and with python for integration tests.
-- [ ] **Documentation**: Improve documentation with detailed examples and usage guides (e.g. the mkdocs site).
+- [ ] **Documentation**: Improve documentation with detailed examples and usage guides (e.g. the Zensical site).
 - [ ] **Pipeline**: Pipeline to build and test the library, including performance and memory leak tests
 - [ ] **Async Http Backend**: Needed for adequate performance, probably rely on libuv and its [c3 types](https://github.com/velikoss/libuv.c3l) for this
 - [ ] **Http 2.0**: Full support for the different encoding, as well as features like multiplexing

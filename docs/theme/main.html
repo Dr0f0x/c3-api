@@ -85,7 +85,7 @@
   {%- set page_description = page.meta.description if page.meta and page.meta.description else config.site_description %}
   {%- set page_url = page.canonical_url %}
   {%- set version_root = page.canonical_url | replace(page.url, "") %}
-  {%- set og_image = version_root ~ "assets/logo.png" if version_root.endswith('/') else version_root ~ "/assets/logo.png" %}
+  {%- set og_image = version_root ~ ("assets/logo.png" if version_root[-1:] == "/" else "/assets/logo.png") %}
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />

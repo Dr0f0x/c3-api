@@ -1,0 +1,111 @@
+[project]
+site_url = "https://dr0f0x.github.io/c3-api/mkdocs/"
+site_name = "C3 API"
+site_description = "A lightweight HTTP web framework for the C3 programming language."
+repo_url = "https://github.com/Dr0f0x/c3-api"
+repo_name = "Dr0f0x/c3-api"
+edit_uri = "edit/main/docs"
+
+nav = [
+  { "Introduction" = "index.md" },
+  { "Quickstart" = "quickstart.md" },
+  { "Configuration" = [
+    { "Overview" = "configuration/overview.md" },
+    { "Server & HTTP" = "configuration/server_http.md" },
+    { "CORS" = "configuration/cors.md" },
+    { "Concurrency Mode" = "configuration/concurrency_mode.md" },
+    { "Logging" = "configuration/logging.md" },
+  ] },
+  { "Routing" = [
+    { "HTTP Methods" = "routing/http_methods.md" },
+    { "Handlers" = "routing/handlers.md" },
+    { "Path & Query Parameters" = "routing/parameters.md" },
+    { "Middleware" = "routing/middleware.md" },
+    { "Groups" = "routing/groups.md" },
+    { "Static Files" = "routing/static_files.md" },
+  ] },
+  { "Requests & Responses" = [
+    { "Request" = "http/request.md" },
+    { "Response" = "http/response.md" },
+    { "Headers" = "http/headers.md" },
+    { "Context" = "http/context.md" },
+    { "Encoding" = [
+      { "Struct Binding" = "http/encoding/binding.md" },
+      { "JSON" = "http/encoding/json.md" },
+      { "XML" = "http/encoding/xml.md" },
+      { "Forms" = "http/encoding/forms.md" },
+    ] },
+    { "Cookies" = "http/cookies.md" },
+  ] },
+  { "Logging" = [
+    { "Logger" = "logging/logger.md" },
+    { "Fields" = "logging/fields.md" },
+    { "Sinks & Encoders" = "logging/sinks.md" },
+  ] },
+  { "Examples" = "examples/index.md" },
+  { "API Reference" = "https://dr0f0x.github.io/c3-api/api-reference/" },
+]
+
+[project.theme]
+name = "material"
+custom_dir = "docs/theme"
+logo = "c3api_logo.svg"
+favicon = "c3api_logo.svg"
+features = [
+  "header.autohide",
+  "navigation.indexes",
+  "navigation.top",
+  "navigation.footer",
+  "navigation.tracking",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.progress",
+  "toc.follow",
+  "search.suggest",
+  "content.code.copy",
+  "content.action.edit",
+]
+
+[project.theme.icon]
+repo = "fontawesome/brands/github"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "indigo"
+accent = "indigo"
+
+[project.theme.palette.toggle]
+icon = "material/brightness-7"
+name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "indigo"
+accent = "indigo"
+
+[project.theme.palette.toggle]
+icon = "material/brightness-4"
+name = "Switch to light mode"
+
+[project.plugins]
+search = {}
+
+[project.plugins.minify]
+minify_html = true
+minify_js = true
+minify_css = true
+
+[project.plugins.minify.htmlmin_opts]
+remove_comments = true
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+md_in_html = {}
+"pymdownx.details" = {}
+"pymdownx.highlight" = { anchor_linenums = true, pygments_lang_class = true }
+"pymdownx.superfences" = {}
+"pymdownx.tabbed" = { alternate_style = true }
+toc = { permalink = true, title = "On this page" }

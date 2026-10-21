@@ -30,8 +30,8 @@ jobs:
           python -m pip install uv
           uv sync --locked
 
-      - name: Build MkDocs documentation
-        run: uv run mkdocs build --strict
+      - name: Build Zensical documentation
+        run: uv run zensical build --clean --strict
 
       - name: Upload docs artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -40,10 +40,10 @@ jobs:
           path: docs.html
           archive: true
 
-      - name: Upload MkDocs artifact
+      - name: Upload Zensical artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: mkdocs-docs
+          name: zensical-docs
           path: site
           archive: true
 
@@ -68,10 +68,10 @@ jobs:
           name: c3-docs
           path: docs
 
-      - name: Download MkDocs artifact
+      - name: Download Zensical artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: mkdocs-docs
+          name: zensical-docs
           path: site
 
       - name: Prepare folder structure

@@ -1,0 +1,16 @@
+[project]
+name = "pygments-c3"
+version = "0.1.0"
+description = "Pygments lexer for the C3 programming language"
+requires-python = ">=3.14"
+dependencies = ["pygments>=2.21.0"]
+
+[project.entry-points."pygments.lexers"]
+c3 = "pygments_c3:C3Lexer"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pygments_c3"]
