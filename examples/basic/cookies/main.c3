@@ -52,17 +52,18 @@ fn void handler(void* self = null, Allocator allocator, HandlerContext* ctx, Htt
 
 	// Update Cookie value
 	DateTime expiration = datetime::now().add_months(1);
+	CookieOptions options;
+	options
+		.with_expires(expiration)
+		.with_max_age(cookies::HOUR)
+		.with_path("/")
+		.with_secure();
+
 	res.set_cookie(
 		tmem,
 		"lastVisit",
 		string::format(tmem, "%s", time::now() / (Time)time::SEC),
-		{
-			.use = CookieOption.EXPIRES | CookieOption.SECURE | CookieOption.MAX_AGE | CookieOption.PATH,
-			.expires = expiration,
-			.max_age = cookies::HOUR,
-			.path = "/",
-			.secure = true,
-		}
+		options
 	);
 }
 

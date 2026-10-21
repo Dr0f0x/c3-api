@@ -108,7 +108,12 @@ constdef CookieOption : ushort
 	PARTITIONED = 1 << 7,
 }
 
-<* Cookie attributes used when creating a Set-Cookie header. *>
+<*
+ Cookie attributes used when creating a Set-Cookie header.
+
+ Prefer the `with_*` builder methods to set attribute values and the
+ corresponding `CookieOption` flags together.
+*>
 struct CookieOptions
 {
 	CookieOption use;
@@ -129,6 +134,107 @@ struct CookieOptions
 
 	// CHIPS
 	bool partitioned;
+}
+
+<*
+ Enable the Expires cookie attribute.
+ @param self : "Cookie options to update"
+ @param expires : "Expiration date and time"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_expires(&self, DateTime expires) @inline
+{
+	self.use = self.use | CookieOption.EXPIRES;
+	self.expires = expires;
+	return self;
+}
+
+<*
+ Enable the Max-Age cookie attribute.
+ @param self : "Cookie options to update"
+ @param max_age : "Cookie lifetime in seconds"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_max_age(&self, CookieDuration max_age) @inline
+{
+	self.use = self.use | CookieOption.MAX_AGE;
+	self.max_age = max_age;
+	return self;
+}
+
+<*
+ Enable the Domain cookie attribute.
+ @param self : "Cookie options to update"
+ @param domain : "Cookie domain"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_domain(&self, String domain) @inline
+{
+	self.use = self.use | CookieOption.DOMAIN;
+	self.domain = domain;
+	return self;
+}
+
+<*
+ Enable the Path cookie attribute.
+ @param self : "Cookie options to update"
+ @param path : "Cookie path"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_path(&self, String path) @inline
+{
+	self.use = self.use | CookieOption.PATH;
+	self.path = path;
+	return self;
+}
+
+<*
+ Enable the Secure cookie attribute.
+ @param self : "Cookie options to update"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_secure(&self) @inline
+{
+	self.use = self.use | CookieOption.SECURE;
+	self.secure = true;
+	return self;
+}
+
+<*
+ Enable the HttpOnly cookie attribute.
+ @param self : "Cookie options to update"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_http_only(&self) @inline
+{
+	self.use = self.use | CookieOption.HTTP_ONLY;
+	self.http_only = true;
+	return self;
+}
+
+<*
+ Enable the SameSite cookie attribute.
+ @param self : "Cookie options to update"
+ @param same_site : "SameSite policy to emit"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_same_site(&self, SameSite same_site) @inline
+{
+	self.use = self.use | CookieOption.SAME_SITE;
+	self.same_site = same_site;
+	return self;
+}
+
+<*
+ Enable the Partitioned cookie attribute.
+ @param self : "Cookie options to update"
+ @return "This options instance for chaining"
+*>
+fn CookieOptions* CookieOptions.with_partitioned(&self) @inline
+{
+	self.use = self.use | CookieOption.PARTITIONED;
+	self.partitioned = true;
+	return self;
 }
 
 <*

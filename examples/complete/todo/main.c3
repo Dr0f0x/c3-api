@@ -53,18 +53,14 @@ fn void static_no_controller(
 	res.body = json::marshal(allocator, (JSONResponse) { false, "string_val" });
 
 	DateTime expiration = datetime::now().add_hours(1);
-	res.set_cookie(
-		allocator,
-		"test",
-		"value",
-		{
-			.use = CookieOption.EXPIRES | CookieOption.SECURE | CookieOption.MAX_AGE | CookieOption.PATH,
-			.expires = expiration,
-			.max_age = cookies::HOUR,
-			.path = "/",
-			.secure = true,
-		}
-	);
+	CookieOptions options;
+	options
+		.with_expires(expiration)
+		.with_max_age(cookies::HOUR)
+		.with_path("/")
+		.with_secure();
+
+	res.set_cookie(allocator, "test", "value", options);
 
 	io::printfn("%s", res);
 }
