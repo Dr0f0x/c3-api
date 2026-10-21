@@ -2,6 +2,11 @@ name: Zip and Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version override for debug builds (defaults to project.json)"
+        required: false
+        type: string
 
 jobs:
 
@@ -9,43 +14,38 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Determine Version
+        id: version
+        env:
+          VERSION_OVERRIDE: ${{ inputs.version }}
+        run: |
+          version="$VERSION_OVERRIDE"
+          if [ -z "$version" ]; then
+            version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' project.json | head -n1)
+          fi
+          if [ -z "$version" ]; then
+            echo "Unable to determine version from project.json" >&2
+            exit 1
+          fi
+          if ! printf '%s' "$version" | grep -Eq '^[0-9A-Za-z._+-]+$'; then
+            echo "Invalid version '$version': use only letters, digits, '.', '_', '+', and '-'" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Move files to src directory
         run: |
           find src -type f -mindepth 2 -exec mv {} src/ \;
           find src -type d -empty -delete
 
-      - name: Determine Build Number
-        id: determine_build
-        run: echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
-
-      - name: Create manifest.json file
-        run: |
-          cat <<EOT > src/manifest.json
-          // C3API BUILD: ${{ env.BUILD_NUMBER }}
-          {
-            "provides" : "c3api",
-            "targets" : {
-              "freebsd-x64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "linux-aarch64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "linux-riscv32" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "linux-riscv64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "linux-x86" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "linux-x64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "macos-aarch64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "macos-x64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "netbsd-x64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "openbsd-x64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "wasm32" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "wasm64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "windows-aarch64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []},
-              "windows-x64" : {"link-args" : [], "dependencies" : [], "linked-libraries" : []}
-            }
-          }
-          EOT
+      - name: Copy manifest.json into src
+        run: cp manifest.json src/manifest.json
 
       - name: Zip src contents to top-level c3api.c3l
         run: |
@@ -53,7 +53,7 @@ jobs:
           zip -r ../c3api.c3l ./*
 
       - name: Upload zip artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: src-zip
           path: c3api.c3l
@@ -62,46 +62,29 @@ jobs:
     runs-on: ubuntu-latest
     needs: [package-and-zip]
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         
-      - name: Read Release Notes
-        id: get_release_notes
-        run: |
-          release_notes=$(cat release_notes.md)
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-          echo "$release_notes" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
       - name: Determine Tag Version
         id: determine_tag
-        run: |
-          echo "TAG_VERSION=build-${{ github.run_number }}" >> $GITHUB_ENV
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          tag_name: ${{ env.TAG_VERSION }}
-          release_name: "Release ${{ env.TAG_VERSION }}"
-          body: ${{ env.RELEASE_NOTES }}
-          draft: false
-          prerelease: false
+          VERSION: ${{ needs.package-and-zip.outputs.version }}
+        run: |
+          echo "TAG_VERSION=v$VERSION" >> "$GITHUB_ENV"
 
       - name: Download zip artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: src-zip
 
-      - name: Upload zip to release
-        uses: actions/upload-release-asset@v1
+      - name: Create GitHub Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: c3api.c3l
-          asset_name: c3api.c3l
-          asset_content_type: application/zip
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG_VERSION" c3api.c3l \
+            --target "$GITHUB_SHA" \
+            --title "Release $TAG_VERSION" \
+            --notes ""

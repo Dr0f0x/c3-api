@@ -79,6 +79,7 @@ nav:
       - Logging: configuration/logging.md       # console/file keys
   - Routing:
       - HTTP Methods: routing/http_methods.md
+      - Handlers: routing/handlers.md
       - Path & Query Parameters: routing/parameters.md
       - Middleware: routing/middleware.md
       - Groups: routing/groups.md
@@ -86,6 +87,8 @@ nav:
   - Requests & Responses:
       - Request: http/request.md                # headers, body, cookie read link
       - Response: http/response.md              # status, body helpers, cookie write link
+      - Headers: http/headers.md
+      - Context: http/context.md
       - Encoding:
           - Struct Binding: http/encoding/binding.md     # @Json/@Xml/@Form
           - JSON: http/encoding/json.md                  
@@ -93,6 +96,8 @@ nav:
           - Forms: http/encoding/forms.md 
       - Cookies: http/cookies.md                               
   - Logging:
+      - Logger: logging/logger.md
+      - Fields: logging/fields.md
       - Sinks & Encoders: logging/sinks.md      # custom sink/encoder, rotating-file example
   - Examples: examples/index.md                 # table mirroring examples/basic/* + todo
   - API Reference: https://dr0f0x.github.io/c3-api/api-reference/

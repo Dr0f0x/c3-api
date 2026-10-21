@@ -42,7 +42,7 @@ This project originally started as a fork of the original [c3-api](https://githu
 
 ## Installation
 
-- Download latest `c3api.c3l` from [Releases](TO-DO)
+- Download latest `c3api.c3l` from [Releases](https://github.com/Dr0f0x/c3-api/releases)
 - Move the file to your projects `lib/` folder
 - Add c3api to your dependencies in `project.json`
 
