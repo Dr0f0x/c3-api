@@ -9,6 +9,7 @@ import std::encoding::json;
 import std::time::datetime;
 
 import c3api;
+import c3api::routing;
 import c3api::routing::router;
 import c3api::routing::group;
 import c3api::encoding;
@@ -272,7 +273,11 @@ fn int main(String[] args)
 	Path cwd = path::tcwd()!!;
 	Path dir = cwd.tappend("examples/complete/todo/public")!!;
 
-	router.serve_static("/files", dir)!!;
+	routing::StaticFiles static_files;
+	static_files.init(mem, dir);
+	defer static_files.free();
+
+	router.serve_static("/files", &static_files)!!;
 
 	router.post("/todo", &todo_handler);
 

@@ -38,7 +38,14 @@
         "tests/**"
       ]
     },
-    
+    // benchmark target run with c3c benchmark 'benchmarks'
+    "c3api-benchmarks": {
+      "type": "benchmark",
+      "sources": [
+        "benchmarks/**"
+      ],
+      "opt": "O2"
+    },
     // example projects run with c3c run '<target-name>'
     "minimal-demo": {
       "type": "executable",

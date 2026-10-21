@@ -103,10 +103,18 @@ fn HandlerCollection* HandlerCollection.init(&self)
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
-fn bool HandlerCollection.set_handler(&self, RouteMethod method, HandleFunc handler, void* instance = null)
+fn bool HandlerCollection.set_handler(
+	&self,
+	RouteMethod method,
+	HandleFunc handler,
+	void* instance = null,
+)
 {
 	bool already_present = self.has_handler(method);
-	self.handler_map.set(method, { .self = instance, .handler = handler });
+	self.handler_map.set(
+		method,
+		{ .self = instance, .handler = handler }
+	);
 	return already_present;
 }
 

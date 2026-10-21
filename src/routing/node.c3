@@ -37,7 +37,7 @@ fn RouteNode* RouteNode.init(&self, Allocator allocator, String name)
 	self.sub_nodes.init(allocator);
 	self.middlewares.init(allocator);
 	self.handlers.init();
-	self.name = name;
+	self.name = name.copy(allocator);
 	return self;
 }
 
@@ -70,12 +70,29 @@ fn RouteNode*? RouteNode.get_next_node(&self, String to)
  Free node-owned resources.
 
  @param [&inout] self : "Route node to free"
+ @param [&inout] allocator : "Allocator that owns the copied segment name"
 *>
-fn void RouteNode.free(&self)
+fn void RouteNode.free(&self, Allocator allocator)
 {
+	self.name.free(allocator);
 	self.middlewares.free();
 	self.sub_nodes.free();
 	self.handlers.free();
+}
+
+<*
+ Recursively free this node and all descendant nodes.
+
+ @param [&inout] self : "Root node of the subtree to free"
+ @param [&inout] allocator : "Allocator that owns the copied segment names"
+*>
+fn void RouteNode.free_recursive(&self, Allocator allocator)
+{
+	foreach (child : self.sub_nodes.value_iter())
+	{
+		child.free_recursive(allocator);
+	}
+	self.free(allocator);
 }
 
 

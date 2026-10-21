@@ -407,6 +407,10 @@ fn Group* Router.group(&self, Allocator allocator, String uri)
 *>
 fn void Router.free(&self)
 {
+	foreach (node : self.root_nodes.value_iter())
+	{
+		node.free_recursive(self.allocator);
+	}
 	self.root_nodes.free();
 	self.root_middlewares.free();
 	self.root_handlers.free();

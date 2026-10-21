@@ -19,8 +19,13 @@ fn int main(String[] args)
 	Path cwd = path::tcwd()!!;
 	Path dir = cwd.tappend("examples/basic/static/public")!!;
 
-	// serve static files from the public directory
-	router.serve_static("/", dir)!!;
+	// create storage configured with the public directory and options
+	routing::StaticFiles static_files;
+	static_files.init(tmem, dir);
+	defer static_files.free();
+
+	// serve static files from the configured directory
+	router.serve_static("/", &static_files)!!;
 
 	// macro to print all registered routes to the console.
 	routing::print_routes(router);

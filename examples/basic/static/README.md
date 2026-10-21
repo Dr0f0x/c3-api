@@ -2,7 +2,8 @@
 
 This example serves a fully static site with c3-api.
 
-- Maps `/` to `examples/static/public` with `router.serve_static("/", dir)`.
+- Configures a caller-owned `StaticFiles` store with `examples/static/public`.
+- Maps `/` to the configured directory with `router.serve_static("/", &static_files)`.
 - Serves `index.html`, `style.css`, and `favicon.svg` directly.
 
 ## Files
