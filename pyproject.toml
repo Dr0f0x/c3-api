@@ -4,11 +4,10 @@ version = "0.1.0"
 description = "Python tests and tooling for c3-api"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
-    "psutil>=7.2.2",
-    "pygments-c3",
-    "zensical>=0.0.71",
-]
+dependencies = ["psutil>=7.2.2", "pygments-c3", "zensical>=0.0.71"]
 
 [tool.uv.sources]
 pygments-c3 = { path = "tools/pygments_c3" }
+
+[dependency-groups]
+dev = ["pytest>=9.2.0"]

@@ -73,5 +73,9 @@ jobs:
       - name: Install Python dependencies
         run: uv sync --locked
 
-      - name: Run Python tests
+      # run examples as a kind of smoke test
+      - name: Run Examples
         run: uv run python tests/run_examples.py --quiet
+
+      - name: Run integration tests
+        run: uv run pytest

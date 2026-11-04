@@ -1,0 +1,22 @@
+{
+  "langrev": "1",
+  "warnings": [
+    "no-unused"
+  ],
+  "dependency-search-paths": [
+    "lib"
+  ],
+  "dependencies": [
+    "c3api"
+  ],
+  "sources": [
+    "src/**"
+  ],
+  "output": "build",
+  "targets": {
+    "integration-app": {
+      "type": "executable"
+    }
+  },
+  "opt": "O0"
+}
