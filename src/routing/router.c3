@@ -107,20 +107,25 @@ fn RegisteredHandler*? Router.get_route(
  Add or replace a route handler.
 
  If a handler is already registered for the specified method and URI,
- it is replaced with the new handler.
+ it is replaced with the new handler. Registering the same path shape twice,
+ but with a different parameter name is an error and aborts the program.
+
+ The route pattern must be known at compile time. A pattern that repeats a
+ parameter name, such as `/path/{name}/test/{name}`, is rejected.
 
  @param [&inout] self : "Router receiving the route"
  @param method : "HTTP method"
- @param [in] uri : "Route URI"
+ @param [in] $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional instance passed to the handler as self"
 
+ @require !internal::has_duplicate_path_params($uri) : "Route contains duplicate path parameter names"
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
-fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handler, void* instance = null)
+macro bool Router.add_route(&self, RouteMethod method, String $uri, HandleFunc handler, void* instance = null)
 {
 	return internal::_add_handler(
-		uri,
+		$uri,
 		method,
 		handler,
 		instance,
@@ -135,98 +140,98 @@ fn bool Router.add_route(&self, RouteMethod method, String uri, HandleFunc handl
 <*
  Register a GET handler on this router.
  @param [&inout] self : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Router.get(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.GET, uri, handler, instance);
+) => self.add_route(RouteMethod.GET, $uri, handler, instance);
 
 <*
  Register a POST handler on this router.
  @param [&inout] self : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Router.post(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.POST, uri, handler, instance);
+) => self.add_route(RouteMethod.POST, $uri, handler, instance);
 
 <*
  Register a PUT handler on this router.
  @param [&inout] self : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Router.put(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.PUT, uri, handler, instance);
+) => self.add_route(RouteMethod.PUT, $uri, handler, instance);
 
 <*
  Register a PATCH handler on this router.
  @param [&inout] self : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Router.patch(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.PATCH, uri, handler, instance);
+) => self.add_route(RouteMethod.PATCH, $uri, handler, instance);
 
 <*
  Register a DELETE handler on this router.
  @param [&inout] self : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Router.delete(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.DELETE, uri, handler, instance);
+) => self.add_route(RouteMethod.DELETE, $uri, handler, instance);
 
 <*
  Register a HEAD handler on this router.
  @param [&inout] self : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Router.head(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.HEAD, uri, handler, instance);
+) => self.add_route(RouteMethod.HEAD, $uri, handler, instance);
 
 <*
  Register a typed route handler on this router.
  @param router : "Router receiving the route"
  @param method : "HTTP method"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
@@ -234,103 +239,103 @@ macro bool Router.head(
 macro bool route(
 	Router* router,
 	RouteMethod method,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
 ) <Type>
 {
-	return router.add_route(method, uri, (HandleFunc)handler, instance);
+	return router.add_route(method, $uri, (HandleFunc)handler, instance);
 }
 
 <*
  Register a typed GET handler on a router.
  @param router : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool get(
 	Router* router,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => router.add_route(RouteMethod.GET, uri, (HandleFunc)handler, instance);
+) <Type> => router.add_route(RouteMethod.GET, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed POST handler on a router.
  @param router : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool post(
 	Router* router,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => router.add_route(RouteMethod.POST, uri, (HandleFunc)handler, instance);
+) <Type> => router.add_route(RouteMethod.POST, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed PUT handler on a router.
  @param router : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool put(
 	Router* router,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => router.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, instance);
+) <Type> => router.add_route(RouteMethod.PUT, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed PATCH handler on a router.
  @param router : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool patch(
 	Router* router,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => router.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, instance);
+) <Type> => router.add_route(RouteMethod.PATCH, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed DELETE handler on a router.
  @param router : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool delete(
 	Router* router,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => router.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, instance);
+) <Type> => router.add_route(RouteMethod.DELETE, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed HEAD handler on a router.
  @param router : "Router receiving the route"
- @param uri : "Route URI"
+ @param $uri : "Route URI"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool head(
 	Router* router,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => router.add_route(RouteMethod.HEAD, uri, (HandleFunc)handler, instance);
+) <Type> => router.add_route(RouteMethod.HEAD, $uri, (HandleFunc)handler, instance);
 
 <*
  Add middleware to a router route.

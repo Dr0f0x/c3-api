@@ -1,7 +1,7 @@
 # Handlers
 
 A handler is a function that receives a request and fills in a response. Every
-handler has the same signature, whether it is a free function or a method on a
+handler has the same signature, whether it is a free function or a type method on a
 struct.
 
 ```c3
@@ -18,10 +18,11 @@ fn void handler(
 }
 ```
 
-Register it with any of the method helpers:
+Register it with any of the macro helpers or `add_route`:
 
 ```c3
 router.get("/hello", &handler);
+router.add_route(RouteMethod.GET, "/hello2", &handler);
 ```
 
 ## Handler parameters
@@ -30,9 +31,14 @@ router.get("/hello", &handler);
 | --- | --- |
 | `self` | Optional instance pointer. It is `null` for free functions. |
 | `allocator` | Request-scoped allocator for response data. It is valid until request processing completes. |
-| `ctx` | Shared request context used to pass values between middleware and handlers. |
+| `ctx` | Shared request context for passing data between middleware and handlers, or from the server to handlers, without relying on global or static variables. |
 | `req` | The parsed request, including method, URI, headers, path parameters, query parameters, and body. |
 | `res` | The response to populate with a status, headers, and body. |
+
+In addition to the passed `allocator`, C3's `tmem` is set to a stack-backed
+temporary allocator that stays alive for the duration of the request. Unless
+you open a nested `@pool` scope, allocations made with `tmem` also remain valid
+until request handling finishes.
 
 Handlers return `void`. They signal the result by writing to `res`; the server
 sends the response after the handler and middleware pipeline finish.
@@ -43,10 +49,10 @@ sends the response after the handler and middleware pipeline finish.
     store pointers allocated from it in global state or in objects that outlive
     the request. Use a longer-lived allocator for persistent data.
 
-## Stateful handlers
+## Type method handlers
 
-A handler can be a method on a struct. The `self` parameter then points at the
-instance supplied during registration:
+A handler can be a type method on a struct. The `self` parameter then points at
+the instance supplied during registration:
 
 ```c3
 struct Counter
@@ -79,7 +85,7 @@ router.get("/counter", (HandleFunc)&Counter.handle, &counter);
 The cast is required because the non-generic registration helpers accept the
 plain `HandleFunc` type, whose `self` parameter is `void*`.
 
-The generic helpers preserve the instance type, so no cast is needed:
+There are generic helpers to preserve the instance type, so no cast is needed:
 
 ```c3
 router::get{Counter}(router, "/typed-counter", &Counter.handle, &counter);
@@ -97,8 +103,8 @@ router::route{Counter}(
 );
 ```
 
-The generic forms are type-safe: the instance argument must match the type of
-the handler's `self` parameter.
+The generic forms make registration type-safe: the instance argument must
+match the type of the handler's `self` parameter.
 
 !!! warning "Shared state"
 
@@ -119,18 +125,6 @@ The routing module exposes two aliases:
 Both have the same remaining parameters: `Allocator`, `HandlerContext*`,
 `HttpRequest*`, and `HttpResponse*`.
 
-## Registering one handler for several methods
-
-Register the same function more than once when the behavior is identical:
-
-```c3
-router.get("/status", &status);
-router.post("/status", &status);
-```
-
-A `HEAD` request can use an explicit `HEAD` route or fall back to `GET`. See
-[HTTP methods](http_methods.md) for the fallback rules.
-
 ## Unmatched requests
 
 When no route matches, the server uses the built-in 404 handler. It sets
@@ -140,12 +134,23 @@ When no route matches, the server uses the built-in 404 handler. It sets
 {"type":"error","status":404}
 ```
 
-The 404 handler is not configurable at the moment.
+The built-in handler can also be called directly:
+
+```c3
+routing::handler::e404(null, allocator, &handler_ctx, req, res);
+```
+
+Pass null for self, and supply the current allocator, HandlerContext,
+request, and response. 
+
+
 
 ## See also
 
-- [HTTP methods](http_methods.md) — method helpers and route matching.
-- [Path & query parameters](parameters.md) — read values from the request URL.
-- [Middleware](middleware.md) — run code around handlers.
-- [Context](../http/context.md) — share values across the pipeline.
+- [HTTP methods](http_methods.md) — method registration and HEAD, OPTIONS, and
+  TRACE behavior.
+- [Path & query parameters](parameters.md) — route matching, path parameters,
+  and query parameters.
+- [Middleware](middleware.md) — ordering, short-circuiting, and built-ins.
+- [Context](../http/context.md) — share values across the request pipeline.
 - [Response](../http/response.md) — status codes, headers, and response bodies.

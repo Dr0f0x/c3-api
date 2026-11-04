@@ -14,6 +14,37 @@ import c3api::routing::node;
 import c3api::routing::middleware;
 
 <*
+ Check whether a route pattern repeats a path parameter name.
+
+ Only braced segments are treated as parameters, matching the router's
+ segment rules. The check runs at compile time.
+
+ @param [in] $uri : "Route pattern to inspect"
+ @return "True when the same parameter name appears more than once"
+*>
+macro bool has_duplicate_path_params(String $uri) @const
+{
+	var $wrapped = "/" +++ $uri +++ "/";
+	var $pos = 0;
+	$for ; $pos < $wrapped.len; $pos++:
+		$if $wrapped[$pos] == '{' &&& $wrapped[$pos - 1] == '/':
+			var $end = $pos + 1;
+			$for ; $end < $wrapped.len &&& $wrapped[$end] != '}'; $end++:
+			$endfor
+			$if $end + 1 < $wrapped.len &&& $wrapped[$end + 1] == '/':
+				var $name = $wrapped[$pos + 1:$end - $pos - 1];
+				var $needle = "/{" +++ $name +++ "}/";
+				$if @str_find($wrapped[$end + 1..], $needle) >= 0:
+					return true;
+				$endif
+			$endif
+			$pos = $end;
+		$endif
+	$endfor
+	return false;
+}
+
+<*
  Traverse the route trie and return handlers for a URI.
 
  Collects middleware along the matched path and writes dynamic path
@@ -117,6 +148,40 @@ fn String next_uri_segment(String uri, sz* position) @private
 faultdef REFERS_TO_ROOT;
 
 <*
+ Check whether a requested dynamic segment conflicts with an existing one.
+
+ @param [in] existing : "Parameter name already stored by the node"
+ @param [in] requested : "Parameter name from the new registration"
+ @return "True when both segments are dynamic and use different names"
+*>
+fn bool has_dynamic_name_conflict(String existing, String requested)
+{
+	return requested.is_braced() && existing.is_braced() && existing != requested;
+}
+
+<*
+ Abort when a registration reuses a dynamic branch with another parameter name.
+
+ @param [in] uri : "Route pattern being registered"
+ @param [&in] node : "Existing dynamic branch"
+ @param [in] segment : "Dynamic segment from the new registration"
+ @param [&in] log : "Logger receiving the error entry"
+*>
+fn void _abort_on_dynamic_name_conflict(String uri, RouteNode* node, String segment, log::Logger log) @private
+{
+	if (!has_dynamic_name_conflict(node.name, segment)) return;
+
+	log.errorf(
+		"Route '%s' conflicts with existing parameter '%s'; requested '%s'",
+		"route parameter name conflict",
+		log::_string("uri", &uri),
+		log::_string("existing", &node.name),
+		log::_string("requested", &segment)
+	);
+	abort("Route parameter name conflict in '%s': existing '%s', requested '%s'", uri, node.name, segment);
+}
+
+<*
  Get or create the route node corresponding to the given URI.
 
  Root-level URIs return REFERS_TO_ROOT~ so callers can attach directly
@@ -131,6 +196,8 @@ fn RouteNode*? _get_or_create_node(String uri, HashMap{String, RouteNode}* start
 {
 	@pool()
 	{
+		String original_uri = uri;
+
 		log.tracef("Retrieving route node at '%s'", "Retrieving route node", log::_string("uri", &uri));
 
 		// would be root route
@@ -173,22 +240,26 @@ fn RouteNode*? _get_or_create_node(String uri, HashMap{String, RouteNode}* start
 				log::_string("uri", &uri_segments[0])
 			);
 			cur_node = start_nodes.get_ref(root_key)!!;
+			_abort_on_dynamic_name_conflict(original_uri, cur_node, uri_segments[0], log);
 		}
 
 		// traverse node tree down
 		foreach (i, segment : uri_segments[1..^1])
 		{
-			if (try new_cur_node = cur_node.get_next_node(segment))
+			String key = node_key(segment);
+
+			if (cur_node.sub_nodes.has_key(key))
 			{
+				cur_node = cur_node.sub_nodes.get_ref(key)!!;
+				_abort_on_dynamic_name_conflict(original_uri, cur_node, segment, log);
+
 				log.tracef(
 					"Using existing route node '%s'",
 					"Found existing route node",
-					log::_string("uri", &new_cur_node.name)
+					log::_string("uri", &cur_node.name)
 				);
-				cur_node = new_cur_node;
 				continue;
 			}
-			String key = node_key(segment);
 
 			log.tracef("Creating new route node '%s'", "Created new route node", log::_string("name", &key));
 

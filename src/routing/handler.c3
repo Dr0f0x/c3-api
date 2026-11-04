@@ -233,7 +233,8 @@ fn RegisteredHandler*? HandlerCollection.get_delete(&self) => self.get_handler(R
 *>
 fn bool HandlerCollection.has_handler(&self, RouteMethod method)
 {
-	return self.handler_map.get_ref(method) != null;
+	RegisteredHandler* handler = self.handler_map.get_ref(method);
+	return handler != null && handler.handler != null;
 }
 
 <*

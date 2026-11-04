@@ -23,7 +23,7 @@ The framework follows the ideas that make Gin and Express pleasant to use — co
 
 - **Familiar API** — Routing and middleware modeled after Gin and Express.
 - **Composable middleware** — Scope middleware to a path prefix, short-circuit the pipeline, or run code before and after the handler.
-- **Typed handlers** — Use free functions or stateful type methods, with type-safe registration macros for both.
+- **Typed handlers** — Use free functions or type methods, with type-safe registration macros for both.
 - **Request binding and response serialization** — Bind bodies into C3 types and serialize results as JSON, XML, or form data.
 - **Route groups** — Organize endpoints under shared prefixes and attach middleware per group, including nested groups.
 - **Configurable server** — Tune concurrency modes, keep-alive, timeouts, connection limits, and more through code or `c3api.conf.json`.

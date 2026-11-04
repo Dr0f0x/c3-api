@@ -50,7 +50,7 @@ fn int main(String[] args)
 }
 ```
 
-The router supports the following methods:
+The router supports all common HTTP methods through builtin-in macros:
 
 | Registration | `RouteMethod` | Common use |
 | --- | --- | --- |
@@ -68,10 +68,13 @@ the method is selected at runtime:
 router.add_route(RouteMethod.PATCH, "/users/{id}", &update_user);
 ```
 
+Route patterns have to be compile-time values as `add_route` and the method helpers
+use a Precondition to reject patterns that repeat a parameter name, such as
+`/path/{name}/test/{name}`, during compilation. Registering the same path shape twice,
+but with a different parameter name at runtime logs an error and aborts.
+
 `add_route` and the method helpers return `true` when they replaced an existing
 handler for the same method and path, and `false` when they added a new one.
-This makes it possible to replace a route during setup without registering it
-twice:
 
 ```c3
 if (router.get("/health", &health))
@@ -80,39 +83,27 @@ if (router.get("/health", &health))
 }
 ```
 
-## Route matching
-
-The router stores paths in a trie. Each path is split on `/`, and every segment
-is matched independently:
-
-- Literal segments match exactly. Matching is case-sensitive.
-- A segment such as `{id}` matches one path segment.
-- An exact child is preferred over a dynamic child. With both `/users/me` and
-  `/users/{id}` registered, `GET /users/me` uses the literal route.
-- A dynamic segment does not match across `/`. `/users/{id}` matches
-  `/users/42`, but not `/users/42/posts`.
-- There is one dynamic branch per trie level. Routes such as `/users/{id}` and
-  `/users/{name}` share that branch, so keep the parameter name consistent.
-- The query string is removed before routing. `/search?q=c3` is routed as
-  `/search`.
-- There is no catch-all or wildcard segment.
-
-If no route matches, the server responds with the built-in 404 handler:
-
-```json
-{"type":"error","status":404}
-```
-
 ## HEAD requests
 
-If you register a `HEAD` handler, it is used for `HEAD` requests. Otherwise the
-router falls back to the matching `GET` handler and the server removes the
-response body before sending it. This lets clients inspect headers without
-downloading the resource.
+A registered `HEAD` handler takes precedence for `HEAD` requests to that path.
+If none exists, the router falls back to the matching `GET` handler, and the
+server strips the response body before sending it.
 
 ```c3
 router.get("/articles/{id}", &get_article);
 // HEAD /articles/42 runs get_article, then drops the body.
+```
+
+!!! note "HEAD responses never include a body"
+
+    The server always removes the response body from HEAD responses before sending
+    them to the client, even if a registered HEAD handler sets one.
+
+If no matching `GET` or `HEAD` handler is found, the server responds with the
+built-in 404 handler:
+
+```json
+{"type":"error","status":404}
 ```
 
 ## OPTIONS requests
@@ -128,10 +119,34 @@ Allow: HEAD, OPTIONS, GET, POST
 
 If the path does not exist, the built-in 404 response is returned.
 
+## TRACE requests
+
+`TRACE` is handled by the server before routing, not by a route handler. It is
+disabled by default and must be enabled with `http.trace_enabled` in
+`c3api.conf.json` (or the corresponding `Config` field):
+
+```json
+{
+  "http": {
+    "trace_enabled": true
+  }
+}
+```
+!!! warning "TRACE can expose sensitive information"
+
+    `TRACE` is disabled by default because it can echo sensitive request headers, such as cookies and `Authorization`, back to the caller. It has historically been abused in Cross-Site Tracing (XST) attacks. Enable it only for controlled debugging on trusted networks, and disable it again when debugging is complete.
+
+When enabled, the server responds with `200 OK` and a body that echoes the
+request line, headers, and body. This is useful for diagnosing how a proxy or
+client modified a request in transit. When disabled, `TRACE` requests receive
+`405 Method Not Allowed`, and the connection is closed.
+
 ## Inspecting registered routes
 
-`routing::print_routes(router)` prints the route trie, including methods and
-nested paths. Call it after registration and before `server.run()`:
+The macro `routing::print_routes(router)` prints the route trie to standard output,
+including every registered method and nested path. Call it after registering all
+routes and before `server.run()` to confirm the final route table before the
+server starts accepting traffic:
 
 ```c3
 routing::print_routes(router);
@@ -139,7 +154,8 @@ routing::print_routes(router);
 
 ## See also
 
-- [Handlers](handlers.md) — handler signatures and stateful handlers.
-- [Path & query parameters](parameters.md) — read values from the URL.
-- [Middleware](middleware.md) — run code before and after handlers.
-- [Groups](groups.md) — share prefixes across routes.
+- [Handlers](handlers.md) — handler signatures and type methods.
+- [Path & query parameters](parameters.md) — route matching, path parameters,
+  and query parameters.
+- [Middleware](middleware.md) — ordering, short-circuiting, and built-ins.
+- [Groups](groups.md) — group routes under a shared prefix.

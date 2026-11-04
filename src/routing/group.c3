@@ -41,20 +41,24 @@ fn Group* Group.init(&self, RouteNode* node, log::Logger log)
  Add or replace a route handler.
 
  If a handler is already registered for the specified method and URI,
- it is replaced with the new handler.
+ it is replaced with the new handler. Registering the same path shape twice,
+ but with a different parameter name is an error and aborts the program.
+ The route pattern must be known at compile time. A pattern that repeats a
+ parameter name, such as `/path/{name}/test/{name}`, is rejected.
 
  @param [&inout] self : "Group receiving the route"
  @param method : "HTTP method"
- @param [in] uri : "Route URI"
+ @param [in] $uri : "Route URI"
  @param handler : "Handler function"
  @param instance : "Optional instance passed to the handler as self"
 
+ @require !internal::has_duplicate_path_params($uri) : "Route contains duplicate path parameter names"
  @return "True if an existing handler was replaced, false if a new handler was added"
 *>
-fn bool Group.add_route(&self, RouteMethod method, String uri, HandleFunc handler, void* instance = null)
+macro bool Group.add_route(&self, RouteMethod method, String $uri, HandleFunc handler, void* instance = null)
 {
 	return internal::_add_handler(
-		uri,
+		$uri,
 		method,
 		handler,
 		instance,
@@ -69,98 +73,98 @@ fn bool Group.add_route(&self, RouteMethod method, String uri, HandleFunc handle
 <*
  Register a GET handler relative to this group.
  @param [&inout] self : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Group.get(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.GET, uri, handler, instance);
+) => self.add_route(RouteMethod.GET, $uri, handler, instance);
 
 <*
  Register a POST handler relative to this group.
  @param [&inout] self : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Group.post(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.POST, uri, handler, instance);
+) => self.add_route(RouteMethod.POST, $uri, handler, instance);
 
 <*
  Register a PUT handler relative to this group.
  @param [&inout] self : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Group.put(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.PUT, uri, handler, instance);
+) => self.add_route(RouteMethod.PUT, $uri, handler, instance);
 
 <*
  Register a PATCH handler relative to this group.
  @param [&inout] self : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Group.patch(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.PATCH, uri, handler, instance);
+) => self.add_route(RouteMethod.PATCH, $uri, handler, instance);
 
 <*
  Register a DELETE handler relative to this group.
  @param [&inout] self : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Group.delete(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.DELETE, uri, handler, instance);
+) => self.add_route(RouteMethod.DELETE, $uri, handler, instance);
 
 <*
  Register a HEAD handler relative to this group.
  @param [&inout] self : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Handler function"
  @param instance : "Optional handler instance passed as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool Group.head(
 	&self,
-	String uri,
+	String $uri,
 	HandleFunc handler,
 	void* instance = null
-) => self.add_route(RouteMethod.HEAD, uri, handler, instance);
+) => self.add_route(RouteMethod.HEAD, $uri, handler, instance);
 
 <*
  Register a typed route handler relative to this group.
  @param group : "Group receiving the route"
  @param method : "HTTP method"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
@@ -168,106 +172,109 @@ macro bool Group.head(
 macro bool route(
 	Group* group,
 	RouteMethod method,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
 ) <Type>
 {
-	return group.add_route(method, uri, (HandleFunc)handler, instance);
+	return group.add_route(method, $uri, (HandleFunc)handler, instance);
 }
 
 <*
  Register a typed GET handler relative to a group.
  @param group : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool get(
 	Group* group,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => group.add_route(RouteMethod.GET, uri, (HandleFunc)handler, instance);
+) <Type> => group.add_route(RouteMethod.GET, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed POST handler relative to a group.
  @param group : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool post(
 	Group* group,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => group.add_route(RouteMethod.POST, uri, (HandleFunc)handler, instance);
+) <Type> => group.add_route(RouteMethod.POST, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed PUT handler relative to a group.
  @param group : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool put(
 	Group* group,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => group.add_route(RouteMethod.PUT, uri, (HandleFunc)handler, instance);
+) <Type> => group.add_route(RouteMethod.PUT, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed PATCH handler relative to a group.
  @param group : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool patch(
 	Group* group,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => group.add_route(RouteMethod.PATCH, uri, (HandleFunc)handler, instance);
+) <Type> => group.add_route(RouteMethod.PATCH, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed DELETE handler relative to a group.
  @param group : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool delete(
 	Group* group,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => group.add_route(RouteMethod.DELETE, uri, (HandleFunc)handler, instance);
+) <Type> => group.add_route(RouteMethod.DELETE, $uri, (HandleFunc)handler, instance);
 
 <*
  Register a typed HEAD handler relative to a group.
  @param group : "Group receiving the route"
- @param uri : "Route URI relative to the group"
+ @param $uri : "Route URI relative to the group"
  @param handler : "Type-safe handler function"
  @param instance : "Optional instance passed to the handler as self"
  @return "True if an existing handler was replaced"
 *>
 macro bool head(
 	Group* group,
-	String uri,
+	String $uri,
 	HandleFuncGen{Type} handler,
 	Type* instance = null
-) <Type> => group.add_route(RouteMethod.HEAD, uri, (HandleFunc)handler, instance);
+) <Type> => group.add_route(RouteMethod.HEAD, $uri, (HandleFunc)handler, instance);
 
 <*
  Add middleware to a router route.
+
+ Dynamic parameter names must match the existing route branch. A conflicting
+ name is an error and aborts the program.
 
  @param [&inout] self : "Group receiving the middleware"
  @param [in] uri : "Route pattern"

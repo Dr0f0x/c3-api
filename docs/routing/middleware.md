@@ -47,6 +47,12 @@ This middleware runs for `/admin` and every path below it, such as
 router.use("/", &request_logger);
 ```
 
+!!! warning "Match dynamic parameter names"
+
+    Middleware registered on a dynamic path must use the same parameter name as
+    the routes on that branch. Registering a conflicting name logs an error and
+    aborts the program.
+
 Middleware can also be scoped to a group. See [Groups](groups.md).
 
 ## Short-circuit a request
@@ -80,10 +86,10 @@ Register it on the routes that need protection:
 router.use("/admin", &require_auth);
 ```
 
-## Stateful middleware
+## Type method middleware
 
-Like handlers, middleware can be a method on a struct. The instance is passed
-as `self`:
+Like handlers, middleware can be a type method on a struct. The instance is
+passed as `self`:
 
 ```c3
 struct Auth
@@ -149,13 +155,24 @@ root_middleware
       get_user
 ```
 
+Multiple Middlewares registered for the same path run in registration order. The first `use` call runs first, and code after `ctx.next(...)` unwinds in reverse order:
+
+```c3
+router.use("/api", &first_middleware);
+router.use("/api", &second_middleware);
+```
+
+For a request under `/api`, `first_middleware` runs before `second_middleware`,
+and `second_middleware` resumes after `ctx.next(...)` before `first_middleware`
+does.
+
 Middleware registered for a path does not run for unrelated paths.
 `/administrator` does not match middleware registered on `/admin`.
 
 ## Built-in middleware
 
-The server registers request logging by default. Disable it before starting the
-server:
+The server registers request logging by default, but you can disable
+it before starting the server:
 
 ```c3
 server.use_builtin_logging_middleware(false);
@@ -168,7 +185,7 @@ adds the configured `Access-Control-Allow-*` headers to `OPTIONS` requests. See
 
 ## See also
 
-- [Handlers](handlers.md) — handler signatures and stateful handlers.
-- [Groups](groups.md) — attach middleware to a shared route prefix.
-- [Context](../http/context.md) — pass values between middleware and handlers.
-- [Logger](../logging/logger.md) — log from middleware and handlers.
+- [Handlers](handlers.md) — handler signatures and type methods.
+- [Groups](groups.md) — group routes under a shared prefix.
+- [Context](../http/context.md) — share values across the request pipeline.
+- [Logger](../logging/logger.md) — configure and use logging.

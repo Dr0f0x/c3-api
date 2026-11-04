@@ -389,7 +389,7 @@ For explanations of additional framework features — such as the built-in logge
 
 ### Website
 
-- [Documentation](https://dr0f0x.github.io/c3-api/mkdocs/) — Guides, tutorials, configuration reference, and additional documentation built with Zensical.
+- [Zensical Documentation](https://dr0f0x.github.io/c3-api/mkdocs/) — Guides, tutorials, configuration reference, and additional documentation built with Zensical.
 
 ## Configuration
 

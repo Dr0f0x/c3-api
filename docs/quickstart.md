@@ -1,6 +1,7 @@
 # Quickstart
 
-This guide takes you from an empty C3 project to a running c3-api server. It should take a few minutes.
+This guide takes you from an empty C3 project to a running c3-api server. It should 
+only take a few minutes.
 
 ## Prerequisites
 

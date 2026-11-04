@@ -9,13 +9,7 @@ edit_uri = "edit/main/docs"
 nav = [
   { "Introduction" = "index.md" },
   { "Quickstart" = "quickstart.md" },
-  { "Configuration" = [
-    { "Overview" = "configuration/overview.md" },
-    { "Server & HTTP" = "configuration/server_http.md" },
-    { "CORS" = "configuration/cors.md" },
-    { "Concurrency Mode" = "configuration/concurrency_mode.md" },
-    { "Logging" = "configuration/logging.md" },
-  ] },
+  { "Server" = "server.md" },
   { "Routing" = [
     { "HTTP Methods" = "routing/http_methods.md" },
     { "Handlers" = "routing/handlers.md" },
@@ -41,6 +35,13 @@ nav = [
     { "Logger" = "logging/logger.md" },
     { "Fields" = "logging/fields.md" },
     { "Sinks & Encoders" = "logging/sinks.md" },
+  ] },
+  { "Configuration" = [
+    { "Overview" = "configuration/overview.md" },
+    { "Server & HTTP" = "configuration/server_http.md" },
+    { "CORS" = "configuration/cors.md" },
+    { "Concurrency Mode" = "configuration/concurrency_mode.md" },
+    { "Logging" = "configuration/logging.md" },
   ] },
   { "Examples" = "examples/index.md" },
   { "API Reference" = "https://dr0f0x.github.io/c3-api/api-reference/" },

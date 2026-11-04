@@ -138,6 +138,7 @@ If a registered file disappears from disk, the route returns the standard JSON
 
 ## See also
 
-- [HTTP methods](http_methods.md) — route matching and HEAD handling.
-- [Groups](groups.md) — organize routes under shared prefixes.
+- [HTTP methods](http_methods.md) — method registration and HEAD, OPTIONS, and
+  TRACE behavior.
+- [Groups](groups.md) — group routes under a shared prefix.
 - [Configuration overview](../configuration/overview.md) — server settings.

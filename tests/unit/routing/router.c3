@@ -11,6 +11,7 @@ import c3api::http;
 import c3api::http::request;
 import c3api::log;
 import c3api::routing::handler;
+import c3api::routing::internal;
 import c3api::routing::middleware;
 import c3api::routing::router;
 
@@ -39,6 +40,25 @@ fn void TestRouter.free(&self)
 
 fn void noop_handler(void* self = null, Allocator allocator, HandlerContext* ctx, HttpRequest* req, HttpResponse* res)
 {
+}
+
+struct MiddlewareTrace
+{
+	List{int} calls;
+}
+
+struct MiddlewareTraceEntry
+{
+	MiddlewareTrace* trace;
+	int id;
+}
+
+fn void trace_middleware(void* self, Allocator allocator, MiddlewareContext* ctx, HttpRequest* req, HttpResponse* res)
+{
+	MiddlewareTraceEntry* entry = (MiddlewareTraceEntry*)self;
+	entry.trace.calls.push(entry.id);
+	ctx.next(allocator, req, res);
+	entry.trace.calls.push(-entry.id);
 }
 
 fn void assert_route(TestRouter* tr, String uri, void* expected)
@@ -113,6 +133,15 @@ fn void test_router_lookup_root_route() @test
 	assert_route(&tr, "", (void*)&marker);
 }
 
+fn void test_router_detects_duplicate_path_params() @test
+{
+	assert(internal::has_duplicate_path_params("/path/{name}/test/{name}/"));
+	assert(internal::has_duplicate_path_params("/{id}/{id}"));
+	assert(!internal::has_duplicate_path_params("/path/{name}/test/{other}/"));
+	assert(!internal::has_duplicate_path_params("/path/{id}/{id2}/"));
+	assert(!internal::has_duplicate_path_params("/foo{id}/bar/{id}/"));
+}
+
 fn void test_router_lookup_dynamic_params() @test
 {
 	TestRouter tr;
@@ -139,6 +168,70 @@ fn void test_router_lookup_dynamic_params() @test
 	handler = tr.router.get_route(RouteMethod.GET, "/api/users/42/", &req, &collector) ?? null;
 	assert(handler != null);
 	assert(handler.self == (void*)&marker);
+	assert(req.params["id"]!! == "42");
+}
+
+fn void test_router_detects_dynamic_name_conflict() @test
+{
+	assert(internal::has_dynamic_name_conflict("{id}", "{name}"));
+	assert(!internal::has_dynamic_name_conflict("{id}", "{id}"));
+	assert(!internal::has_dynamic_name_conflict("users", "{name}"));
+	assert(!internal::has_dynamic_name_conflict("{id}", "users"));
+}
+
+fn void test_router_same_dynamic_name_replaces_handler() @test
+{
+	TestRouter tr;
+	tr.init();
+	defer tr.free();
+
+	int first_marker;
+	int second_marker;
+	assert(!tr.router.get("/users/{id}", &noop_handler, (void*)&first_marker));
+	assert(tr.router.get("/users/{id}", &noop_handler, (void*)&second_marker));
+
+	HttpRequest req;
+	req.init(mem);
+	defer req.free();
+
+	List{RegisteredMiddleware} collector;
+	collector.init(mem);
+	defer collector.free();
+
+	RegisteredHandler* handler = tr.router.get_route(RouteMethod.GET, "/users/42", &req, &collector) ?? null;
+	assert(handler != null);
+	assert(handler.self == (void*)&second_marker);
+	assert(req.params["id"]!! == "42");
+}
+
+fn void test_router_literal_registered_after_dynamic_route() @test
+{
+	TestRouter tr;
+	tr.init();
+	defer tr.free();
+
+	int dynamic_marker;
+	int literal_marker;
+	tr.router.get("/users/{id}", &noop_handler, (void*)&dynamic_marker);
+	tr.router.get("/users/me", &noop_handler, (void*)&literal_marker);
+
+	HttpRequest req;
+	req.init(mem);
+	defer req.free();
+
+	List{RegisteredMiddleware} collector;
+	collector.init(mem);
+	defer collector.free();
+
+	RegisteredHandler* handler = tr.router.get_route(RouteMethod.GET, "/users/me", &req, &collector) ?? null;
+	assert(handler != null);
+	assert(handler.self == (void*)&literal_marker);
+	assert(req.params.len() == 0);
+
+	req.reset();
+	handler = tr.router.get_route(RouteMethod.GET, "/users/42", &req, &collector) ?? null;
+	assert(handler != null);
+	assert(handler.self == (void*)&dynamic_marker);
 	assert(req.params["id"]!! == "42");
 }
 
@@ -242,4 +335,55 @@ fn void test_router_lookup_rejects_wrong_method_and_missing_route() @test
 
 	handler = tr.router.get_route(RouteMethod.GET, "/api/missing", &req, &collector) ?? null;
 	assert(handler == null);
+}
+fn void test_router_same_path_middleware_runs_in_registration_order() @test
+{
+	TestRouter tr;
+	tr.init();
+	defer tr.free();
+
+	int marker;
+	tr.router.get("/api/users", &noop_handler, (void*)&marker);
+
+	MiddlewareTrace trace;
+	trace.calls.init(mem);
+	defer trace.calls.free();
+
+	MiddlewareTraceEntry first  = { .trace = &trace, .id = 1 };
+	MiddlewareTraceEntry second = { .trace = &trace, .id = 2 };
+	MiddlewareTraceEntry third  = { .trace = &trace, .id = 3 };
+
+	tr.router.use("/api/users", &trace_middleware, &first);
+	tr.router.use("/api/users", &trace_middleware, &second);
+	tr.router.use("/api/users", &trace_middleware, &third);
+
+	HttpRequest req;
+	req.init(mem);
+	defer req.free();
+
+	HttpResponse res;
+	res.init(mem);
+	defer res.free();
+
+	List{RegisteredMiddleware} collector;
+	collector.init(mem);
+	defer collector.free();
+
+	RegisteredHandler* handler = tr.router.get_route(RouteMethod.GET, "/api/users", &req, &collector) ?? null;
+	assert(handler != null);
+	assert(handler.self == (void*)&marker);
+
+	Context ctx;
+	ctx.init(mem);
+	defer ctx.free();
+	ctx.setup_handling(collector.array_view(), handler);
+	ctx.next(mem, &req, &res);
+
+	assert(trace.calls.len() == 6);
+	assert(trace.calls[0] == 1);
+	assert(trace.calls[1] == 2);
+	assert(trace.calls[2] == 3);
+	assert(trace.calls[3] == -3);
+	assert(trace.calls[4] == -2);
+	assert(trace.calls[5] == -1);
 }
